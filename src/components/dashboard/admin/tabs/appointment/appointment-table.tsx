@@ -1,0 +1,108 @@
+import {
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Button,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  Box,
+} from '@chakra-ui/react';
+import { IAppointment } from '@/types/appointments';
+import { DialogButton } from '@/components/ui/alert-dialog';
+import { useAppointment } from '@/hooks/useAppointmentHook';
+import { MoreVertical } from 'lucide-react';
+import EditAppointmentModal from './edit-appointment-modal';
+import { useLoading } from '@/context/loading/loadingContext';
+import { useAuth } from '@/context/user/userContext';
+
+const AppointmentTable = ({
+  appointments,
+}: {
+  appointments: IAppointment[];
+}) => {
+  const { loading, setLoading } = useLoading();
+  const { deleteAppointment } = useAppointment();
+  const { role } = useAuth();
+
+  const handleDeleteAppointment = async (id: string) => {
+    await deleteAppointment(id);
+    setLoading(false);
+  };
+  return (
+    <Box overflowX={'auto'}>
+      <Table variant="striped" colorScheme="blackAlpha">
+        <Thead>
+          <Tr>
+            <Th>No</Th>
+            <Th>Client</Th>
+            <Th>Lawyer</Th>
+            <Th>Time</Th>
+            <Th>Date</Th>
+            <Th>Location</Th>
+            <Th>Status</Th>
+            <Th>Action</Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {appointments.map((appointment, index) => (
+            <Tr key={appointment.id}>
+              <Td>{index + 1}</Td>
+              <Td>{appointment.clientDetails.name}</Td>
+              <Td>{appointment.lawyerDetails.name}</Td>
+              <Td>{appointment.time}</Td>
+              <Td>{appointment.date}</Td>
+              <Td>{appointment.location}</Td>
+              <Td>{appointment.status}</Td>
+              <Td>
+                <Menu>
+                  <MenuButton
+                    as={IconButton}
+                    aria-label="Options"
+                    icon={<MoreVertical />}
+                    variant="outline"
+                  />
+                  <MenuList zIndex={50} maxWidth={100}>
+                    <MenuItem as={'div'}>
+                      <DialogButton
+                        title={'Delete'}
+                        message={'Do you wan to Delete the Appointment?'}
+                        onConfirm={() =>
+                          handleDeleteAppointment(appointment.id as string)
+                        }
+                        children={'Delete'}
+                        confirmButtonColorScheme="red"
+                        confirmButtonText="Delete"
+                      />
+                    </MenuItem>
+                    <MenuItem as={'div'}>
+                      <EditAppointmentModal appointment={appointment} />
+                    </MenuItem>
+                    <MenuItem as={'div'}>
+                      <Button
+                        className="w-full"
+                        colorScheme="purple"
+                        onClick={() =>
+                          (window.location.href = `/appointment/${appointment.id}`)
+                        }
+                      >
+                        View
+                      </Button>
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
+              </Td>
+            </Tr>
+          ))}
+        </Tbody>
+      </Table>
+    </Box>
+  );
+};
+
+export default AppointmentTable;

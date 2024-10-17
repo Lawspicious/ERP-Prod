@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --indico-primary: #4f46e5;
+  --indico-secondary: #4338ca;
+  --background-secondary: #3f3f3f;
+  --background-primary: #2f2f2f;
+  --background-color: #f5f5f5;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+body {
+  background-color: var(--background-color) !important;
+}
+
+button {
+  font-family: 'Cabin', sans-serif !important;
+}
+
+.fc-toolbar-title {
+  font-family: 'Cabin', system-ui;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.chakra-table th {
+  font-family: 'Cabin', system-ui;
+  font-size: 16px;
+  color: var(--indico-secondary);
+}
+
+.fc-button {
+  background-color: #805ad5 !important;
+  border: none !important;
+}
+
+.chakra-table tr:not(:last-child),
+thead {
+  border-bottom: 2px solid #2f2f2f/60; /* Set your desired border color */
+}
+.text-wrapper {
+  white-space: pre-line;
+}
+
+.chakra-step h3 {
+  font-family: 'Cabin', system-ui;
+}
+.chakra-step p {
+  font-family: 'Cabin', system-ui;
+}
+
+@layer base {
+  .btn-primary {
+    @apply rounded-md bg-indicoPrimary px-4 py-2.5 text-white transition-all duration-300 hover:bg-indicoSecondary disabled:cursor-not-allowed disabled:bg-gray-500 disabled:text-black;
+  }
+  .heading-primary {
+    @apply font-cabin text-2xl font-bold md:text-3xl lg:text-4xl;
+  }
+  .heading-secondary {
+    @apply font-cabin text-xl font-semibold md:text-2xl;
+  }
+  .margin-bottom-content {
+    @apply mb-6 md:mb-8 lg:mb-10;
+  }
+}
