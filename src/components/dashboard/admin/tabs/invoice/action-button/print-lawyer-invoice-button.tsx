@@ -75,7 +75,7 @@ const PrintLawyerInvoiceButton = ({
                 <table class="details-table">
                     <tr>
                         <td><strong>Date:</strong> ${today}</td>
-                        <td><strong>Bill to:</strong> ${invoiceData.clientDetails.name}</td>
+                        <td><strong>Bill to:</strong> ${invoiceData?.clientDetails?.name}</td>
                     </tr>
                 </table>
             

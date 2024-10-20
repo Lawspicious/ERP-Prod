@@ -127,7 +127,6 @@ const EditCaseFormLawyer = ({ caseData }: { caseData: ICase }) => {
               <FormLabel>Case Status</FormLabel>
               <Select name="caseStatus" value={formInputs.caseStatus}>
                 <option value="RUNNING">Running</option>
-                <option value="ABANDONED">Abandoned</option>
                 <option value="DECIDED">Decided</option>
                 <option value="PENDING">Pending</option>
               </Select>

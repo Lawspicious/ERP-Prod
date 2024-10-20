@@ -195,6 +195,26 @@ export const useTask = () => {
     }
   }, []);
 
+  const getPayableTask = async () => {
+    try {
+      const taskCollectionRef = collection(db, collectionName);
+      const taskQuery = query(
+        taskCollectionRef,
+        where('payable', '==', true),
+        where('taskStatus', '==', 'COMPLETED'),
+      );
+      const querySnapshot = await getDocs(taskQuery);
+
+      const taskList: ITask[] = querySnapshot.docs.map((doc) => {
+        const taskData = doc.data() as ITask;
+        return { ...taskData, id: doc.id };
+      });
+      return taskList;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return {
     loading,
     allTask,
@@ -207,5 +227,6 @@ export const useTask = () => {
     deleteTasks,
     getTasksByLawyerId,
     getTasksByCaseId,
+    getPayableTask,
   };
 };

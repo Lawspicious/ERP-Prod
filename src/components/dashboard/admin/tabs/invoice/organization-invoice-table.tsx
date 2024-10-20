@@ -19,6 +19,8 @@ import {
   TabPanels,
   Tab,
   TabPanel,
+  Button,
+  TableCaption,
 } from '@chakra-ui/react';
 import { MoreVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -29,6 +31,8 @@ import PrintLawspiciousInvoiceButton from './action-button/print-lawspicious-inv
 import { useRouter } from 'next/navigation';
 import withAuth from '@/components/shared/hoc-middlware';
 import EditInvoiceModal from './action-button/edit-invoice-modal';
+import { useTask } from '@/hooks/useTaskHooks';
+import { ITask } from '@/types/task';
 
 const OrganizationInvoiceTable = ({
   organizationInvoices,
@@ -40,6 +44,18 @@ const OrganizationInvoiceTable = ({
   const [filteredInvoices, setFilteredInvoices] = useState<IInvoice[]>([]);
   const router = useRouter();
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+
+  const { getPayableTask } = useTask();
+  const [taskInvoice, setTaskInvoices] = useState<ITask[]>([]);
+
+  useEffect(() => {
+    const handleFetchInvoice = async () => {
+      const data = await getPayableTask();
+      setTaskInvoices(data as ITask[]);
+    };
+
+    handleFetchInvoice();
+  }, []);
 
   const filterInvoices = (status: string) => {
     if (status === 'ALL') {
@@ -75,18 +91,27 @@ const OrganizationInvoiceTable = ({
             <Tab>ALL</Tab>
             <Tab>Paid</Tab>
             <Tab>Unpaid</Tab>
-            {/* <Tab>Pending</Tab> */}
+            <Tab>Payable Task</Tab>
           </TabList>
           <TabPanels>
-            {Array.from({ length: 4 }, (_, index) => (
+            {Array.from({ length: 3 }, (_, index) => (
               <TabPanel key={index}>
-                {filteredInvoices.length === 0 ? (
+                {filteredInvoices?.length === 0 ? (
                   <div className="heading-primary flex h-[40vh] items-center justify-center text-center">
                     No Invoice Found!!
                   </div>
                 ) : (
                   <Box overflowX={'auto'}>
                     <Table variant="striped" colorScheme="blackAlpha">
+                      <TableCaption fontSize={'lg'} textAlign={'left'}>
+                        Total Paid Amount: Rs.
+                        {filteredInvoices
+                          .filter((invoice) => invoice.paymentStatus === 'paid')
+                          .reduce(
+                            (sum, invoice) => sum + invoice.totalAmount,
+                            0,
+                          )}
+                      </TableCaption>
                       <Thead>
                         <Tr>
                           <Th>No</Th>
@@ -101,16 +126,17 @@ const OrganizationInvoiceTable = ({
                         </Tr>
                       </Thead>
                       <Tbody>
-                        {filteredInvoices.map((invoice, index) => (
+                        {filteredInvoices?.map((invoice, index) => (
                           <Tr key={invoice.id}>
                             <Td>{index + 1}</Td>
                             <Td>{invoice.id}</Td>
                             <Td>{invoice.createdAt}</Td>
-                            <Td>{invoice.paymentDate}</Td>
-                            <Td>{invoice.clientDetails.name}</Td>
-                            <Td>{invoice.totalAmount}</Td>
+                            <Td>{invoice.paymentDate || 'NA'}</Td>
+                            <Td>{invoice.clientDetails?.name || 'NA'}</Td>
+                            <Td>{invoice.totalAmount || 'NA'}</Td>
                             <Td>{invoice.paymentStatus}</Td>
-                            <Td>{invoice.teamMember?.name}</Td>
+                            {/* @ts-ignore */}
+                            <Td>{invoice.teamMember?.name || 'NA'}</Td>
                             <Td>
                               <Menu>
                                 <MenuButton
@@ -120,6 +146,17 @@ const OrganizationInvoiceTable = ({
                                   variant="outline"
                                 />
                                 <MenuList zIndex={50} maxWidth={100}>
+                                  <MenuItem as={'div'}>
+                                    <Button
+                                      colorScheme="purple"
+                                      className="w-full"
+                                      onClick={() =>
+                                        (window.location.href = `/invoice/${invoice.id}`)
+                                      }
+                                    >
+                                      Go to Invoice
+                                    </Button>
+                                  </MenuItem>
                                   <MenuItem as={'div'}>
                                     <EditInvoiceModal invoiceData={invoice} />
                                   </MenuItem>
@@ -158,6 +195,68 @@ const OrganizationInvoiceTable = ({
                 )}
               </TabPanel>
             ))}
+            <TabPanel>
+              {taskInvoice.length == 0 ? (
+                <div className="heading-primary flex items-center justify-center">
+                  No Payable Task Present
+                </div>
+              ) : (
+                <Box overflowX={'auto'}>
+                  <Table variant="striped" colorScheme="blackAlpha">
+                    <Thead>
+                      <Tr>
+                        <Th>No</Th>
+                        <Th>Task Name</Th>
+                        <Th>Case No</Th>
+                        <Th>Amount</Th>
+                        <Th>Assigned To</Th>
+                        <Th>End Date</Th>
+                        {/* <Th>Action</Th> */}
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {taskInvoice.map((task, index) => (
+                        <Tr key={task.id}>
+                          <Td>{index + 1}</Td>
+                          <Td>{task.taskName || 'NA'}</Td>
+                          <Td>
+                            {task.caseDetails.caseNo || task.taskType || 'NA'}
+                          </Td>
+                          <Td>{task.amount || 'NA'}</Td>
+                          <Td>
+                            {task.lawyerDetails.map((lawyer) => (
+                              <>
+                                {lawyer.name}
+                                <br />
+                              </>
+                            ))}
+                          </Td>
+                          <Td>{task.endDate || 'NA'}</Td>
+                          {/* <Td>
+                            <Menu>
+                              <MenuButton
+                                as={IconButton}
+                                aria-label="Options"
+                                icon={<MoreVertical />}
+                                variant="outline"
+                              />
+                              <MenuList zIndex={50} maxWidth={100}>
+                                <MenuItem as={'div'}>
+                                  <Button colorScheme='purple' className='w-full'>
+                                    Go to Invoice
+                                  </Button>
+                                </MenuItem>
+
+                              </MenuList>
+                            </Menu>
+                          </Td> */}
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </Box>
+              )}
+            </TabPanel>
           </TabPanels>
         </Tabs>
       )}

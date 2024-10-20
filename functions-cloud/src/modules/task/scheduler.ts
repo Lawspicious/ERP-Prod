@@ -4,11 +4,6 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as nodemailer from 'nodemailer';
 
-// // Initialize Firebase Admin SDK
-// if (!admin.apps.length) {
-//   admin.initializeApp();
-// }
-
 // Setup NodeMailer
 const gmail = process.env.NEXT_PUBLIC_NODEMAILER_GMAIL;
 const pass = process.env.NEXT_PUBLIC_NODEMAILER_PASS;

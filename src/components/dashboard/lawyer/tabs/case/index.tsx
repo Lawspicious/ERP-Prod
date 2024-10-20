@@ -10,6 +10,8 @@ import { useCases } from '@/hooks/useCasesHook';
 import { useLoading } from '@/context/loading/loadingContext';
 import { truncate } from 'fs';
 import { useAuth } from '@/context/user/userContext';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
+import { today } from '@/lib/utils/todayDate';
 
 const CaseTab = () => {
   const router = useRouter();
@@ -40,27 +42,46 @@ const CaseTab = () => {
 
   const columns = [
     { key: 'No', label: 'No', sortable: false },
-    { key: 'caseRegistration', label: 'Case Registration', sortable: true },
+    { key: 'caseRegistration', label: 'Case Details', sortable: true },
+    { key: 'courtDetails', label: 'Court Details', sortable: true },
     {
       key: 'petitionVsRespondent',
       label: 'Pet vs Resp',
       sortable: false,
     },
     { key: 'nextDate', label: 'Next Date', sortable: true },
-    { key: 'allotedClient', label: 'Alloted Client', sortable: true },
-    { key: 'status', label: 'Status', sortable: true },
+    { key: 'allotedClient', label: 'Client', sortable: true },
+    // { key: 'status', label: 'Status', sortable: true },
+    { key: 'priority', label: 'Priority', sortable: true },
   ];
 
   const transformedData = useMemo(() => {
     return allCasesLawyer.map((caseData, index) => {
+      const endDate = caseData.nextHearing
+        ? parseISO(caseData.nextHearing)
+        : null;
+
+      // Calculate the difference between the current date and the end date
+      const daysUntilEnd = endDate
+        ? differenceInCalendarDays(endDate, today)
+        : null;
+
+      // Determine the color based on how near the end date is
+      let rowColor = ''; // Default color
+      if (daysUntilEnd !== null && daysUntilEnd <= 2) {
+        rowColor = 'bg-red-300'; // If the end date is within 2 days
+      }
       return {
         No: `${index + 1}`, // No as index
         id: caseData.caseId,
         caseRegistration: `CaseNo:${caseData.caseNo} \nType:${caseData.caseType}`, // Case Details
+        courtDetails: `Court:${caseData.courtName || 'NA'} `,
         petitionVsRespondent: `${caseData.petition.petitioner}\nvs\n${caseData.respondent.respondentee}`, // Petitioner vs Respondent
         nextDate: caseData.nextHearing || 'TBD', // Next Hearing Date
         allotedClient: caseData.clientDetails.name,
         status: caseData.caseStatus, // Status
+        priority: caseData.priority,
+        rowColor,
       };
     });
   }, [allCasesLawyer]);

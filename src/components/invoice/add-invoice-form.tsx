@@ -104,12 +104,14 @@ const AddInvoiceForm = ({
             },
             teamMember:
               billTo === 'organization' && teamMember
-                ? {
-                    id: teamMember.id as string,
-                    name: teamMember.name,
-                    email: teamMember.email,
-                    phoneNumber: teamMember.phoneNumber,
-                  }
+                ? [
+                    {
+                      id: teamMember.id as string,
+                      name: teamMember.name,
+                      email: teamMember.email,
+                      phoneNumber: teamMember.phoneNumber,
+                    },
+                  ]
                 : null,
             services: services,
             RE: REData,

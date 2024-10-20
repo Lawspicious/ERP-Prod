@@ -4,12 +4,14 @@ import { useToastHook } from './shared/useToastHook';
 import { app, auth } from '@/lib/config/firebase.config';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { useLoading } from '@/context/loading/loadingContext';
 
 const collectionName = 'users';
 
 export const useUser = () => {
   const [user, setUser] = useState<IUser | null>(null);
   const [state, newToast] = useToastHook();
+  const { loading, setLoading } = useLoading();
 
   const functions = getFunctions(app, 'asia-south1');
   const createUserAndSetClaim = httpsCallable(functions, 'createUserCloud');
@@ -100,11 +102,11 @@ export const useUser = () => {
       });
       newToast({
         status: 'success',
-        message: 'Password Reset Successfully',
+        message: 'Password Reset Link Send Successfully',
       });
       return result;
     } catch (error) {
-      console.error('Error resetting password:', error);
+      console.error('Error resetting link send:', error);
       newToast({
         status: 'error',
         message: 'Error Resetting Password',

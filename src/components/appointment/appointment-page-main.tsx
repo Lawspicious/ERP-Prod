@@ -88,7 +88,7 @@ export const IndividualAppointment = ({
           colorScheme="blue"
           leftIcon={<ArrowLeft />}
           onClick={() =>
-            (window.location.href = `/dashboard/${role?.toLowerCase()}/workspace-${role?.toLowerCase()}#appointment`)
+            (window.location.href = `/dashboard/${role === 'SUPERADMIN' ? 'admin' : role?.toLowerCase()}/workspace-${role === 'SUPERADMIN' ? 'admin' : role?.toLowerCase()}#appointment`)
           }
         >
           Back

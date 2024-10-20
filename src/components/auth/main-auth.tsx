@@ -87,6 +87,13 @@ export function AuthUI() {
                 >
                   Login
                 </Button>
+                <a
+                  href="/auth/reset-password"
+                  target="_blank"
+                  className="text-center text-purple-800 underline"
+                >
+                  Forgot Password
+                </a>
               </form>
             </div>
           </div>

@@ -65,7 +65,7 @@ const ClientForm = () => {
         />
       </FormControl>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Email</FormLabel>
         <Input
           type="email"
@@ -76,7 +76,7 @@ const ClientForm = () => {
         />
       </FormControl>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Mobile</FormLabel>
         <Input
           type="text"
@@ -86,7 +86,7 @@ const ClientForm = () => {
           onChange={handleInputChange}
         />
       </FormControl>
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Gender</FormLabel>
         <Select
           name="gender"
@@ -100,7 +100,7 @@ const ClientForm = () => {
         </Select>
       </FormControl>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Address</FormLabel>
         <Input
           type="text"
@@ -111,7 +111,7 @@ const ClientForm = () => {
         />
       </FormControl>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Country</FormLabel>
         <Input
           type="text"
@@ -122,7 +122,7 @@ const ClientForm = () => {
         />
       </FormControl>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>State</FormLabel>
         <Input
           type="text"
@@ -133,7 +133,7 @@ const ClientForm = () => {
         />
       </FormControl>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>City</FormLabel>
         <Input
           type="text"
@@ -143,7 +143,7 @@ const ClientForm = () => {
           onChange={handleInputChange}
         />
       </FormControl>
-      <FormControl isRequired className="col-span-2">
+      <FormControl className="col-span-2">
         <FormLabel>Rate the Client</FormLabel>
         <StarRating
           maxStars={5}
@@ -155,7 +155,7 @@ const ClientForm = () => {
           }
         />
       </FormControl>
-      <FormControl isRequired className="col-span-2">
+      <FormControl className="col-span-2">
         <FormLabel>Remark</FormLabel>
         <Textarea
           rows={2}

@@ -18,14 +18,12 @@ import { useAuth } from '@/context/user/userContext';
 
 const IndividualTask = ({ task }: { task: ITask }) => {
   const { role } = useAuth();
-  const getBadgeColor = (status: 'PENDING' | 'COMPLETED' | 'IN_PROGRESS') => {
+  const getBadgeColor = (status: 'PENDING' | 'COMPLETED') => {
     switch (status) {
       case 'PENDING':
         return 'yellow';
       case 'COMPLETED':
         return 'green';
-      case 'IN_PROGRESS':
-        return 'blue';
       default:
         return 'gray';
     }

@@ -87,14 +87,14 @@ const CaseDetail = ({ caseData }: { caseData: ICase }) => {
                 <Text>
                   <strong>Case Type:</strong>
                 </Text>
-                <Text>{caseData.caseType}</Text>
+                <Text>{caseData.caseType || 'NA'}</Text>
               </Flex>
 
               <Flex justify="space-between" mb={2}>
                 <Text>
                   <strong>Registration Date:</strong>
                 </Text>
-                <Text>{caseData.regDate}</Text>
+                <Text>{caseData.regDate || 'NA'}</Text>
               </Flex>
               <Flex justify="space-between" mb={2}>
                 <Text>
@@ -104,20 +104,20 @@ const CaseDetail = ({ caseData }: { caseData: ICase }) => {
                   onClick={handleCopyToClipboard}
                   className="cursor-pointer text-purple-600 hover:underline"
                 >
-                  {caseData.CNRNo}
+                  {caseData.CNRNo || 'NA'}
                 </Text>
               </Flex>
               <Flex justify="space-between" mb={2}>
                 <Text>
                   <strong>Lawyer Action Status:</strong>
                 </Text>
-                <Text>{caseData.lawyerActionStatus}</Text>
+                <Text>{caseData.lawyerActionStatus || 'NA'}</Text>
               </Flex>
               <Flex justify="space-between" mb={2}>
                 <Text>
                   <strong>Reference:</strong>
                 </Text>
-                <Text>{caseData.reference}</Text>
+                <Text>{caseData.reference || 'NA'}</Text>
               </Flex>
             </Box>
             <Box>
@@ -125,7 +125,7 @@ const CaseDetail = ({ caseData }: { caseData: ICase }) => {
                 <Text>
                   <strong>Next Hearing:</strong>
                 </Text>
-                <Text>{caseData.nextHearing}</Text>
+                <Text>{caseData.nextHearing || 'NA'}</Text>
               </Flex>
               <Flex justify="space-between" mb={2}>
                 <Text>
@@ -137,20 +137,20 @@ const CaseDetail = ({ caseData }: { caseData: ICase }) => {
                 <Text>
                   <strong>Case Status:</strong>
                 </Text>
-                <Text>{caseData.caseStatus}</Text>
+                <Text>{caseData.caseStatus || 'NA'}</Text>
               </Flex>
 
               <Flex justify="space-between" mb={2}>
                 <Text>
                   <strong>Court Name:</strong>
                 </Text>
-                <Text>{caseData.courtName}</Text>
+                <Text>{caseData.courtName || 'NA'}</Text>
               </Flex>
               <Flex justify="space-between" mb={2}>
                 <Text>
                   <strong>Priority:</strong>
                 </Text>
-                <Text>{caseData.priority}</Text>
+                <Text>{caseData.priority || 'NA'}</Text>
               </Flex>
             </Box>
           </SimpleGrid>
@@ -167,7 +167,7 @@ const CaseDetail = ({ caseData }: { caseData: ICase }) => {
                 <Text>
                   <strong>Petitioner:</strong>
                 </Text>
-                <Text>{caseData.petition.petitioner}</Text>
+                <Text>{caseData.petition.petitioner || 'NA'}</Text>
               </Flex>
             </Box>
             <Box>
@@ -175,7 +175,7 @@ const CaseDetail = ({ caseData }: { caseData: ICase }) => {
                 <Text>
                   <strong>Respondent:</strong>
                 </Text>
-                <Text>{caseData.respondent.respondentee}</Text>
+                <Text>{caseData.respondent.respondentee || 'NA'}</Text>
               </Flex>
             </Box>
           </SimpleGrid>
@@ -186,7 +186,7 @@ const CaseDetail = ({ caseData }: { caseData: ICase }) => {
         {/* Case Files Section */}
         <Box p={4} borderWidth={1} borderRadius="md">
           <h1 className="heading-secondary mb-4">Case Files</h1>
-          <Link href={caseData.caseFiles} color="teal.500" isExternal>
+          <Link href={caseData.caseFiles || 'NA'} color="teal.500" isExternal>
             View Case Files
           </Link>
         </Box>

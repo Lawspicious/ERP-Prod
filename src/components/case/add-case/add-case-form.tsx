@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Button,
+  Checkbox,
   FormControl,
   FormHelperText,
   FormLabel,
@@ -67,6 +68,7 @@ const AddCaseForm = ({
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const { loading, setLoading } = useLoading();
   const { allClients } = useClient();
+  const [isOtherCaseType, setIsOtherCaseType] = useState(false);
 
   useEffect(() => {
     if (selectedLawyerId !== '') {
@@ -132,9 +134,9 @@ const AddCaseForm = ({
     } catch (error) {
       console.log(error);
     }
-    // setFormInputs(initialFormData);
     setLoading(false);
   };
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between gap-6">
@@ -174,18 +176,35 @@ const AddCaseForm = ({
 
             <FormControl>
               <FormLabel>Case Type</FormLabel>
-              <Select
-                name="caseType"
-                value={formInputs.caseType}
-                onChange={handleInputChange}
-                placeholder="Enter Case Type"
+              <Checkbox
+                isChecked={isOtherCaseType}
+                onChange={() => setIsOtherCaseType(!isOtherCaseType)}
+                mb={4}
               >
-                {caseTypes.map((caseType: string, i) => (
-                  <option key={i} value={caseType}>
-                    {caseType}
-                  </option>
-                ))}
-              </Select>
+                Add Other Case Type
+              </Checkbox>
+              {isOtherCaseType ? (
+                <Input
+                  type="text"
+                  name="caseType"
+                  placeholder="Enter Case Type"
+                  value={formInputs.caseType}
+                  onChange={handleInputChange}
+                />
+              ) : (
+                <Select
+                  name="caseType"
+                  value={formInputs.caseType}
+                  onChange={handleInputChange}
+                  placeholder="Select Case Type"
+                >
+                  {caseTypes.map((caseType: string, i) => (
+                    <option key={i} value={caseType}>
+                      {caseType}
+                    </option>
+                  ))}
+                </Select>
+              )}
             </FormControl>
 
             <FormControl>
@@ -208,7 +227,7 @@ const AddCaseForm = ({
                 onChange={handleInputChange}
               />
               <FormHelperText>
-                Case Number Record (CNR) is unique ID number which remains
+                Case Number Record (CNR) is a unique ID number which remains
                 constant
               </FormHelperText>
             </FormControl>
@@ -231,7 +250,6 @@ const AddCaseForm = ({
                 onChange={handleInputChange}
               >
                 <option value="RUNNING">Running</option>
-                <option value="ABANDONED">Abandoned</option>
                 <option value="DECIDED">Decided</option>
                 <option value="PENDING">Pending</option>
               </Select>

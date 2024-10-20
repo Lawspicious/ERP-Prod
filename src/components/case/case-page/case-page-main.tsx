@@ -31,7 +31,7 @@ const IndividualCase = ({ caseData }: { caseData: ICase }) => {
           <Tab>Details</Tab>
           <Tab>History</Tab>
           <Tab>Tasks</Tab>
-          <Tab>Invoices</Tab>
+          {role !== 'LAWYER' && <Tab>Invoices</Tab>}
         </TabList>
         <div className="md:hidden">
           <Menu>
@@ -45,7 +45,7 @@ const IndividualCase = ({ caseData }: { caseData: ICase }) => {
               <MenuItem as={'div'}>
                 <UpdateNextDateButton caseDetails={caseData} />
               </MenuItem>
-              {role === 'ADMIN' && (
+              {(role === 'ADMIN' || role === 'SUPERADMIN') && (
                 <MenuItem as={'div'}>
                   <TransferCaseButton caseDetails={caseData} />
                 </MenuItem>
@@ -56,7 +56,9 @@ const IndividualCase = ({ caseData }: { caseData: ICase }) => {
         <div className="hidden md:block">
           <div className="flex items-center justify-end gap-4">
             <UpdateNextDateButton caseDetails={caseData} />
-            {role === 'ADMIN' && <TransferCaseButton caseDetails={caseData} />}
+            {(role === 'ADMIN' || role === 'SUPERADMIN') && (
+              <TransferCaseButton caseDetails={caseData} />
+            )}
           </div>
         </div>
       </Flex>
@@ -70,9 +72,11 @@ const IndividualCase = ({ caseData }: { caseData: ICase }) => {
         <TabPanel>
           <CaseTask caseId={caseData.caseId as string} />
         </TabPanel>
-        <TabPanel>
-          <CaseInvoiceTable caseId={caseData.caseId as string} />
-        </TabPanel>
+        {role !== 'LAWYER' && (
+          <TabPanel>
+            <CaseInvoiceTable caseId={caseData.caseId as string} />
+          </TabPanel>
+        )}
       </TabPanels>
     </Tabs>
   );

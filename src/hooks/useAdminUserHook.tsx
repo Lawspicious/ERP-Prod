@@ -22,7 +22,7 @@ export const useAdminUser = () => {
 
   const fetchAdminUsers = useCallback(async () => {
     const currentUserRole = role;
-    if (currentUserRole === 'ADMIN') {
+    if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
       try {
         const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
         onSnapshot(q, (querySnapshot) => {
@@ -50,7 +50,7 @@ export const useAdminUser = () => {
 
   const createAdminUser = useCallback(async (data: IUser) => {
     const currentUserRole = role;
-    if (currentUserRole === 'ADMIN') {
+    if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
       try {
         const response = await createUser(data);
 
@@ -85,7 +85,7 @@ export const useAdminUser = () => {
 
   const updateAdminUser = useCallback(async (data: IUser) => {
     const currentUserRole = role;
-    if (currentUserRole === 'ADMIN') {
+    if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
       try {
         const docRef = doc(db, 'users', data.id?.toString() as string);
         await updateDoc(docRef, {
@@ -116,7 +116,7 @@ export const useAdminUser = () => {
 
   const deleteAdminUser = useCallback(async (userID: string) => {
     const currentUserRole = role;
-    if (currentUserRole === 'ADMIN') {
+    if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
       try {
         await deleteDoc(doc(db, 'users', userID));
         toast({
@@ -141,7 +141,7 @@ export const useAdminUser = () => {
   const resetPassword = useCallback(
     async (email: string, name: string, message: string) => {
       const currentUserRole = role;
-      if (currentUserRole === 'ADMIN') {
+      if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
         try {
           // setIsResetPasswordOpen(true);
           const response = await resetUserPassword(email, name, message);

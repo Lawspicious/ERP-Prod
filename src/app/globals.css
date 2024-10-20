@@ -58,6 +58,10 @@ thead {
   font-family: 'Cabin', system-ui;
 }
 
+.chakra-menu__menu-button {
+  border: none !important;
+}
+
 @layer base {
   .btn-primary {
     @apply rounded-md bg-indicoPrimary px-4 py-2.5 text-white transition-all duration-300 hover:bg-indicoSecondary disabled:cursor-not-allowed disabled:bg-gray-500 disabled:text-black;

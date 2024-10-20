@@ -9,7 +9,7 @@ const page = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if ((role === 'ADMIN' || 'SUPERADMIN') && authUser) {
+    if ((role === 'ADMIN' || role === 'SUPERADMIN') && authUser) {
       router.push('/dashboard/admin/workspace-admin#home');
     } else if (role === 'LAWYER' && authUser) {
       router.push('/dashboard/lawyer/workspace-lawyer#home');

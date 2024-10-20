@@ -175,7 +175,9 @@ const AddMemberPage = () => {
               >
                 <option value="ADMIN">Admin</option>
                 <option value="LAWYER">Lawyer</option>
-                <option value="SUPERADMIN">SuperAdmin</option>
+                {role === 'SUPERADMIN' && (
+                  <option value="SUPERADMIN">SuperAdmin</option>
+                )}
               </Select>
             </FormControl>
 

@@ -40,6 +40,10 @@ interface DisplayTableProps {
   tabField: string; // Field used for tab generation
   otherField?: string;
   actionButton: (id: string) => ReactElement[]; // Action buttons callback
+  tableStyle?: {
+    colKey: string;
+    style: string;
+  };
 }
 
 // Sort direction constants
@@ -54,6 +58,7 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
   tabField,
   otherField,
   actionButton,
+  tableStyle,
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [sortConfig, setSortConfig] = useState<{
@@ -104,7 +109,10 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
   // Render the table based on filtered data
   const renderTable = (tableData: TableData[]) => (
     <TableContainer>
-      <Table variant="striped" colorScheme="blackAlpha">
+      <Table
+        variant={tableData[0]?.rowColor ? 'simple' : 'striped'}
+        colorScheme="blackAlpha"
+      >
         <Thead>
           <Tr>
             {columns.map((col) => (
@@ -134,9 +142,9 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
         </Thead>
         <Tbody>
           {tableData.map((row, index) => (
-            <Tr key={index}>
+            <Tr key={index} className={row.rowColor}>
               {columns.map((col) => (
-                <Td key={col.key} className="text-wrapper">
+                <Td key={col.key} className={`text-wrapper`}>
                   {row[col.key]}
                 </Td>
               ))}

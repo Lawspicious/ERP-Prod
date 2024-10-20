@@ -102,8 +102,9 @@ const PrintLawspiciousInvoiceButton = ({
 
         <div class="bill-to">
             <p>Bill to:</p>
-            <p><strong>${invoiceData.clientDetails.name}</strong></p>
-            <p>${invoiceData.clientDetails.location}</p>
+
+            <p><strong>${invoiceData?.clientDetails?.name}</strong></p>
+            <p>${invoiceData?.clientDetails?.location}</p>
            ${invoiceData.panNo ? `<p>PAN: ${invoiceData.panNo}</p>` : ''}
             
         </div>
@@ -138,7 +139,11 @@ const PrintLawspiciousInvoiceButton = ({
         </div>
 
         <div class="footer">
-            <p>Authorized Signatory for Lawspicious</p>
+            <p>
+                <img src="/sign.jpg"  style="height: 50px;">
+                <br>
+                Abhradip Jha
+            </p>
             <p>Our Bank details:</p>
             <p>Name: Lawspicious</p>
             <p>IFSC: HDFC0006504</p>

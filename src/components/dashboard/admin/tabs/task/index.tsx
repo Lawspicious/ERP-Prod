@@ -8,6 +8,7 @@ import { DialogButton } from '@/components/ui/alert-dialog';
 import DisplayTable from '@/components/ui/display-table';
 import TaskEditModal from './action-button/edit-task-modal';
 import TaskModal from './task-modal';
+import { differenceInCalendarDays, isBefore, parseISO } from 'date-fns';
 
 const TaskTab = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -30,7 +31,25 @@ const TaskTab = () => {
   ];
 
   const transformedTaskData = useMemo(() => {
+    const today = new Date();
+    const prevDate = today.setDate(today.getDate() - 1);
+
     return allTask.map((taskData, index) => {
+      const endDate = taskData.endDate ? parseISO(taskData.endDate) : null;
+
+      // Calculate the difference between the current date and the end date
+      const daysUntilEnd = endDate
+        ? differenceInCalendarDays(endDate, today)
+        : null;
+
+      // Determine the color based on how near the end date is
+      let rowColor = ''; // Default color
+      if (isBefore(endDate as Date, prevDate)) {
+        rowColor = 'bg-red-400';
+      } else if (daysUntilEnd !== null && daysUntilEnd <= 2) {
+        rowColor = 'bg-red-200'; // If the end date is within 2 days
+      }
+
       return {
         No: `${index + 1}`, // No as index
         id: taskData.id,
@@ -39,7 +58,7 @@ const TaskTab = () => {
           ? `CaseNo:${taskData.caseDetails.caseNo}`
           : 'Other',
         petitionVsRespondent: taskData.caseDetails?.caseId
-          ? `${taskData.caseDetails.petition.petitioner}\nvs\n${taskData.caseDetails.respondent.respondentee}`
+          ? `${taskData.caseDetails.petition.petitioner || 'NA'}\nvs\n${taskData.caseDetails.respondent.respondentee || 'NA'}`
           : 'N/A',
         startDate: taskData.startDate || 'TBD', // Start Date
         endDate: taskData.endDate || 'TBD', // End Date
@@ -48,6 +67,7 @@ const TaskTab = () => {
           'No Lawyers Assigned',
         status: taskData.taskStatus, // Status
         priority: taskData.priority, // Priority
+        rowColor, // Row color based on end date proximity
       };
     });
   }, [allTask]);

@@ -40,8 +40,14 @@ const CaseInvoiceTable = ({ caseId }: { caseId: string }) => {
 
   const handleSortByClientName = () => {
     const sortedInvoices = [...invoiceList].sort((a, b) => {
-      const nameA = a.clientDetails.name.toLowerCase();
-      const nameB = b.clientDetails.name.toLowerCase();
+      {
+        /* @ts-ignore */
+      }
+      const nameA = a.clientDetails?.name.toLowerCase() as string;
+      {
+        /* @ts-ignore */
+      }
+      const nameB = b.clientDetails?.name.toLowerCase() as string;
       if (nameA < nameB) return sortOrder === 'asc' ? -1 : 1;
       if (nameA > nameB) return sortOrder === 'asc' ? 1 : -1;
       return 0;
@@ -52,77 +58,86 @@ const CaseInvoiceTable = ({ caseId }: { caseId: string }) => {
 
   return (
     <Box overflowX={'auto'}>
-      <Table variant="striped" colorScheme="blackAlpha">
-        <Thead>
-          <Tr>
-            <Th>No</Th>
-            <Th>Invoice No</Th>
-            <Th>Date</Th>
-            <Th
-              className="flex items-center"
-              onClick={handleSortByClientName}
-              cursor="pointer"
-            >
-              Client Name {sortOrder === 'asc' ? <ArrowUp /> : <ArrowDown />}
-            </Th>
-            <Th>Total</Th>
-            <Th>Status</Th>
-            <Th>Team Member</Th>
-            <Th>Action</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {invoiceList.map((invoice, index) => (
-            <Tr key={invoice.id}>
-              <Td>{index + 1}</Td>
-              <Td>{invoice.id}</Td>
-              <Td>{invoice.createdAt}</Td>
-              <Td>{invoice.clientDetails.name}</Td>
-              <Td>{invoice.totalAmount}</Td>
-              <Td>{invoice.paymentStatus}</Td>
-              <Td>
-                {invoice.teamMember
-                  ? Object.keys(invoice.teamMember).length === 0
-                    ? 'NA'
-                    : invoice.teamMember?.name
-                  : 'NA'}
-              </Td>
-              <Td>
-                <Menu>
-                  <MenuButton
-                    as={IconButton}
-                    aria-label="Options"
-                    icon={<MoreVertical />}
-                    variant="outline"
-                  />
-                  <MenuList zIndex={50} maxWidth={100}>
-                    {(role === 'ADMIN' || 'SUPERADMIN') && (
-                      <MenuItem as={'div'}>
-                        <DialogButton
-                          title={'Delete'}
-                          message={'Do you want to delete the invoice?'}
-                          onConfirm={async () =>
-                            deleteInvoice(invoice.id as string)
-                          }
-                          children={'Delete'}
-                          confirmButtonColorScheme="red"
-                          confirmButtonText="Delete"
-                        />
-                      </MenuItem>
-                    )}
-                    <MenuItem as={'div'}>
-                      <PrintLawyerInvoiceButton invoiceData={invoice} />
-                    </MenuItem>
-                    <MenuItem as={'div'}>
-                      <PrintLawspiciousInvoiceButton invoiceData={invoice} />
-                    </MenuItem>
-                  </MenuList>
-                </Menu>
-              </Td>
+      {invoiceList.length === 0 ? (
+        <div className="heading-primary my-6 text-center">
+          No Invoice Found!
+        </div>
+      ) : (
+        <Table variant="striped" colorScheme="blackAlpha">
+          <Thead>
+            <Tr>
+              <Th>No</Th>
+              <Th>Invoice No</Th>
+              <Th>Date</Th>
+              <Th
+                className="flex items-center"
+                onClick={handleSortByClientName}
+                cursor="pointer"
+              >
+                Client Name {sortOrder === 'asc' ? <ArrowUp /> : <ArrowDown />}
+              </Th>
+              <Th>Total</Th>
+              <Th>Status</Th>
+              <Th>Team Member</Th>
+              <Th>Action</Th>
             </Tr>
-          ))}
-        </Tbody>
-      </Table>
+          </Thead>
+          <Tbody>
+            {invoiceList.map((invoice, index) => (
+              <Tr key={invoice.id}>
+                <Td>{index + 1}</Td>
+                <Td>{invoice.id}</Td>
+                <Td>{invoice.createdAt}</Td>
+                {/* @ts-ignore */}
+                <Td>{invoice.clientDetails?.name || 'NA'}</Td>
+                <Td>{invoice.totalAmount || 'NA'}</Td>
+                <Td>{invoice.paymentStatus || 'NA'}</Td>
+                <Td>
+                  {/* @ts-ignore */}
+                  {invoice.teamMember
+                    ? Object.keys(invoice.teamMember).length === 0
+                      ? 'NA'
+                      : /* @ts-ignore */
+                        invoice.teamMember?.name
+                    : 'NA'}
+                </Td>
+                <Td>
+                  <Menu>
+                    <MenuButton
+                      as={IconButton}
+                      aria-label="Options"
+                      icon={<MoreVertical />}
+                      variant="outline"
+                    />
+                    <MenuList zIndex={50} maxWidth={100}>
+                      {(role === 'ADMIN' || role === 'SUPERADMIN') && (
+                        <MenuItem as={'div'}>
+                          <DialogButton
+                            title={'Delete'}
+                            message={'Do you want to delete the invoice?'}
+                            onConfirm={async () =>
+                              deleteInvoice(invoice.id as string)
+                            }
+                            children={'Delete'}
+                            confirmButtonColorScheme="red"
+                            confirmButtonText="Delete"
+                          />
+                        </MenuItem>
+                      )}
+                      <MenuItem as={'div'}>
+                        <PrintLawyerInvoiceButton invoiceData={invoice} />
+                      </MenuItem>
+                      <MenuItem as={'div'}>
+                        <PrintLawspiciousInvoiceButton invoiceData={invoice} />
+                      </MenuItem>
+                    </MenuList>
+                  </Menu>
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      )}
     </Box>
   );
 };

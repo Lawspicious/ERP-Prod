@@ -1,14 +1,14 @@
 export interface IInvoice {
   id?: string;
   billTo: 'client' | 'organization';
-  clientDetails: IClientDetails;
+  clientDetails?: IClientDetails;
   createdAt: string;
   dueDate: string;
   services: IService[];
   paymentStatus: 'paid' | 'unpaid';
   totalAmount: number;
   RE: IRE[];
-  teamMember?: ITeamMembers | null;
+  teamMember?: ITeamMembers[] | null;
   gstNote?: string;
   panNo?: string;
   paymentDate?: string;

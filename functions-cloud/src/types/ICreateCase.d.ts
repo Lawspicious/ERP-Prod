@@ -11,7 +11,7 @@ export interface ICreateCase {
   hearings: IDate[];
   nextHearing: 'string';
   decision: string;
-  caseStatus: 'RUNNING' | 'ABANDONED' | 'DECIDED';
+  caseStatus: 'RUNNING' | 'DECIDED';
   judge?: string;
   courtName: string;
   petition: { petitioner: string; advocate: string };

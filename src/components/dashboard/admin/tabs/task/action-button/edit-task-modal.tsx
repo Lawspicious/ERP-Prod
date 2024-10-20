@@ -25,25 +25,35 @@ import { useTask } from '@/hooks/useTaskHooks';
 import { ILawyer } from '@/types/case';
 import { useTeam } from '@/hooks/useTeamHook';
 import { useLoading } from '@/context/loading/loadingContext';
+import { IInvoice, IRE, IService } from '@/types/invoice';
+import { today } from '@/lib/utils/todayDate';
+import { useInvoice } from '@/hooks/useInvoiceHook';
+import { useAuth } from '@/context/user/userContext';
 
 const TaskEditModal = ({ taskId }: { taskId: string }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [lawyers, setLawyers] = useState<IUser[]>([]);
   const { loading, setLoading } = useLoading();
-  const { getTaskById, updateTask } = useTask();
+  const { getTaskById, updateTask, task } = useTask();
   const { getAllTeam } = useTeam();
+  const { role } = useAuth();
   const [formData, setFormData] = useState<{
     endDate: string;
     taskStatus: string;
     priority: string;
     lawyerDetails: ILawyer[];
+    amount: number;
+    payable: boolean;
   }>({
     endDate: '',
     taskStatus: '',
     priority: '',
     lawyerDetails: [],
+    amount: 0,
+    payable: false,
   });
   const [selectedLawyerIds, setSelectedLawyerIds] = useState<string[]>([]);
+  const { createInvoice } = useInvoice();
 
   const handleFetchTask = async () => {
     try {
@@ -54,6 +64,8 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
           taskStatus: task.taskStatus,
           priority: task.priority,
           lawyerDetails: task.lawyerDetails,
+          payable: task?.payable as boolean,
+          amount: task?.amount as number,
         });
         const lawyerIds = task.lawyerDetails.map(
           (lawyer: ILawyer) => lawyer.id,
@@ -96,6 +108,32 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
     setSelectedLawyerIds(selectedLawyerIds.filter((id) => id !== lawyerId));
   };
 
+  const handleCreateInvoice = async () => {
+    if (!task?.payable || task.amount === 0 || role !== 'LAWYER') {
+      return;
+    }
+    const invoiceData: IInvoice = {
+      createdAt: today,
+      billTo: 'organization',
+      dueDate: '',
+      services: [
+        {
+          name: task?.taskName,
+          description: task?.taskDescription,
+          amount: formData.amount || 0,
+        },
+      ] as IService[],
+      paymentStatus: 'unpaid',
+      totalAmount: formData.amount || 0,
+      RE: [{ caseId: task?.caseDetails.caseId }] as IRE[],
+      teamMember: task?.lawyerDetails,
+      gstNote: '',
+      panNo: '',
+      paymentDate: '',
+    };
+    await createInvoice(invoiceData);
+  };
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     try {
@@ -112,6 +150,10 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
         lawyerDetails: selectedLawyers,
       };
       await updateTask(taskId, updatedFormData as ITask);
+      if (formData.payable) {
+        await handleCreateInvoice();
+      }
+      onClose();
     } catch (error) {
       console.log(error);
     }
@@ -153,6 +195,21 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
                     <option value="COMPLETED">Completed</option>
                   </Select>
                 </FormControl>
+                {formData.payable && (
+                  <FormControl mb={4}>
+                    <FormLabel>Amount</FormLabel>
+                    <Input
+                      type="number"
+                      name="amount"
+                      value={
+                        formData.amount === 0 ? undefined : formData.amount
+                      }
+                      placeholder="Enter task Amount"
+                      onChange={handleInputChange}
+                      readOnly={role !== 'LAWYER'}
+                    />
+                  </FormControl>
+                )}
 
                 <FormControl mb={4}>
                   <FormLabel>Priority</FormLabel>
@@ -161,9 +218,9 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
                     name="priority"
                     onChange={handleInputChange}
                   >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
+                    <option value="LOW">LOW</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="HIGH">HIGH</option>
                   </Select>
                 </FormControl>
 

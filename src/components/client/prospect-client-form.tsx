@@ -72,7 +72,7 @@ const ClientProspectForm = () => {
         />
       </FormControl>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Email</FormLabel>
         <Input
           type="email"
@@ -83,7 +83,7 @@ const ClientProspectForm = () => {
         />
       </FormControl>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Mobile</FormLabel>
         <Input
           type="text"
@@ -94,7 +94,7 @@ const ClientProspectForm = () => {
         />
       </FormControl>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Location</FormLabel>
         <Input
           type="text"
@@ -104,7 +104,7 @@ const ClientProspectForm = () => {
           onChange={handleInputChange}
         />
       </FormControl>
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Gender</FormLabel>
         <Select
           name="gender"
@@ -146,7 +146,7 @@ const ClientProspectForm = () => {
         )}
       </div>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Source</FormLabel>
         <Select
           name="source"
@@ -161,7 +161,7 @@ const ClientProspectForm = () => {
         </Select>
       </FormControl>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Service</FormLabel>
         <Input
           type="text"
@@ -172,7 +172,7 @@ const ClientProspectForm = () => {
         />
       </FormControl>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Client Feedback</FormLabel>
         <Input
           type="text"
@@ -183,7 +183,7 @@ const ClientProspectForm = () => {
         />
       </FormControl>
 
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Status</FormLabel>
         <Select
           name="status"
@@ -192,10 +192,10 @@ const ClientProspectForm = () => {
           onChange={handleInputChange}
         >
           <option value={'ACTIVE'}>Active</option>
-          <option value={'IN ACTIVE'}>In Active</option>
+          <option value={'IN ACTIVE'}>Closed</option>
         </Select>
       </FormControl>
-      <FormControl isRequired>
+      <FormControl>
         <FormLabel>Rate the Client</FormLabel>
         <StarRating
           maxStars={5}
@@ -207,7 +207,7 @@ const ClientProspectForm = () => {
           }
         />
       </FormControl>
-      <FormControl isRequired className="col-span-2">
+      <FormControl className="col-span-2">
         <FormLabel>Remark</FormLabel>
         <Textarea
           rows={2}

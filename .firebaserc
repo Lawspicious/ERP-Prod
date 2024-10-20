@@ -1,5 +1,9 @@
 {
   "projects": {
-    "default": "lawspicious-erp"
-  }
+    "default": "lawspicious-erp-prod",
+    "prod": "lawspicious-erp-prod"
+  },
+  "targets": {},
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
 }

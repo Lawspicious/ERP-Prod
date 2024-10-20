@@ -79,7 +79,7 @@ export const useCases = () => {
   }, []);
 
   const createCase = async (data: ICase) => {
-    if (!authUser || role !== 'ADMIN') {
+    if (!authUser || role === 'LAWYER') {
       newToast({
         message: 'Permission Denied',
         status: 'error',
@@ -320,9 +320,7 @@ export const useCases = () => {
     }
   };
 
-  const fetchCasesByStatus = async (
-    caseStatus: 'RUNNING' | 'ABANDONED' | 'DECIDED',
-  ) => {
+  const fetchCasesByStatus = async (caseStatus: 'RUNNING' | 'DECIDED') => {
     try {
       const casesCollectionRef = collection(db, collectionName);
       const casesQuery = query(

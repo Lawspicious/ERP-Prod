@@ -36,11 +36,9 @@ const DuplicateInvoiceForm = ({
   initialInvoiceData,
 }: DuplicateInvoiceFormProps) => {
   const [selectedClientId, setSelectedClientId] = useState(
-    initialInvoiceData.clientDetails.id || '',
+    initialInvoiceData?.clientDetails?.id || '',
   );
-  const [selectedTeamMemberId, setSelectedTeamMemberId] = useState(
-    initialInvoiceData.teamMember?.id || '',
-  );
+  const [selectedTeamMemberId, setSelectedTeamMemberId] = useState('');
   const [invoiceDueDate, setInvoiceDueDate] = useState(
     initialInvoiceData.dueDate || '',
   );
@@ -115,12 +113,14 @@ const DuplicateInvoiceForm = ({
             },
             teamMember:
               billTo === 'organization' && teamMember
-                ? {
-                    id: teamMember.id as string,
-                    name: teamMember.name,
-                    email: teamMember.email,
-                    phoneNumber: teamMember.phoneNumber,
-                  }
+                ? [
+                    {
+                      id: teamMember.id as string,
+                      name: teamMember.name,
+                      email: teamMember.email,
+                      phoneNumber: teamMember.phoneNumber,
+                    },
+                  ]
                 : null,
             services: services,
             RE: REData,

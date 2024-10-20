@@ -18,18 +18,18 @@ const TaskTab = () => {
   const { authUser } = useAuth();
 
   const taskColumns = [
-    { key: 'No', label: 'No', sortable: false },
+    // { key: 'No', label: 'No', sortable: false },
     { key: 'taskName', label: 'Task Name', sortable: true },
     { key: 'relatedTo', label: 'Related To', sortable: true },
     {
       key: 'petitionVsRespondent',
-      label: 'Petitioner vs Respondent',
+      label: 'Pet vs Resp',
       sortable: false,
     },
     { key: 'startDate', label: 'Start Date', sortable: true },
     { key: 'endDate', label: 'End Date', sortable: true },
     { key: 'member', label: 'Member', sortable: true },
-    { key: 'status', label: 'Status', sortable: true },
+    // { key: 'status', label: 'Status', sortable: true },
     { key: 'priority', label: 'Priority', sortable: true },
   ];
 
@@ -44,7 +44,7 @@ const TaskTab = () => {
         id: taskData.id,
         taskName: taskData.taskName, // Task Name
         relatedTo: taskData.caseDetails.caseId
-          ? `CaseID:${taskData.caseDetails.caseId}`
+          ? `CaseNo:${taskData.caseDetails.caseNo}`
           : 'Other',
         petitionVsRespondent: taskData.caseDetails?.caseId
           ? `${taskData.caseDetails.petition.petitioner}\nvs\n${taskData.caseDetails.respondent.respondentee}`

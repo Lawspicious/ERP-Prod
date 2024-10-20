@@ -20,6 +20,7 @@ import {
   Tab,
   TabPanel,
   Button,
+  TableCaption,
 } from '@chakra-ui/react';
 import { MoreVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -87,6 +88,15 @@ const ClientInvoiceTable = ({
                 ) : (
                   <Box overflowX="auto">
                     <Table variant="striped" colorScheme="blackAlpha">
+                      <TableCaption fontSize={'lg'} textAlign={'left'}>
+                        Total Paid Amount: Rs.
+                        {filteredInvoices
+                          .filter((invoice) => invoice.paymentStatus === 'paid')
+                          .reduce(
+                            (sum, invoice) => sum + invoice.totalAmount,
+                            0,
+                          )}
+                      </TableCaption>
                       <Thead>
                         <Tr>
                           <Th>No</Th>
@@ -105,8 +115,9 @@ const ClientInvoiceTable = ({
                             <Td>{index + 1}</Td>
                             <Td>{invoice.id}</Td>
                             <Td>{invoice.createdAt}</Td>
-                            <Td>{invoice.paymentDate}</Td>
-                            <Td>{invoice.clientDetails.name}</Td>
+                            <Td>{invoice.paymentDate || 'NA'}</Td>
+                            {/* @ts-ignore */}
+                            <Td>{invoice.clientDetails.name || 'NA'}</Td>
                             <Td>{invoice.totalAmount}</Td>
                             <Td>{invoice.paymentStatus}</Td>
                             <Td>
@@ -118,6 +129,17 @@ const ClientInvoiceTable = ({
                                   variant="outline"
                                 />
                                 <MenuList zIndex={50} maxWidth={100}>
+                                  <MenuItem as={'div'}>
+                                    <Button
+                                      colorScheme="purple"
+                                      className="w-full"
+                                      onClick={() =>
+                                        (window.location.href = `/invoice/${invoice.id}`)
+                                      }
+                                    >
+                                      Go to Invoice
+                                    </Button>
+                                  </MenuItem>
                                   <MenuItem as={'div'}>
                                     <EditInvoiceModal invoiceData={invoice} />
                                   </MenuItem>

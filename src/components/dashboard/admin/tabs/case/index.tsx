@@ -7,8 +7,10 @@ import { ReactElement, useEffect, useMemo, useState } from 'react';
 import DisplayTable from '@/components/ui/display-table';
 import { DialogButton } from '@/components/ui/alert-dialog';
 import { useCases } from '@/hooks/useCasesHook';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { useLoading } from '@/context/loading/loadingContext';
 import { truncate } from 'fs';
+import { today } from '@/lib/utils/todayDate';
 
 const CaseTab = () => {
   const router = useRouter();
@@ -47,6 +49,21 @@ const CaseTab = () => {
 
   const transformedData = useMemo(() => {
     return allCases.map((caseData, index) => {
+      const endDate = caseData.nextHearing
+        ? parseISO(caseData.nextHearing)
+        : null;
+
+      // Calculate the difference between the current date and the end date
+      const daysUntilEnd = endDate
+        ? differenceInCalendarDays(endDate, today)
+        : null;
+
+      // Determine the color based on how near the end date is
+      let rowColor = ''; // Default color
+      if (daysUntilEnd !== null && daysUntilEnd <= 2) {
+        rowColor = 'bg-red-300'; // If the end date is within 2 days
+      }
+
       return {
         No: `${index + 1}`, // No as index
         id: caseData.caseId,
@@ -57,6 +74,7 @@ const CaseTab = () => {
         status: caseData.caseStatus, // Status
         clientName: caseData.clientDetails.name,
         priority: caseData.priority,
+        rowColor,
       };
     });
   }, [allCases]);

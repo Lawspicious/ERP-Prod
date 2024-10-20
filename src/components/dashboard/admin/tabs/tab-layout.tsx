@@ -6,7 +6,7 @@ const TabLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div>
       <Navbar />
-      <div className="mb-24 p-4 md:p-6">{children}</div>
+      <div className="mb-24 min-h-screen p-4 md:p-6">{children}</div>
       {/* <Footer /> */}
     </div>
   );

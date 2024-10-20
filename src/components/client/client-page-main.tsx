@@ -61,7 +61,10 @@ export const ClientPageMain = ({
                 <TextDisplay label="Source:" value={client.source} />
                 <TextDisplay label="Service:" value={client.service} />
                 <TextDisplay label="Feedback:" value={client.client_feedback} />
-                <TextDisplay label="Status:" value={client.status} />
+                <TextDisplay
+                  label="Status:"
+                  value={client.status === 'IN ACTIVE' ? 'CLOSED' : 'ACTIVE'}
+                />
                 <TextDisplay
                   label="Follow-up:"
                   value={client.followUp ? 'Yes' : 'No'}
@@ -139,7 +142,7 @@ export const ClientPageMain = ({
           colorScheme="blue"
           leftIcon={<ArrowLeft />}
           onClick={() =>
-            (window.location.href = `/dashboard/${role?.toLowerCase()}/workspace-${role?.toLowerCase()}#client`)
+            (window.location.href = `/dashboard/${role === 'SUPERADMIN' ? 'admin' : role?.toLowerCase()}/workspace-${role === 'SUPERADMIN' ? 'admin' : role?.toLowerCase()}#client`)
           }
         >
           Back

@@ -10,6 +10,8 @@ export interface ITask {
   endDate: string;
   timeLimit: string;
   taskDescription: string;
+  payable?: boolean;
+  amount?: number;
 }
 
 interface ILawyer {

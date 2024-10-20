@@ -77,6 +77,7 @@ export const useInvoice = () => {
 
   const getInvoiceById = async (id: string) => {
     try {
+      setLoading(true);
       const docRef = doc(db, collectionName, id);
       const docSnap = await getDoc(docRef);
 
@@ -89,12 +90,14 @@ export const useInvoice = () => {
           status: 'error',
         });
       }
+      setLoading(false);
     } catch (error) {
       console.error('Error getting invoice:', error);
       newToast({
         message: 'Could not fetch Invoice',
         status: 'error',
       });
+      setLoading(false);
     }
   };
 
@@ -128,13 +131,13 @@ export const useInvoice = () => {
 
   const createInvoice = useCallback(
     async (data: IInvoice) => {
-      if (!authUser || role === 'LAWYER') {
-        newToast({
-          message: 'Permission Denied',
-          status: 'error',
-        });
-        return;
-      }
+      // if (!authUser || role === 'LAWYER') {
+      //   newToast({
+      //     message: 'Permission Denied',
+      //     status: 'error',
+      //   });
+      //   return;
+      // }
 
       try {
         const docId = await createNextDocId();

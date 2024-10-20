@@ -165,7 +165,6 @@ const EditCaseForm = ({
                 onChange={handleInputChange}
               >
                 <option value="RUNNING">Running</option>
-                <option value="ABANDONED">Abandoned</option>
                 <option value="DECIDED">Decided</option>
                 <option value="PENDING">Pending</option>
               </Select>

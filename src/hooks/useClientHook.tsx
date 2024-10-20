@@ -132,7 +132,7 @@ export const useClient = () => {
 
   const createClient = useCallback(
     async (data: IClient | IClientProspect) => {
-      if (!authUser || role !== 'ADMIN') {
+      if (!authUser || role === 'LAWYER') {
         newToast({
           message: 'Permission Denied',
           status: 'error',
@@ -159,7 +159,7 @@ export const useClient = () => {
 
   const updateClient = useCallback(
     async (id: string, updatedData: Partial<IClient | IClientProspect>) => {
-      if (!authUser || role !== 'ADMIN') {
+      if (!authUser || role === 'LAWYER') {
         newToast({
           message: 'Permission Denied',
           status: 'error',
@@ -187,7 +187,7 @@ export const useClient = () => {
 
   const deleteClient = useCallback(
     async (id: string) => {
-      if (!authUser || role !== 'ADMIN') {
+      if (!authUser || role === 'LAWYER') {
         newToast({
           message: 'Permission Denied',
           status: 'error',

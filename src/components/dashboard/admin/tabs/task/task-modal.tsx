@@ -1,9 +1,12 @@
 'use client';
 import { useLoading } from '@/context/loading/loadingContext';
 import { useCases } from '@/hooks/useCasesHook';
+import { useInvoice } from '@/hooks/useInvoiceHook';
 import { useTask } from '@/hooks/useTaskHooks';
 import { useTeam } from '@/hooks/useTeamHook';
+import { today } from '@/lib/utils/todayDate';
 import { ICase } from '@/types/case';
+import { IRE, IService } from '@/types/invoice';
 import { ITask } from '@/types/task';
 import { IUser } from '@/types/user';
 import {
@@ -28,6 +31,7 @@ import {
   TagCloseButton,
   TagLabel,
   Checkbox,
+  FormHelperText,
 } from '@chakra-ui/react';
 import React from 'react';
 import { useEffect, useState } from 'react';
@@ -49,6 +53,7 @@ const initialData = {
   taskDescription: '',
   otherRelatedTo: '',
   timeLimit: '',
+  payable: false,
 };
 
 const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
@@ -138,6 +143,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
     }));
 
     const createTaskData: ITask = {
+      payable: formInputs.payable,
+      amount: 0,
       taskName: formInputs.taskName,
       startDate: formInputs.startDate,
       endDate: formInputs.endDate,
@@ -298,12 +305,13 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                     onChange={handleInputChange}
                   />
                 </FormControl>
+                {/* <div /> */}
 
                 {/* Toggle between Case ID and Other Related To */}
                 <div>
                   <Checkbox
                     isChecked={useCaseId}
-                    mb={6}
+                    mb={3}
                     onChange={toggleRelatedField}
                   >
                     Use Case ID
@@ -340,6 +348,28 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                       />
                     </FormControl>
                   )}
+                </div>
+                <div>
+                  <FormControl mb={3}>
+                    <Checkbox
+                      isChecked={formInputs.payable}
+                      name="payable"
+                      mb={2}
+                      onChange={(e) =>
+                        setFormInputs((prev) => ({
+                          ...prev,
+                          payable: e.target.checked,
+                        }))
+                      }
+                    >
+                      Payable
+                    </Checkbox>
+                    <FormHelperText>
+                      Select if the task is payable
+                    </FormHelperText>
+                  </FormControl>
+
+                  {/* Conditionally show either Case ID or Other Related To */}
                 </div>
 
                 {/* Task Description */}

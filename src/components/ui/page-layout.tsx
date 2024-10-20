@@ -21,7 +21,7 @@ const PageLayout: React.FC<LayoutProps> = ({
   return (
     <div>
       <header>
-        {role === 'ADMIN' && <Navbar />}
+        {(role === 'ADMIN' || role === 'SUPERADMIN') && <Navbar />}
         {role === 'LAWYER' && <LawyerNavbar />}
       </header>
       <main

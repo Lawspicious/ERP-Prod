@@ -9,7 +9,7 @@ export interface ICase {
   hearings?: IDate[];
   nextHearing: 'YYYY-MM-DD';
   decision: string;
-  caseStatus: 'RUNNING' | 'ABANDONED' | 'DECIDED';
+  caseStatus: 'RUNNING' | 'DECIDED';
   courtName: string;
   reference: string;
   petition: { petitioner: string };

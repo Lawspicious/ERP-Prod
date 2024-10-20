@@ -147,7 +147,7 @@ export const sendInvoiceEmailToLawyerNodeMailer = async (
     <table class="details-table">
         <tr>
             <td><strong>Date:</strong> ${today}</td>
-            <td><strong>Bill to:</strong> ${invoice.clientDetails.name}</td>
+            <td><strong>Bill to:</strong> ${invoice?.clientDetails?.name}</td>
         </tr>
         <tr>
             <td><strong>Re:</strong> ${invoice.RE.map((redata) => `TS: ${redata.caseId}`).join(', ')}</td>
@@ -225,7 +225,7 @@ export const sendInvoiceEmailToLawyerNodeMailer = async (
           <h1>${message.heading}</h1>
         </div>
         <div class="content">
-          <h2>Hello, <strong>${invoice.clientDetails.name}</strong></h2>
+          <h2>Hello, <strong>${invoice?.clientDetails?.name}</strong></h2>
           <p>${message.body}</p>
 
           ${invoiceDetailsHtml}
@@ -246,7 +246,7 @@ export const sendInvoiceEmailToLawyerNodeMailer = async (
 
   const mailOptions = {
     from: 'admin@lawspicious.com',
-    to: invoice.clientDetails.email,
+    to: invoice?.clientDetails?.email,
     subject: `${message.heading} - Invoice ID: ${invoice.id || 'N/A'}`,
     html: emailHtml,
   };
