@@ -14,13 +14,17 @@ const TeamsTab = () => {
   const { loading, setLoading } = useLoading();
 
   useEffect(() => {
-    const fetchAllTeam = async () => {
-      setLoading(true);
-      await getAllUser();
-      setLoading(false);
-    };
-    fetchAllTeam();
-  }, []);
+    setLoading(true);
+
+    if (allUser) {
+      const timeoutId = setTimeout(() => {
+        setLoading(false);
+      }, 300); // 3 seconds timeout
+
+      // Cleanup timeout on component unmount
+      return () => clearTimeout(timeoutId);
+    }
+  }, [allUser]);
 
   return (
     <TabLayout>

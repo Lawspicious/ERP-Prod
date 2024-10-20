@@ -104,7 +104,7 @@ const CaseDetail = ({ caseData }: { caseData: ICase }) => {
                   onClick={handleCopyToClipboard}
                   className="cursor-pointer text-purple-600 hover:underline"
                 >
-                  {caseData.CNRNo || 'NA'}
+                  {caseData?.CNRNo || 'NA'}
                 </Text>
               </Flex>
               <Flex justify="space-between" mb={2}>
@@ -157,7 +157,34 @@ const CaseDetail = ({ caseData }: { caseData: ICase }) => {
         </Box>
 
         <Divider />
+        {/* Lawyer Section */}
+        <Box p={4} borderWidth={1} borderRadius="md">
+          <h1 className="heading-secondary mb-4">Lawyer Details</h1>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            <Box>
+              <Flex justify="space-between" mb={2}>
+                <Text>
+                  <strong>Name</strong>
+                </Text>
+                <Text>{caseData.lawyer.name || 'NA'}</Text>
+              </Flex>
+              <Flex justify="space-between" mb={2}>
+                <Text>
+                  <strong>Email</strong>
+                </Text>
+                <Text>{caseData.lawyer.email || 'NA'}</Text>
+              </Flex>
+              <Flex justify="space-between" mb={2}>
+                <Text>
+                  <strong>phone Number</strong>
+                </Text>
+                <Text>{caseData.lawyer.phoneNumber || 'NA'}</Text>
+              </Flex>
+            </Box>
+          </SimpleGrid>
+        </Box>
 
+        <Divider />
         {/* Petitioner and Advocate Section */}
         <Box p={4} borderWidth={1} borderRadius="md">
           <h1 className="heading-secondary mb-4">Petitioner and Respondent</h1>
@@ -176,6 +203,34 @@ const CaseDetail = ({ caseData }: { caseData: ICase }) => {
                   <strong>Respondent:</strong>
                 </Text>
                 <Text>{caseData.respondent.respondentee || 'NA'}</Text>
+              </Flex>
+            </Box>
+          </SimpleGrid>
+        </Box>
+
+        <Divider />
+        {/* Lawyer Section */}
+        <Box p={4} borderWidth={1} borderRadius="md">
+          <h1 className="heading-secondary mb-4">Client Details</h1>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            <Box>
+              <Flex justify="space-between" mb={2}>
+                <Text>
+                  <strong>Name</strong>
+                </Text>
+                <Text>{caseData?.clientDetails?.name || 'NA'}</Text>
+              </Flex>
+              <Flex justify="space-between" mb={2}>
+                <Text>
+                  <strong>Email</strong>
+                </Text>
+                <Text>{caseData?.clientDetails?.email || 'NA'}</Text>
+              </Flex>
+              <Flex justify="space-between" mb={2}>
+                <Text>
+                  <strong>phone Number</strong>
+                </Text>
+                <Text>{caseData?.clientDetails?.mobile || 'NA'}</Text>
               </Flex>
             </Box>
           </SimpleGrid>

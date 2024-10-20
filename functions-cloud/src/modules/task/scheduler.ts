@@ -4,6 +4,11 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as nodemailer from 'nodemailer';
 
+// // Initialize Firebase Admin SDK
+// if (!admin.apps.length) {
+//   admin.initializeApp();
+// }
+
 // Setup NodeMailer
 const gmail = process.env.NEXT_PUBLIC_NODEMAILER_GMAIL;
 const pass = process.env.NEXT_PUBLIC_NODEMAILER_PASS;
@@ -43,10 +48,74 @@ const sendDeadlineReminderEmail = async (email: string, taskDetails: any) => {
 
 // Cloud Scheduler Trigger (runs daily)
 // Cloud Scheduler Trigger (runs daily) with region set to 'asia-south1'
+// export const scheduledDeadlineCheck = functions
+//   .region('asia-south1') // Setting region
+//   .pubsub.schedule('every 24 hours')
+//   .onRun(async (context) => {
+//     const db = admin.firestore();
+
+//     // Get the current date and the date 24 hours later in 'YYYY-MM-DD' format
+//     const currentDate = new Date();
+//     const oneDayLater = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+
+//     const currentDateString = currentDate.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+//     const oneDayLaterString = oneDayLater.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+
+//     try {
+//       // Query Firestore for tasks where endDate is within the next 24 hours
+//       const tasksSnapshot = await db
+//         .collection('tasks')
+//         .where('endDate', '>=', currentDateString) // Compare as strings
+//         .where('endDate', '<=', oneDayLaterString)
+//         .get();
+
+//       if (tasksSnapshot.empty) {
+//         console.log('No tasks with upcoming deadlines found.');
+//         return null;
+//       }
+
+//       // Process each task and send email reminders
+//       const tasks = tasksSnapshot.docs.map((taskDoc) => taskDoc.data());
+
+//       await Promise.all(
+//         tasks.map(async (taskData) => {
+//           const lawyerDetails = taskData?.lawyerDetails || [];
+
+//           // Send reminder email to each assigned lawyer
+//           await Promise.all(
+//             lawyerDetails.map(
+//               async (lawyer: { email: string; name: string }) => {
+//                 try {
+//                   await sendDeadlineReminderEmail(lawyer.email, {
+//                     taskName: taskData.taskName,
+//                     endDate: taskData.endDate,
+//                     lawyerName: lawyer.name,
+//                   });
+//                   console.log(
+//                     `Reminder email sent to ${lawyer.email} for task: ${taskData.taskName}`,
+//                   );
+//                 } catch (emailError) {
+//                   console.error(
+//                     `Failed to send email to ${lawyer.email}:`,
+//                     emailError,
+//                   );
+//                 }
+//               },
+//             ),
+//           );
+//         }),
+//       );
+
+//       return null;
+//     } catch (error) {
+//       console.error('Error fetching tasks or sending emails:', error);
+//       return null;
+//     }
+//   });
 export const scheduledDeadlineCheck = functions
   .region('asia-south1') // Setting region
   .pubsub.schedule('every 24 hours')
-  .onRun(async (context) => {
+  .onRun(async () => {
     const db = admin.firestore();
 
     // Get the current date and the date 24 hours later in 'YYYY-MM-DD' format
@@ -60,7 +129,7 @@ export const scheduledDeadlineCheck = functions
       // Query Firestore for tasks where endDate is within the next 24 hours
       const tasksSnapshot = await db
         .collection('tasks')
-        .where('endDate', '>=', currentDateString) // Compare as strings
+        .where('endDate', '>=', currentDateString)
         .where('endDate', '<=', oneDayLaterString)
         .get();
 
@@ -69,18 +138,20 @@ export const scheduledDeadlineCheck = functions
         return null;
       }
 
-      // Process each task and send email reminders
-      const tasks = tasksSnapshot.docs.map((taskDoc) => taskDoc.data());
+      // Process each task and send email reminders and create notifications
+      const tasks = tasksSnapshot.docs.map((taskDoc) => ({
+        ...taskDoc.data(),
+      }));
 
       await Promise.all(
         tasks.map(async (taskData) => {
           const lawyerDetails = taskData?.lawyerDetails || [];
 
-          // Send reminder email to each assigned lawyer
           await Promise.all(
             lawyerDetails.map(
-              async (lawyer: { email: string; name: string }) => {
+              async (lawyer: { email: string; name: string; id: string }) => {
                 try {
+                  // Send the reminder email
                   await sendDeadlineReminderEmail(lawyer.email, {
                     taskName: taskData.taskName,
                     endDate: taskData.endDate,
@@ -89,10 +160,26 @@ export const scheduledDeadlineCheck = functions
                   console.log(
                     `Reminder email sent to ${lawyer.email} for task: ${taskData.taskName}`,
                   );
-                } catch (emailError) {
+
+                  // Create a new document in the notifications collection
+                  await db.collection('notifications').add({
+                    taskId: taskData.id,
+                    taskName: taskData.taskName,
+                    lawyerId: lawyer.id,
+                    lawyerName: lawyer.name,
+                    lawyerEmail: lawyer.email,
+                    notificationName: `Tomorrow is the deadline for task: ${taskData.taskName}`,
+                    endDate: taskData.endDate,
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                  });
+
+                  console.log(
+                    `Notification created for lawyer: ${lawyer.name} regarding task: ${taskData.taskName}`,
+                  );
+                } catch (error) {
                   console.error(
-                    `Failed to send email to ${lawyer.email}:`,
-                    emailError,
+                    `Failed to process lawyer ${lawyer.email}:`,
+                    error,
                   );
                 }
               },
@@ -101,9 +188,10 @@ export const scheduledDeadlineCheck = functions
         }),
       );
 
+      console.log('Scheduled deadline check completed successfully.');
       return null;
     } catch (error) {
-      console.error('Error fetching tasks or sending emails:', error);
+      console.error('Error fetching tasks or processing reminders:', error);
       return null;
     }
   });

@@ -227,14 +227,30 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
                 <FormControl mb={4}>
                   <FormLabel>Select Lawyers</FormLabel>
                   <Select
-                    placeholder="Select lawyer"
+                    placeholder="Select team member"
                     onChange={handleSelectLawyer}
                   >
-                    {lawyers.map((lawyer) => (
-                      <option key={lawyer.id} value={lawyer.id}>
-                        {lawyer.name}
-                      </option>
-                    ))}
+                    {/* Group for Lawyers */}
+                    <optgroup label="Lawyers">
+                      {lawyers
+                        .filter((team: IUser) => team.role === 'LAWYER')
+                        .map((lawyer: IUser) => (
+                          <option key={lawyer.id} value={lawyer.id}>
+                            {lawyer.name}
+                          </option>
+                        ))}
+                    </optgroup>
+
+                    {/* Group for Admins */}
+                    <optgroup label="Admins">
+                      {lawyers
+                        .filter((team: IUser) => team.role === 'ADMIN')
+                        .map((admin: IUser) => (
+                          <option key={admin.id} value={admin.id}>
+                            {admin.name}
+                          </option>
+                        ))}
+                    </optgroup>
                   </Select>
 
                   <VStack mt={2} align="start">

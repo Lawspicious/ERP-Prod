@@ -37,7 +37,7 @@ export const onTaskWritten = onDocumentWritten(
           lawyerName: lawyer?.name,
           message: {
             heading: 'Task Deleted',
-            body: 'A Task assigned to you has been Closed in the Lawspicious system. Please find the details',
+            body: 'A Task assigned to you has been Deleted in the Lawspicious system. Please find the details',
           },
         };
 

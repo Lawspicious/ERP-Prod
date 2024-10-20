@@ -8,20 +8,16 @@ export const createCaseCloud = onCall(
   async (request) => {
     const {
       CNRNo,
-      FIR,
       caseFiles,
       caseStatus,
       caseType,
       courtName,
       decision,
-      fillingNo,
       hearings,
-      judge,
       nextHearing,
       petition,
       priority,
       regDate,
-      regNo,
       respondent,
       lawyer,
       clientDetails,
@@ -39,21 +35,17 @@ export const createCaseCloud = onCall(
       // Store case details in Firestore with the auto-generated ID
       await newCaseRef.set({
         CNRNo,
-        FIR,
         caseFiles,
         caseId: newCaseRef.id, // Use the auto-generated ID
         caseStatus,
         caseType,
         courtName,
         decision,
-        fillingNo,
         hearings,
-        judge,
         nextHearing,
         petition,
         priority,
         regDate,
-        regNo,
         respondent,
         createdAt: admin.firestore.FieldValue.serverTimestamp(), // Use Firestore timestamp
         lawyer,

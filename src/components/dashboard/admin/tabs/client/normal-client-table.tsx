@@ -26,7 +26,7 @@ const NormalClientTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const { normalClient, getClientByType, deleteClient } = useClient();
+  const { normalClient, deleteClient } = useClient();
   const { loading } = useLoading();
 
   const filteredData = useMemo(() => {
@@ -68,9 +68,9 @@ const NormalClientTable: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    getClientByType('normal');
-  }, []);
+  // useEffect(() => {
+  //   getClientByType('normal');
+  // }, []);
 
   return (
     <>

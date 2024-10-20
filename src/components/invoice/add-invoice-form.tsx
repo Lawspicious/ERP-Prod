@@ -55,7 +55,12 @@ const AddInvoiceForm = ({
   const [toggleOtherInput, setToggleOtherInput] = useState<boolean>(false);
   const { createInvoice } = useInvoice();
   const { loading, setLoading } = useLoading();
-  const { fetchCasesByClientId, allCases } = useCases();
+  const {
+    fetchCasesByClientId,
+    allCases,
+    fetchCasesByLawyerId,
+    allCasesLawyer,
+  } = useCases();
   const { getAllTeam, allTeam } = useTeam();
   const [billTo, setBillTo] = useState('client');
   const [gstNote, setGstNote] = useState('');
@@ -82,63 +87,77 @@ const AddInvoiceForm = ({
     e.preventDefault();
     setLoading(true);
     try {
+      let clientDetails = null;
+      let teamMember: IUser | undefined = undefined;
+
       if (selectedClientId) {
         const client = allClients.find(
           (client) => client.id === selectedClientId,
         );
-        let teamMember: IUser | undefined = undefined;
-        if (billTo === 'organization' && selectedTeamMemberId !== '') {
-          teamMember = allTeam.find(
-            (member) => member.id === selectedTeamMemberId,
-          );
-        }
-
-        if (client) {
-          const invoiceData: IInvoice = {
-            clientDetails: {
+        clientDetails = client
+          ? {
               name: client.name,
               email: client.email,
               mobile: client.mobile,
               location:
                 client.clientType === 'normal' ? client.city : client.location,
-            },
-            teamMember:
-              billTo === 'organization' && teamMember
-                ? [
-                    {
-                      id: teamMember.id as string,
-                      name: teamMember.name,
-                      email: teamMember.email,
-                      phoneNumber: teamMember.phoneNumber,
-                    },
-                  ]
-                : null,
-            services: services,
-            RE: REData,
-            createdAt: today,
-            dueDate: invoiceDueDate,
-            paymentStatus: paymentStatus,
-            billTo: billTo as 'client' | 'organization',
-            totalAmount: services.reduce((accumulator, service) => {
-              return (
-                accumulator + parseInt(service.amount as unknown as string)
-              );
-            }, 0),
-            panNo,
-            gstNote,
-            paymentDate,
-          };
-          createInvoice(invoiceData);
-          sendInvoiceEmail(invoiceData);
-          setServices([
-            {
-              description: '',
-              name: '',
-              amount: 0,
-            },
-          ]);
-        }
+            }
+          : null;
       }
+
+      if (billTo === 'organization' && selectedTeamMemberId !== '') {
+        teamMember = allTeam.find(
+          (member) => member.id === selectedTeamMemberId,
+        );
+      }
+
+      const invoiceData: IInvoice = {
+        clientDetails: clientDetails,
+        teamMember:
+          billTo === 'organization' && teamMember
+            ? [
+                {
+                  id: teamMember.id as string,
+                  name: teamMember.name,
+                  email: teamMember.email,
+                  phoneNumber: teamMember.phoneNumber,
+                },
+              ]
+            : null,
+        services: services,
+        RE: REData,
+        createdAt: today,
+        dueDate: invoiceDueDate,
+        paymentStatus: paymentStatus,
+        billTo: billTo as 'client' | 'organization',
+        totalAmount: services.reduce((accumulator, service) => {
+          return accumulator + parseInt(service.amount as unknown as string);
+        }, 0),
+        panNo,
+        gstNote,
+        paymentDate,
+      };
+
+      // Only create and send invoice if clientDetails or selectedClientId is not null
+      createInvoice(invoiceData);
+      // sendInvoiceEmail(invoiceData);
+      setServices([
+        {
+          description: '',
+          name: '',
+          amount: 0,
+        },
+      ]);
+      setREData([
+        {
+          caseId: '',
+        },
+      ]);
+      setSelectedTeamMemberId('');
+      setSelectedClientId('');
+      setGstNote('');
+      setPanNo('');
+      setPaymentStatus('unpaid');
     } catch (error) {
       console.log(error);
     }
@@ -151,8 +170,11 @@ const AddInvoiceForm = ({
     }
     if (billTo === 'organization') {
       getAllTeam();
+      if (selectedTeamMemberId !== '') {
+        fetchCasesByLawyerId(selectedTeamMemberId);
+      }
     }
-  }, [selectedClientId, billTo]);
+  }, [selectedClientId, billTo, selectedTeamMemberId]);
 
   return (
     <div>
@@ -191,18 +213,34 @@ const AddInvoiceForm = ({
                 value={selectedTeamMemberId}
                 onChange={(e) => setSelectedTeamMemberId(e.target.value)}
               >
-                {allTeam.map((team: IUser) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name}
-                  </option>
-                ))}
+                {/* Group for Lawyers */}
+                <optgroup label="Lawyers">
+                  {allTeam
+                    .filter((team: IUser) => team.role === 'LAWYER')
+                    .map((lawyer: IUser) => (
+                      <option key={lawyer.id} value={lawyer.id}>
+                        {lawyer.name}
+                      </option>
+                    ))}
+                </optgroup>
+
+                {/* Group for Admins */}
+                <optgroup label="Admins">
+                  {allTeam
+                    .filter((team: IUser) => team.role === 'ADMIN')
+                    .map((admin: IUser) => (
+                      <option key={admin.id} value={admin.id}>
+                        {admin.name}
+                      </option>
+                    ))}
+                </optgroup>
               </Select>
             </FormControl>
           )}
         </div>
 
         <AddREForm
-          allCases={allCases}
+          allCases={billTo === 'organization' ? allCasesLawyer : allCases}
           allClients={allClients}
           REData={REData}
           setREData={setREData}
@@ -210,6 +248,7 @@ const AddInvoiceForm = ({
           setInvoiceDueDate={setInvoiceDueDate}
           selectedClientId={selectedClientId}
           setSelectedClientId={setSelectedClientId}
+          billTo={billTo}
         />
 
         <AddServiceForm

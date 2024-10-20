@@ -7,7 +7,11 @@ export interface ICreateTask {
   taskName: string;
   startDate: string;
   endDate: string;
+  timeLimit: string;
   taskDescription: string;
+  payable?: boolean;
+  amount?: number;
+  clientDetails: IClientDetails;
 }
 
 interface ILawyer {
@@ -20,8 +24,15 @@ interface ILawyer {
 interface ICase {
   caseId: string;
   caseType: string;
-  petition: { petitioner: string; advocate: string };
-  respondent: { respondentee: string; advocate: string };
+  petition: { petitioner: string };
+  respondent: { respondentee: string };
   courtName: string;
   caseNo: string;
+}
+
+interface IClientDetails {
+  name: string;
+  email: string;
+  phoneNumber: string;
+  id: string;
 }

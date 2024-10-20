@@ -26,6 +26,7 @@ export const useTask = () => {
   const functions = getFunctions(app, 'asia-south1');
   const createTaskAndSendEmail = httpsCallable(functions, 'createTaskCloud');
   const [loading, setLoading] = useState(true);
+  const [payableTasks, setPayableTasks] = useState<ITask[]>([]);
 
   const createTask = async (data: Partial<ITask>) => {
     try {
@@ -215,11 +216,38 @@ export const useTask = () => {
     }
   };
 
+  useEffect(() => {
+    const taskCollectionRef = collection(db, collectionName);
+    const taskQuery = query(
+      taskCollectionRef,
+      where('payable', '==', true),
+      where('taskStatus', '==', 'COMPLETED'),
+    );
+
+    const unsubscribe = onSnapshot(
+      taskQuery,
+      (snapshot) => {
+        const taskList: ITask[] = snapshot.docs.map((doc) => ({
+          ...(doc.data() as ITask),
+          id: doc.id,
+        }));
+        setPayableTasks(taskList); // Assuming you have a state setter for payable tasks
+      },
+      (error) => {
+        console.error('Error fetching payable tasks: ', error);
+      },
+    );
+
+    // Cleanup the listener on component unmount
+    return () => unsubscribe();
+  }, [collectionName]);
+
   return {
     loading,
     allTask,
     task,
     allTaskLawyer,
+    payableTasks,
     createTask,
     getAllTask,
     getTaskById,

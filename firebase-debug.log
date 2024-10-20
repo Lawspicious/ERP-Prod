@@ -1,0 +1,101 @@
+[debug] [2024-10-20T20:38:48.711Z] ----------------------------------------------------------------------
+[debug] [2024-10-20T20:38:48.718Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\USER\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions
+[debug] [2024-10-20T20:38:48.722Z] CLI Version:   13.18.0
+[debug] [2024-10-20T20:38:48.722Z] Platform:      win32
+[debug] [2024-10-20T20:38:48.722Z] Node Version:  v20.14.0
+[debug] [2024-10-20T20:38:48.723Z] Time:          Mon Oct 21 2024 02:08:48 GMT+0530 (India Standard Time)
+[debug] [2024-10-20T20:38:48.723Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-10-20T20:38:48.957Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-10-20T20:38:48.958Z] > authorizing via signed-in user (nandakrishnarjun@gmail.com)
+[debug] [2024-10-20T20:38:48.958Z] [iam] checking project lawspicious-erp-prod for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2024-10-20T20:38:48.960Z] > refreshing access token with scopes: []
+[debug] [2024-10-20T20:38:48.964Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2024-10-20T20:38:48.964Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2024-10-20T20:38:49.388Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2024-10-20T20:38:49.388Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2024-10-20T20:38:49.398Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/lawspicious-erp-prod:testIamPermissions [none]
+[debug] [2024-10-20T20:38:49.398Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/lawspicious-erp-prod:testIamPermissions x-goog-quota-user=projects/lawspicious-erp-prod
+[debug] [2024-10-20T20:38:49.399Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/lawspicious-erp-prod:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2024-10-20T20:38:51.071Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/lawspicious-erp-prod:testIamPermissions 200
+[debug] [2024-10-20T20:38:51.071Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/lawspicious-erp-prod:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2024-10-20T20:38:51.072Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/lawspicious-erp-prod/serviceAccounts/lawspicious-erp-prod@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2024-10-20T20:38:51.072Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/lawspicious-erp-prod/serviceAccounts/lawspicious-erp-prod@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2024-10-20T20:38:52.991Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/lawspicious-erp-prod/serviceAccounts/lawspicious-erp-prod@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2024-10-20T20:38:52.991Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/lawspicious-erp-prod/serviceAccounts/lawspicious-erp-prod@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'lawspicious-erp-prod'...
+[info] 
+[info] i  deploying functions 
+[info] Running command: npm --prefix "$RESOURCE_DIR" run build
+[info] +  functions: Finished running predeploy script. 
+[debug] [2024-10-20T20:39:03.688Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/lawspicious-erp-prod [none]
+[debug] [2024-10-20T20:39:04.540Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/lawspicious-erp-prod 200
+[debug] [2024-10-20T20:39:04.540Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/lawspicious-erp-prod {"projectId":"lawspicious-erp-prod","projectNumber":"611441936095","displayName":"Lawspicious-ERP-Prod","name":"projects/lawspicious-erp-prod","resources":{"hostingSite":"lawspicious-erp-prod"},"state":"ACTIVE","etag":"1_edd970c3-5ec8-4dd7-a786-22369c6c86bf"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2024-10-20T20:39:04.542Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/cloudfunctions.googleapis.com [none]
+[debug] [2024-10-20T20:39:04.542Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/cloudfunctions.googleapis.com x-goog-quota-user=projects/lawspicious-erp-prod
+[debug] [2024-10-20T20:39:04.543Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/runtimeconfig.googleapis.com [none]
+[debug] [2024-10-20T20:39:04.543Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/runtimeconfig.googleapis.com x-goog-quota-user=projects/lawspicious-erp-prod
+[debug] [2024-10-20T20:39:04.544Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/cloudbuild.googleapis.com [none]
+[debug] [2024-10-20T20:39:04.544Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/cloudbuild.googleapis.com x-goog-quota-user=projects/lawspicious-erp-prod
+[debug] [2024-10-20T20:39:04.545Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/artifactregistry.googleapis.com [none]
+[debug] [2024-10-20T20:39:04.545Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/artifactregistry.googleapis.com x-goog-quota-user=projects/lawspicious-erp-prod
+[debug] [2024-10-20T20:39:06.570Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/cloudbuild.googleapis.com 200
+[debug] [2024-10-20T20:39:06.570Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/cloudbuild.googleapis.com [omitted]
+[info] +  functions: required API cloudbuild.googleapis.com is enabled 
+[debug] [2024-10-20T20:39:06.571Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/runtimeconfig.googleapis.com 200
+[debug] [2024-10-20T20:39:06.571Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/runtimeconfig.googleapis.com [omitted]
+[debug] [2024-10-20T20:39:06.583Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/cloudfunctions.googleapis.com 200
+[debug] [2024-10-20T20:39:06.583Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/cloudfunctions.googleapis.com [omitted]
+[info] +  functions: required API cloudfunctions.googleapis.com is enabled 
+[debug] [2024-10-20T20:39:06.584Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/artifactregistry.googleapis.com 200
+[debug] [2024-10-20T20:39:06.584Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/lawspicious-erp-prod/services/artifactregistry.googleapis.com [omitted]
+[info] +  artifactregistry: required API artifactregistry.googleapis.com is enabled 
+[debug] [2024-10-20T20:39:06.585Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/lawspicious-erp-prod/adminSdkConfig [none]
+[debug] [2024-10-20T20:39:07.165Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/lawspicious-erp-prod/adminSdkConfig 200
+[debug] [2024-10-20T20:39:07.165Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/lawspicious-erp-prod/adminSdkConfig {"projectId":"lawspicious-erp-prod","storageBucket":"lawspicious-erp-prod.appspot.com"}
+[debug] [2024-10-20T20:39:07.165Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/lawspicious-erp-prod/configs [none]
+[debug] [2024-10-20T20:39:07.791Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/lawspicious-erp-prod/configs 200
+[debug] [2024-10-20T20:39:07.791Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/lawspicious-erp-prod/configs {}
+[debug] [2024-10-20T20:39:07.792Z] Validating nodejs source
+[warn] !  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[warn] !  functions: Please note that there will be breaking changes when you upgrade. 
+[debug] [2024-10-20T20:39:08.947Z] > [functions] package.json contents: {
+  "name": "functions-cloud",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "firebase": "^10.13.1",
+    "firebase-admin": "^12.1.0",
+    "firebase-functions": "^5.0.0",
+    "nodemailer": "^6.9.15"
+  },
+  "devDependencies": {
+    "@emailjs/nodejs": "^4.0.4",
+    "@types/nodemailer": "^6.4.15",
+    "firebase-functions-test": "^3.1.0",
+    "typescript": "^4.9.0"
+  },
+  "private": true
+}
+[debug] [2024-10-20T20:39:08.947Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[debug] [2024-10-20T20:39:08.948Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-10-20T20:39:08.962Z] Found firebase-functions binary at 'C:\Users\USER\Downloads\lawspicious-main\lawspicious-main\functions-cloud\node_modules\.bin\firebase-functions'
+[info] Serving at port 8784
+

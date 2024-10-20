@@ -1,5 +1,5 @@
 import { ICase } from '@/types/case';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/user/userContext';
 import { useToastHook } from './shared/useToastHook';
 import {
@@ -9,6 +9,7 @@ import {
   getDoc,
   getDocs,
   limit,
+  onSnapshot,
   orderBy,
   query,
   updateDoc,
@@ -23,13 +24,14 @@ export const useCases = () => {
   const [inividualCase, setCase] = useState<ICase | null>(null);
   const [allCases, setAllCases] = useState<ICase[]>([]);
   const [allCasesLawyer, setAllCasesLawyer] = useState<ICase[]>([]);
+  const [allCasesDate, setAllCasesDate] = useState<ICase[]>([]);
   const { role, authUser } = useAuth();
   const [state, newToast] = useToastHook();
   const functions = getFunctions(app, 'asia-south1');
   const createCaseAndSendEmail = httpsCallable(functions, 'createCaseCloud');
 
   const getAllCases = useCallback(async () => {
-    // if (role !== 'ADMIN') {
+    // if (role === 'LAWYER') {
     //   newToast({
     //     message: 'Permission Denied',
     //     status: 'error',
@@ -53,6 +55,43 @@ export const useCases = () => {
       });
     }
   }, [authUser, role]);
+
+  useEffect(() => {
+    // if (role === 'LAWYER') {
+    //   newToast({
+    //     message: 'Permission Denied',
+    //     status: 'error',
+    //   });
+    //   return;
+    // }
+
+    const unsubscribe = onSnapshot(
+      collection(db, collectionName),
+      (snapshot) => {
+        const caseList: ICase[] = snapshot.docs.map((doc) => ({
+          caseId: doc.id,
+          ...(doc.data() as ICase),
+        }));
+
+        // Update state only if data has changed
+        setAllCases((prevCases) => {
+          const isSameData =
+            JSON.stringify(prevCases) === JSON.stringify(caseList);
+          return isSameData ? prevCases : caseList;
+        });
+      },
+      (error) => {
+        console.error('Error fetching cases: ', error);
+        newToast({
+          message: 'Could not fetch Cases',
+          status: 'error',
+        });
+      },
+    );
+
+    // Cleanup listener on component unmount
+    return () => unsubscribe();
+  }, [role, collectionName]);
 
   const getCaseById = useCallback(async (id: string) => {
     try {
@@ -158,6 +197,7 @@ export const useCases = () => {
         return { ...caseData, caseId: doc.id };
       });
       setAllCasesLawyer(casesList);
+      setAllCases(casesList);
       return casesList;
     } catch (error) {
       console.error('Error fetching cases by lawyerId: ', error);
@@ -208,7 +248,7 @@ export const useCases = () => {
         return { ...caseData, caseId: doc.id };
       });
 
-      setAllCases(casesList);
+      setAllCasesDate(casesList);
     } catch (error) {
       console.error('Error fetching cases by upcoming hearing date: ', error);
       newToast({
@@ -348,6 +388,7 @@ export const useCases = () => {
     inividualCase,
     allCases,
     allCasesLawyer,
+    allCasesDate,
     getAllCases,
     getCaseById,
     createCase,

@@ -1,3 +1,6 @@
+import { IClient, IClientProspect } from './client';
+import { IClientDetails } from './invoice';
+
 export interface ITask {
   id?: string;
   taskStatus: 'PENDING' | 'COMPLETED'; // Based on status types
@@ -5,6 +8,7 @@ export interface ITask {
   priority: 'HIGH' | 'MEDIUM' | 'LOW'; // Add more priorities if applicable
   caseDetails: ICase;
   lawyerDetails: ILawyer[];
+  clientDetails?: IClientDetails | null;
   taskName: string;
   startDate: string;
   endDate: string;

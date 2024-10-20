@@ -25,7 +25,7 @@ const ProspectClientTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const { prospectClient, getClientByType, deleteClient } = useClient();
+  const { prospectClient, deleteClient } = useClient();
   const { loading } = useLoading();
 
   // Filter data based on search term
@@ -61,9 +61,9 @@ const ProspectClientTable: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    getClientByType('prospect');
-  }, []);
+  // useEffect(() => {
+  //   getClientByType('prospect');
+  // }, []);
 
   const columns = [
     { key: 'name', label: 'Name', sortable: false },

@@ -1,11 +1,13 @@
 'use client';
 import { useLoading } from '@/context/loading/loadingContext';
 import { useCases } from '@/hooks/useCasesHook';
+import { useClient } from '@/hooks/useClientHook';
 import { useInvoice } from '@/hooks/useInvoiceHook';
 import { useTask } from '@/hooks/useTaskHooks';
 import { useTeam } from '@/hooks/useTeamHook';
 import { today } from '@/lib/utils/todayDate';
 import { ICase } from '@/types/case';
+import { IClient, IClientProspect } from '@/types/client';
 import { IRE, IService } from '@/types/invoice';
 import { ITask } from '@/types/task';
 import { IUser } from '@/types/user';
@@ -65,12 +67,14 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
   const { getCaseById } = useCases();
   const [selectedLawyers, setSelectedLawyers] = useState<IUser[]>([]);
   const { allCases, fetchCasesByStatus } = useCases();
+  const { allClients } = useClient();
+  const [selectedClientId, setSelectedClientId] = useState('');
 
   useEffect(() => {
     const handleFetch = async () => {
       setLoading(true);
       await getAllTeam();
-      await fetchCasesByStatus('RUNNING');
+      await await fetchCasesByStatus('RUNNING');
       setLoading(false);
     };
 
@@ -142,6 +146,16 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
       name: lawyer?.name || '',
     }));
 
+    const selectedClient = allClients.find(
+      (client) => (client.id = selectedClientId),
+    );
+    const clientDetails = {
+      id: selectedClient?.id as string,
+      name: selectedClient?.name as string,
+      email: selectedClient?.email as string,
+      mobile: selectedClient?.mobile as string,
+    };
+
     const createTaskData: ITask = {
       payable: formInputs.payable,
       amount: 0,
@@ -152,6 +166,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
       priority: formInputs.priority as 'LOW' | 'MEDIUM' | 'HIGH',
       lawyerDetails: lawyerDetails, // Array of lawyer details
       caseDetails: caseDetails,
+      clientDetails: clientDetails ? clientDetails : null,
       taskDescription: formInputs.taskDescription,
       timeLimit: formInputs.timeLimit,
       taskType:
@@ -211,16 +226,32 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                 {/* Lawyer Details - Multiple Lawyers */}
 
                 <FormControl>
-                  <FormLabel>Select Lawyers</FormLabel>
+                  <FormLabel>Select Members</FormLabel>
                   <Select
-                    placeholder="Select lawyers"
+                    placeholder="Select team member"
                     onChange={(e) => handleLawyerSelection(e.target.value)}
                   >
-                    {allTeam.map((team: IUser) => (
-                      <option key={team.id} value={team.id}>
-                        {team.name}
-                      </option>
-                    ))}
+                    {/* Group for Lawyers */}
+                    <optgroup label="Lawyers">
+                      {allTeam
+                        .filter((team: IUser) => team.role === 'LAWYER')
+                        .map((lawyer: IUser) => (
+                          <option key={lawyer.id} value={lawyer.id}>
+                            {lawyer.name}
+                          </option>
+                        ))}
+                    </optgroup>
+
+                    {/* Group for Admins */}
+                    <optgroup label="Admins">
+                      {allTeam
+                        .filter((team: IUser) => team.role === 'ADMIN')
+                        .map((admin: IUser) => (
+                          <option key={admin.id} value={admin.id}>
+                            {admin.name}
+                          </option>
+                        ))}
+                    </optgroup>
                   </Select>
 
                   {/* Display selected lawyers */}
@@ -242,6 +273,20 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                       </Tag>
                     ))}
                   </VStack>
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>Select Client</FormLabel>
+                  <Select
+                    placeholder="Select Client"
+                    onChange={(e) => setSelectedClientId(e.target.value)}
+                  >
+                    {allClients.map((client: IClient | IClientProspect) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </Select>
                 </FormControl>
 
                 {/* Task Status */}
@@ -332,7 +377,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                             key={individualCase.caseId}
                             value={individualCase.caseId}
                           >
-                            {individualCase.caseNo}
+                            {individualCase.caseNo}-{' '}
+                            {individualCase.petition.petitioner} vs{' '}
+                            {individualCase.respondent.respondentee}
                           </option>
                         ))}
                       </Select>

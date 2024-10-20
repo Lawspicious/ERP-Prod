@@ -47,12 +47,10 @@ export const onCaseWritten = onDocumentWritten(
           caseId: caseId,
           caseType: afterData.caseType,
           petition: {
-            petitioner: afterData.petition.petitioner,
-            advocate: afterData.petition.advocate,
+            petitioner: afterData.petitioner,
           },
           respondent: {
             respondentee: afterData.respondent.respondentee,
-            advocate: afterData.respondent.advocate,
           },
           courtName: afterData.courtName,
         },
@@ -80,7 +78,6 @@ export const onCaseWritten = onDocumentWritten(
         caseId: caseId,
         caseType: afterData.caseType,
         courtName: afterData.courtName,
-        regDate: afterData.regDate,
         judge: afterData.judge,
         nextHearing: afterData.nextHearing,
         caseStatus: afterData.caseStatus,
@@ -125,11 +122,9 @@ export const onCaseWritten = onDocumentWritten(
           caseType: afterData.caseType,
           petition: {
             petitioner: afterData.petition.petitioner,
-            advocate: afterData.petition.advocate,
           },
           respondent: {
             respondentee: afterData.respondent.respondentee,
-            advocate: afterData.respondent.advocate,
           },
           courtName: afterData.courtName,
         },
@@ -157,7 +152,6 @@ export const onCaseWritten = onDocumentWritten(
         caseId: caseId,
         caseType: afterData.caseType,
         courtName: afterData.courtName,
-        regDate: afterData.regDate,
         judge: afterData.judge,
         nextHearing: afterData.nextHearing,
         caseStatus: afterData.caseStatus,
@@ -202,11 +196,9 @@ export const onCaseWritten = onDocumentWritten(
           caseType: afterData.caseType,
           petition: {
             petitioner: afterData.petition.petitioner,
-            advocate: afterData.petition.advocate,
           },
           respondent: {
             respondentee: afterData.respondent.respondentee,
-            advocate: afterData.respondent.advocate,
           },
           courtName: afterData.courtName,
         },
@@ -234,7 +226,6 @@ export const onCaseWritten = onDocumentWritten(
         caseId: caseId,
         caseType: afterData.caseType,
         courtName: afterData.courtName,
-        regDate: afterData.regDate,
         judge: afterData.judge,
         nextHearing: afterData.nextHearing,
         caseStatus: afterData.caseStatus,

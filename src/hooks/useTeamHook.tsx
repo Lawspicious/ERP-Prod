@@ -7,6 +7,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   query,
   where,
 } from 'firebase/firestore';
@@ -22,23 +23,52 @@ export const useTeam = () => {
   const getAllTeam = useCallback(async () => {
     try {
       const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('role', '==', 'LAWYER'));
+      const q = query(usersRef, where('role', 'in', ['LAWYER', 'ADMIN']));
       const querySnapshot = await getDocs(q);
 
-      const lawyers = querySnapshot.docs.map((doc) => ({
+      const teamMembers = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setAllTeam(lawyers as IUser[]);
-      return lawyers;
+      setAllTeam(teamMembers as IUser[]);
+      return teamMembers;
     } catch (error) {
-      console.error('Error fetching LAWYER users:', error);
+      console.error('Error fetching team members:', error);
       newToast({
         message: 'Could not fetch Team Members',
         status: 'error',
       });
     }
   }, [setAllTeam]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      query(collection(db, 'users')),
+      (snapshot) => {
+        const lawyers: IUser[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as IUser),
+        }));
+
+        // Only update state if data has changed
+        setAllUser((prevTeam) => {
+          const isSameData =
+            JSON.stringify(prevTeam) === JSON.stringify(lawyers);
+          return isSameData ? prevTeam : lawyers;
+        });
+      },
+      (error) => {
+        console.error('Error fetching LAWYER users:', error);
+        newToast({
+          message: 'Could not fetch Team Members',
+          status: 'error',
+        });
+      },
+    );
+
+    // Cleanup listener on component unmount
+    return () => unsubscribe();
+  }, []);
 
   const getAllUser = useCallback(async () => {
     try {

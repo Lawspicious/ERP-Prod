@@ -134,7 +134,7 @@ const AddServiceForm = ({
                   placeholder="Enter Amount"
                   type="number"
                   name="amount"
-                  value={service.amount == 0 ? undefined : service.amount}
+                  value={service.amount}
                   onChange={(e) => handleChange(e, i)}
                 />
               </FormControl>

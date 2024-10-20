@@ -69,7 +69,7 @@ const ClientInvoiceTable = ({
       ) : (
         <Tabs
           onChange={(index) =>
-            setSelectedStatus(['ALL', 'paid', 'unpaid', 'pending'][index])
+            setSelectedStatus(['ALL', 'paid', 'unpaid'][index])
           }
         >
           <TabList overflowX={'auto'} overflowY={'hidden'}>
@@ -89,13 +89,41 @@ const ClientInvoiceTable = ({
                   <Box overflowX="auto">
                     <Table variant="striped" colorScheme="blackAlpha">
                       <TableCaption fontSize={'lg'} textAlign={'left'}>
-                        Total Paid Amount: Rs.
-                        {filteredInvoices
-                          .filter((invoice) => invoice.paymentStatus === 'paid')
-                          .reduce(
-                            (sum, invoice) => sum + invoice.totalAmount,
-                            0,
-                          )}
+                        {selectedStatus === 'ALL' ? (
+                          <>
+                            Total Amount : Rs.
+                            {filteredInvoices.reduce(
+                              (sum, invoice) => sum + invoice.totalAmount,
+                              0,
+                            )}
+                          </>
+                        ) : selectedStatus === 'paid' ? (
+                          <>
+                            Total Paid Amount : Rs.
+                            {filteredInvoices
+                              .filter(
+                                (invoice) => invoice.paymentStatus === 'paid',
+                              )
+                              .reduce(
+                                (sum, invoice) => sum + invoice.totalAmount,
+                                0,
+                              )}
+                          </>
+                        ) : selectedStatus === 'unpaid' ? (
+                          <>
+                            Total Unpaid Amount : Rs.
+                            {filteredInvoices
+                              .filter(
+                                (invoice) => invoice.paymentStatus === 'unpaid',
+                              )
+                              .reduce(
+                                (sum, invoice) => sum + invoice.totalAmount,
+                                0,
+                              )}
+                          </>
+                        ) : (
+                          0
+                        )}
                       </TableCaption>
                       <Thead>
                         <Tr>

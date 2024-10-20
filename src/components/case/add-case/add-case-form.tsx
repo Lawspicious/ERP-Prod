@@ -46,11 +46,6 @@ const initialFormData = {
     email: '',
     mobile: '',
   },
-  // extras
-  judge: '',
-  fillingNo: '',
-  regNo: '',
-  FIR: '',
 };
 
 const AddCaseForm = ({
@@ -368,20 +363,38 @@ const AddCaseForm = ({
           </Select>
         </FormControl>
         <div className="mb-4">
-          <h3 className="mb-4 text-lg font-semibold md:text-xl">Add Lawyer</h3>
+          <h3 className="mb-4 text-lg font-semibold md:text-xl">
+            Add Team Member
+          </h3>
           <FormControl>
-            <FormLabel>Lawyer</FormLabel>
+            <FormLabel>Team Member</FormLabel>
             <Select
               name="lawyerId"
-              placeholder="Enter lawyer details"
+              placeholder="Add team Member"
               value={selectedLawyerId}
               onChange={(e) => setSelectedLawyerId(e.target.value)}
             >
-              {lawyers.map((team: IUser) => (
-                <option key={team.id} value={team.id}>
-                  {team.name}
-                </option>
-              ))}
+              {/* Group for Lawyers */}
+              <optgroup label="Lawyers">
+                {lawyers
+                  .filter((team: IUser) => team.role === 'LAWYER')
+                  .map((lawyer: IUser) => (
+                    <option key={lawyer.id} value={lawyer.id}>
+                      {lawyer.name}
+                    </option>
+                  ))}
+              </optgroup>
+
+              {/* Group for Admins */}
+              <optgroup label="Admins">
+                {lawyers
+                  .filter((team: IUser) => team.role === 'ADMIN')
+                  .map((admin: IUser) => (
+                    <option key={admin.id} value={admin.id}>
+                      {admin.name}
+                    </option>
+                  ))}
+              </optgroup>
             </Select>
           </FormControl>
         </div>

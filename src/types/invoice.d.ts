@@ -1,7 +1,7 @@
 export interface IInvoice {
   id?: string;
   billTo: 'client' | 'organization';
-  clientDetails?: IClientDetails;
+  clientDetails?: IClientDetails | null;
   createdAt: string;
   dueDate: string;
   services: IService[];
@@ -24,7 +24,7 @@ interface IClientDetails {
   name: string;
   email: string;
   mobile: string;
-  location: string;
+  location?: string;
 }
 
 interface IRE {

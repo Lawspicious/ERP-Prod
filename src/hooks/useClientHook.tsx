@@ -105,6 +105,57 @@ export const useClient = () => {
     [],
   );
 
+  //fetch client by type using listener snapshot
+  useEffect(() => {
+    const unsubscribeNormal = onSnapshot(
+      query(
+        collection(db, collectionName),
+        where('clientType', '==', 'normal'),
+      ),
+      (snapshot) => {
+        const normalClients: IClient[] = snapshot.docs.map((doc) => ({
+          ...(doc.data() as IClient),
+          id: doc.id,
+        }));
+        setNormalClient(normalClients);
+      },
+      (error) => {
+        console.error('Error fetching normal clients:', error);
+        newToast({
+          message: 'Could not fetch normal clients',
+          status: 'error',
+        });
+      },
+    );
+
+    const unsubscribeProspect = onSnapshot(
+      query(
+        collection(db, collectionName),
+        where('clientType', '==', 'prospect'),
+      ),
+      (snapshot) => {
+        const prospectClients: IClientProspect[] = snapshot.docs.map((doc) => ({
+          ...(doc.data() as IClientProspect),
+          id: doc.id,
+        }));
+        setProspectClient(prospectClients);
+      },
+      (error) => {
+        console.error('Error fetching prospect clients:', error);
+        newToast({
+          message: 'Could not fetch prospect clients',
+          status: 'error',
+        });
+      },
+    );
+
+    // Cleanup listeners on component unmount
+    return () => {
+      unsubscribeNormal();
+      unsubscribeProspect();
+    };
+  }, []);
+
   const getClientById = useCallback(
     async (id: string) => {
       try {

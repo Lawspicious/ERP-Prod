@@ -11,7 +11,7 @@ import { get } from 'http';
 import { useLoading } from '@/context/loading/loadingContext';
 const HomeTab = () => {
   // const {allClients, allCases, highPriorityCases, decidedCases} = useDashboardData();
-  const { normalClient, getClientByType } = useClient();
+  const { normalClient } = useClient();
   const { allCases, fetchCasesByStatus, fetchCasesByPriority } = useCases();
   const [highPriorityCases, setHighPriorityCases] = useState<number>(0);
   const [decidedCases, setDecidedCases] = useState<number>(0);
@@ -25,7 +25,7 @@ const HomeTab = () => {
       setDecidedCases(_decidedCase?.length || 0);
     };
     setLoading(true);
-    getClientByType('normal');
+    // getClientByType('normal');
     handleFetchCases();
     setLoading(false);
   }, []);

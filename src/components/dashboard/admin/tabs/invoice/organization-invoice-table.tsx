@@ -44,18 +44,16 @@ const OrganizationInvoiceTable = ({
   const [filteredInvoices, setFilteredInvoices] = useState<IInvoice[]>([]);
   const router = useRouter();
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+  const { payableTasks, deleteTasks } = useTask();
 
-  const { getPayableTask } = useTask();
-  const [taskInvoice, setTaskInvoices] = useState<ITask[]>([]);
+  // useEffect(() => {
+  //   const handleFetchInvoice = async () => {
+  //     const data = await getPayableTask();
+  //     setTaskInvoices(data as ITask[]);
+  //   };
 
-  useEffect(() => {
-    const handleFetchInvoice = async () => {
-      const data = await getPayableTask();
-      setTaskInvoices(data as ITask[]);
-    };
-
-    handleFetchInvoice();
-  }, []);
+  //   handleFetchInvoice();
+  // }, []);
 
   const filterInvoices = (status: string) => {
     if (status === 'ALL') {
@@ -84,7 +82,7 @@ const OrganizationInvoiceTable = ({
       ) : (
         <Tabs
           onChange={(index) =>
-            setSelectedStatus(['ALL', 'paid', 'unpaid', 'pending'][index])
+            setSelectedStatus(['ALL', 'paid', 'unpaid'][index])
           }
         >
           <TabList>
@@ -104,13 +102,41 @@ const OrganizationInvoiceTable = ({
                   <Box overflowX={'auto'}>
                     <Table variant="striped" colorScheme="blackAlpha">
                       <TableCaption fontSize={'lg'} textAlign={'left'}>
-                        Total Paid Amount: Rs.
-                        {filteredInvoices
-                          .filter((invoice) => invoice.paymentStatus === 'paid')
-                          .reduce(
-                            (sum, invoice) => sum + invoice.totalAmount,
-                            0,
-                          )}
+                        {selectedStatus === 'ALL' ? (
+                          <>
+                            Total Amount : Rs.
+                            {filteredInvoices.reduce(
+                              (sum, invoice) => sum + invoice.totalAmount,
+                              0,
+                            )}
+                          </>
+                        ) : selectedStatus === 'paid' ? (
+                          <>
+                            Total Paid Amount : Rs.
+                            {filteredInvoices
+                              .filter(
+                                (invoice) => invoice.paymentStatus === 'paid',
+                              )
+                              .reduce(
+                                (sum, invoice) => sum + invoice.totalAmount,
+                                0,
+                              )}
+                          </>
+                        ) : selectedStatus === 'unpaid' ? (
+                          <>
+                            Total Unpaid Amount : Rs.
+                            {filteredInvoices
+                              .filter(
+                                (invoice) => invoice.paymentStatus === 'unpaid',
+                              )
+                              .reduce(
+                                (sum, invoice) => sum + invoice.totalAmount,
+                                0,
+                              )}
+                          </>
+                        ) : (
+                          0
+                        )}
                       </TableCaption>
                       <Thead>
                         <Tr>
@@ -196,13 +222,21 @@ const OrganizationInvoiceTable = ({
               </TabPanel>
             ))}
             <TabPanel>
-              {taskInvoice.length == 0 ? (
+              {payableTasks.length == 0 ? (
                 <div className="heading-primary flex items-center justify-center">
                   No Payable Task Present
                 </div>
               ) : (
                 <Box overflowX={'auto'}>
                   <Table variant="striped" colorScheme="blackAlpha">
+                    <TableCaption fontSize={'lg'} textAlign={'left'}>
+                      Total Payable Amount: Rs.
+                      {payableTasks.reduce(
+                        (sum, invoice) => sum + Number(invoice.amount ?? 0),
+                        0,
+                      )}{' '}
+                    </TableCaption>
+
                     <Thead>
                       <Tr>
                         <Th>No</Th>
@@ -215,7 +249,7 @@ const OrganizationInvoiceTable = ({
                       </Tr>
                     </Thead>
                     <Tbody>
-                      {taskInvoice.map((task, index) => (
+                      {payableTasks.map((task, index) => (
                         <Tr key={task.id}>
                           <Td>{index + 1}</Td>
                           <Td>{task.taskName || 'NA'}</Td>
@@ -232,7 +266,7 @@ const OrganizationInvoiceTable = ({
                             ))}
                           </Td>
                           <Td>{task.endDate || 'NA'}</Td>
-                          {/* <Td>
+                          <Td>
                             <Menu>
                               <MenuButton
                                 as={IconButton}
@@ -242,14 +276,22 @@ const OrganizationInvoiceTable = ({
                               />
                               <MenuList zIndex={50} maxWidth={100}>
                                 <MenuItem as={'div'}>
-                                  <Button colorScheme='purple' className='w-full'>
-                                    Go to Invoice
-                                  </Button>
+                                  <DialogButton
+                                    title={'Delete'}
+                                    message={
+                                      'Do you want to delete the invoice?'
+                                    }
+                                    onConfirm={async () =>
+                                      deleteTasks(task.id as string)
+                                    }
+                                    children={'Delete'}
+                                    confirmButtonColorScheme="red"
+                                    confirmButtonText="Delete"
+                                  />
                                 </MenuItem>
-
                               </MenuList>
                             </Menu>
-                          </Td> */}
+                          </Td>
                         </Tr>
                       ))}
                     </Tbody>
@@ -265,6 +307,6 @@ const OrganizationInvoiceTable = ({
 };
 
 // Specify allowed roles for this page
-const allowedRoles = ['SUPERADMIN']; // Add roles that should have access
+const allowedRoles = ['SUPERADMIN', 'ADMIN']; // Add roles that should have access
 
 export default withAuth(OrganizationInvoiceTable, allowedRoles);

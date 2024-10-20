@@ -1,5 +1,5 @@
 // components/tabs/ProfileTab.tsx
-import { Button, Select } from '@chakra-ui/react';
+import { Button, Checkbox, Select } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
 import TabLayout from '../tab-layout';
 import LoaderComponent from '@/components/ui/loader';
@@ -8,23 +8,42 @@ import DisplayTable from '@/components/ui/display-table';
 import { DialogButton } from '@/components/ui/alert-dialog';
 import { useCases } from '@/hooks/useCasesHook';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
-import { useLoading } from '@/context/loading/loadingContext';
-import { truncate } from 'fs';
 import { today } from '@/lib/utils/todayDate';
+import { useAuth } from '@/context/user/userContext';
 
 const CaseTab = () => {
   const router = useRouter();
-  const { allCases, getAllCases, fetchCasesByPriority, deleteCase } =
-    useCases();
+  const {
+    allCases,
+    getAllCases,
+    fetchCasesByPriority,
+    deleteCase,
+    fetchCasesByLawyerId,
+  } = useCases();
   const [selectPriority, setSelectedPriority] = useState('');
   // const { loading, setLoading } = useLoading();
   const [loading, setLoading] = useState<boolean>(true);
+  const [isChecked, setIsChecked] = useState(false);
+  const { authUser, role } = useAuth();
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsChecked(e.target.checked);
+  };
+
+  useEffect(() => {
+    if (isChecked) {
+      fetchCasesByLawyerId(authUser?.uid as string);
+    } else {
+      getAllCases();
+    }
+  }, [isChecked]);
 
   const handleFetch = async () => {
-    if (selectPriority === '') {
-      await getAllCases();
-    } else {
+    if (selectPriority !== '') {
       await fetchCasesByPriority(selectPriority as 'HIGH' | 'MEDIUM' | 'LOW');
+    }
+    if (selectPriority === 'all') {
+      await getAllCases();
     }
   };
 
@@ -35,7 +54,8 @@ const CaseTab = () => {
   const columns = [
     { key: 'No', label: 'No', sortable: false },
     { key: 'caseDetails', label: 'Case Details', sortable: true },
-    { key: 'courtDetails', label: 'Court Details', sortable: true },
+    // { key: 'courtDetails', label: 'Court Details', sortable: true },
+    { key: 'allotedLaywer', label: 'Lawyer', sortable: true },
     {
       key: 'petitionVsRespondent',
       label: 'Petitioner vs Respondent',
@@ -44,13 +64,14 @@ const CaseTab = () => {
     { key: 'nextDate', label: 'Next Date', sortable: true },
     // { key: 'status', label: 'Status', sortable: true },
     { key: 'clientName', label: 'Client', sortable: true },
+
     { key: 'priority', label: 'Priority', sortable: true },
   ];
 
   const transformedData = useMemo(() => {
     return allCases.map((caseData, index) => {
-      const endDate = caseData.nextHearing
-        ? parseISO(caseData.nextHearing)
+      const endDate = caseData?.nextHearing
+        ? parseISO(caseData?.nextHearing)
         : null;
 
       // Calculate the difference between the current date and the end date
@@ -72,8 +93,9 @@ const CaseTab = () => {
         petitionVsRespondent: `${caseData?.petition?.petitioner || 'NA'}\nvs\n${caseData?.respondent?.respondentee || 'NA'}`, // Petitioner vs Respondent
         nextDate: caseData?.nextHearing || 'TBD', // Next Hearing Date
         status: caseData?.caseStatus, // Status
-        clientName: caseData?.clientDetails?.name,
+        clientName: caseData?.clientDetails?.name || 'NA',
         priority: caseData?.priority,
+        allotedLaywer: caseData?.lawyer?.name || 'NA',
         rowColor,
       };
     });
@@ -81,8 +103,14 @@ const CaseTab = () => {
 
   // Only stop loading after both data fetching and transformation are complete
   useEffect(() => {
+    setLoading(true);
     if (transformedData) {
-      setLoading(false); // Hide loader only after data transformation
+      const timeoutId = setTimeout(() => {
+        setLoading(false);
+      }, 300); // 3 seconds timeout
+
+      // Cleanup timeout on component unmount
+      return () => clearTimeout(timeoutId);
     }
   }, [transformedData]);
 
@@ -114,7 +142,14 @@ const CaseTab = () => {
   return (
     <TabLayout>
       <section className="flex items-center justify-between">
-        <h1 className="heading-primary mb-6">Cases</h1>
+        <div className="mb-6 flex flex-col items-start justify-start gap-3">
+          <h1 className="heading-primary">Cases</h1>
+          {role === 'ADMIN' && (
+            <Checkbox isChecked={isChecked} onChange={handleCheckboxChange}>
+              My Cases
+            </Checkbox>
+          )}
+        </div>
         <Button
           colorScheme="purple"
           onClick={() => router.push('/dashboard/admin/add-case')}
@@ -129,7 +164,7 @@ const CaseTab = () => {
           value={selectPriority}
           onChange={(e) => setSelectedPriority(e.target.value)}
         >
-          <option value={''}>All</option>
+          <option value={'all'}>All</option>
           <option value={'HIGH'}>High</option>
           <option value={'MEDIUM'}>Medium</option>
           <option value={'LOW'}>Low</option>

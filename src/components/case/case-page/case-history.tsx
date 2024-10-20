@@ -34,6 +34,7 @@ const CaseHistoryTable: React.FC<CaseHistoryProps> = ({ caseDetails }) => {
               <Th>Hearing No.</Th>
               <Th>Date</Th>
               <Th>Remarks</Th>
+              <Th>Lawyer</Th>
             </Tr>
           </Thead>
           <Tbody>
@@ -47,6 +48,7 @@ const CaseHistoryTable: React.FC<CaseHistoryProps> = ({ caseDetails }) => {
                   <Td>{index + 1}</Td> {/* Hearing No. */}
                   <Td>{hearing.date}</Td> {/* Hearing Date */}
                   <Td>{hearing.remarks}</Td> {/* Remarks */}
+                  <Td>{caseDetails.lawyer.name}</Td>
                 </Tr>
               ))}
           </Tbody>

@@ -20,6 +20,7 @@ import { useClient } from '@/hooks/useClientHook';
 import { useAppointment } from '@/hooks/useAppointmentHook';
 import { IAppointment } from '@/types/appointments';
 import { useLoading } from '@/context/loading/loadingContext';
+import { IUser } from '@/types/user';
 
 const initialData = {
   time: '',
@@ -150,18 +151,34 @@ const CreateAppointmentModal = () => {
                   </Select>
                 </FormControl>
                 <FormControl mt={4}>
-                  <FormLabel>Lawyer</FormLabel>
+                  <FormLabel>Team Members</FormLabel>
                   <Select
                     name="lawyerId"
-                    placeholder="Select Lawyer"
+                    placeholder="Select Team Member"
                     value={appointment.lawyerId}
                     onChange={handleInputChange}
                   >
-                    {allTeam.map((lawyer) => (
-                      <option key={lawyer.id} value={lawyer.id}>
-                        {lawyer.name}
-                      </option>
-                    ))}
+                    {/* Group for Lawyers */}
+                    <optgroup label="Lawyers">
+                      {allTeam
+                        .filter((team: IUser) => team.role === 'LAWYER')
+                        .map((lawyer: IUser) => (
+                          <option key={lawyer.id} value={lawyer.id}>
+                            {lawyer.name}
+                          </option>
+                        ))}
+                    </optgroup>
+
+                    {/* Group for Admins */}
+                    <optgroup label="Admins">
+                      {allTeam
+                        .filter((team: IUser) => team.role === 'ADMIN')
+                        .map((admin: IUser) => (
+                          <option key={admin.id} value={admin.id}>
+                            {admin.name}
+                          </option>
+                        ))}
+                    </optgroup>
                   </Select>
                 </FormControl>
               </ModalBody>

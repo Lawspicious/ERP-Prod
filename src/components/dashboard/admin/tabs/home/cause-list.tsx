@@ -25,7 +25,7 @@ import { useLoading } from '@/context/loading/loadingContext';
 
 const CauseList = () => {
   const [selectedDate, setSelectedDate] = useState<string>(today);
-  const { allCases, fetchCasesByDate, deleteCase } = useCases();
+  const { allCasesDate, fetchCasesByDate, deleteCase } = useCases();
   const { loading, setLoading } = useLoading();
   const router = useRouter();
 
@@ -37,30 +37,32 @@ const CauseList = () => {
 
   const columns = [
     { key: 'No', label: 'No', sortable: false },
-    { key: 'caseRegistration', label: 'Case Registration', sortable: true },
+    { key: 'caseRegistration', label: 'Case Details', sortable: true },
     {
       key: 'petitionVsRespondent',
       label: 'Pet vs Resp',
       sortable: false,
     },
     { key: 'nextDate', label: 'Next Date', sortable: true },
-    { key: 'allotedClient', label: 'Alloted Client', sortable: true },
-    { key: 'status', label: 'Status', sortable: true },
+    { key: 'allotedClient', label: 'Client', sortable: true },
+    { key: 'allotedLaywer', label: 'Lawyer', sortable: true },
+    // { key: 'status', label: 'Status', sortable: true },
   ];
 
   const transformedData = useMemo(() => {
-    return allCases.map((caseData, index) => {
+    return allCasesDate.map((caseData, index) => {
       return {
         No: `${index + 1}`, // No as index
-        id: caseData.caseId,
-        caseRegistration: `CaseNo:${caseData.caseNo} \nType:${caseData.caseType}`, // Case Details
-        petitionVsRespondent: `${caseData.petition.petitioner}\nvs\n${caseData.respondent.respondentee}`, // Petitioner vs Respondent
-        nextDate: caseData.nextHearing || 'TBD', // Next Hearing Date
-        allotedClient: caseData.clientDetails.name,
-        status: caseData.caseStatus, // Status
+        id: caseData?.caseId,
+        caseRegistration: `CaseNo:${caseData?.caseNo} \nType:${caseData?.caseType || 'NA'}`, // Case Details
+        petitionVsRespondent: `${caseData?.petition?.petitioner || 'NA'}\nvs\n${caseData?.respondent?.respondentee || 'NA'}`, // Petitioner vs Respondent
+        nextDate: caseData?.nextHearing || 'TBD', // Next Hearing Date
+        allotedClient: caseData?.clientDetails?.name || 'NA',
+        allotedLaywer: caseData?.lawyer?.name || 'NA',
+        status: caseData?.caseStatus, // Status
       };
     });
-  }, [allCases]);
+  }, [allCasesDate]);
 
   const actionButtons = (id: string): ReactElement[] => [
     <DialogButton
@@ -100,7 +102,7 @@ const CauseList = () => {
       </section>
       {loading ? (
         <LoaderComponent />
-      ) : allCases.length > 0 ? (
+      ) : allCasesDate.length > 0 ? (
         <DisplayTable
           data={transformedData}
           columns={columns}

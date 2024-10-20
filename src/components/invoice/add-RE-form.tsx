@@ -21,6 +21,7 @@ interface ADDREFormProps {
   setREData: React.Dispatch<React.SetStateAction<IRE[]>>;
   setInvoiceDueDate: React.Dispatch<React.SetStateAction<string>>;
   setSelectedClientId: React.Dispatch<React.SetStateAction<string>>;
+  billTo?: string;
 }
 
 const AddREForm = ({
@@ -32,6 +33,7 @@ const AddREForm = ({
   setREData,
   setInvoiceDueDate,
   setSelectedClientId,
+  billTo,
 }: ADDREFormProps) => {
   const [state, newToast] = useToastHook();
 
@@ -70,7 +72,7 @@ const AddREForm = ({
   };
   return (
     <>
-      <FormControl isRequired>
+      <FormControl isRequired={billTo === 'client'}>
         <FormLabel>Client Name</FormLabel>
         <Select
           name="client Id"

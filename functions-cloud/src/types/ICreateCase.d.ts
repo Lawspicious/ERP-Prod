@@ -1,24 +1,20 @@
 export interface ICreateCase {
   caseId?: string;
   caseNo: string;
-  reference: string;
-  lawyerActionStatus: string;
   caseType: string;
-  fillingNo: string | number;
-  regNo: string;
   regDate: string;
   CNRNo: string;
-  hearings: IDate[];
-  nextHearing: 'string';
+  hearings?: IDate[];
+  nextHearing: 'YYYY-MM-DD';
   decision: string;
   caseStatus: 'RUNNING' | 'DECIDED';
-  judge?: string;
   courtName: string;
-  petition: { petitioner: string; advocate: string };
-  respondent: { respondentee: string; advocate: string };
-  FIR: IFIR;
+  reference: string;
+  petition: { petitioner: string };
+  respondent: { respondentee: string };
   caseFiles: string;
   priority?: 'HIGH' | 'MEDIUM' | 'LOW';
+  lawyerActionStatus: string;
   lawyer: ILawyer;
   clientDetails: IClientDetails;
 }
@@ -26,12 +22,6 @@ export interface ICreateCase {
 interface IDate {
   date: string;
   remarks: string;
-}
-
-interface IFIR {
-  FIRNo: string;
-  policeStation: string;
-  FIRDate: string;
 }
 
 interface ILawyer {
@@ -45,5 +35,5 @@ interface IClientDetails {
   name: string;
   email: string;
   id: string;
-  phoneNumber: string;
+  mobile: string;
 }
