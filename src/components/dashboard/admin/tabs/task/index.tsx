@@ -52,21 +52,21 @@ const TaskTab = () => {
 
       return {
         No: `${index + 1}`, // No as index
-        id: taskData.id,
-        taskName: taskData.taskName, // Task Name
-        relatedTo: taskData.caseDetails.caseId
-          ? `CaseNo:${taskData.caseDetails.caseNo}`
+        id: taskData?.id,
+        taskName: taskData?.taskName, // Task Name
+        relatedTo: taskData?.caseDetails?.caseId
+          ? `CaseNo:${taskData?.caseDetails?.caseNo}`
           : 'Other',
-        petitionVsRespondent: taskData.caseDetails?.caseId
-          ? `${taskData.caseDetails.petition.petitioner || 'NA'}\nvs\n${taskData.caseDetails.respondent.respondentee || 'NA'}`
+        petitionVsRespondent: taskData?.caseDetails?.caseId
+          ? `${taskData.caseDetails?.petition?.petitioner || 'NA'}\nvs\n${taskData?.caseDetails?.respondent?.respondentee || 'NA'}`
           : 'N/A',
-        startDate: taskData.startDate || 'TBD', // Start Date
-        endDate: taskData.endDate || 'TBD', // End Date
+        startDate: taskData?.startDate || 'TBD', // Start Date
+        endDate: taskData?.endDate || 'TBD', // End Date
         member:
           taskData.lawyerDetails?.map((lawyer) => lawyer.name).join(', ') ||
           'No Lawyers Assigned',
-        status: taskData.taskStatus, // Status
-        priority: taskData.priority, // Priority
+        status: taskData?.taskStatus, // Status
+        priority: taskData?.priority, // Priority
         rowColor, // Row color based on end date proximity
       };
     });

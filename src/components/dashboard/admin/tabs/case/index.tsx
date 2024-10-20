@@ -66,14 +66,14 @@ const CaseTab = () => {
 
       return {
         No: `${index + 1}`, // No as index
-        id: caseData.caseId,
-        caseDetails: `CaseNo:${caseData.caseNo} \nType:${caseData.caseType}`, // Case Details
-        courtDetails: `Court:${caseData.courtName || 'NA'} `, // Court details
-        petitionVsRespondent: `${caseData.petition.petitioner || 'NA'}\nvs\n${caseData.respondent.respondentee || 'NA'}`, // Petitioner vs Respondent
-        nextDate: caseData.nextHearing || 'TBD', // Next Hearing Date
-        status: caseData.caseStatus, // Status
-        clientName: caseData.clientDetails.name,
-        priority: caseData.priority,
+        id: caseData?.caseId,
+        caseDetails: `CaseNo:${caseData?.caseNo} \nType:${caseData?.caseType}`, // Case Details
+        courtDetails: `Court:${caseData?.courtName || 'NA'} `, // Court details
+        petitionVsRespondent: `${caseData?.petition?.petitioner || 'NA'}\nvs\n${caseData?.respondent?.respondentee || 'NA'}`, // Petitioner vs Respondent
+        nextDate: caseData?.nextHearing || 'TBD', // Next Hearing Date
+        status: caseData?.caseStatus, // Status
+        clientName: caseData?.clientDetails?.name,
+        priority: caseData?.priority,
         rowColor,
       };
     });
