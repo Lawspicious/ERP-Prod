@@ -126,7 +126,6 @@ export const useInvoice = () => {
         message: 'Error Creating Invoice Id',
         status: 'error',
       });
-      console.log(error);
       return null;
     }
   };

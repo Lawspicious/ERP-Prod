@@ -1,5 +1,6 @@
 import { DialogButton } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/context/user/userContext';
+import { useAdminUser } from '@/hooks/useAdminUserHook';
 import { useUser } from '@/hooks/useUserHook';
 import { IUser } from '@/types/user';
 import {
@@ -29,6 +30,7 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
   const [tabIndex, setTabIndex] = useState(0);
   const { deleteUser } = useUser();
   const { role } = useAuth();
+  const { updateAdminUser } = useAdminUser();
 
   const getFilteredMembers = (role: string[]) => {
     return allTeam.filter((member) => role.includes(member.role));
@@ -79,20 +81,6 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                           variant="outline"
                         />
                         <MenuList zIndex={50} maxWidth={100}>
-                          {role === 'SUPERADMIN' && (
-                            <MenuItem as={'div'}>
-                              <DialogButton
-                                title={'Delete'}
-                                message={'Do you want to Delete the Member?'}
-                                onConfirm={async () =>
-                                  deleteUser(member.id as string)
-                                }
-                                children={'Delete'}
-                                confirmButtonColorScheme="red"
-                                // disabled={role === 'ADMIN'}
-                              />
-                            </MenuItem>
-                          )}
                           <MenuItem as={'div'}>
                             <Button
                               colorScheme="purple"
@@ -104,6 +92,39 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                               View
                             </Button>
                           </MenuItem>
+                          {role === 'SUPERADMIN' && (
+                            <>
+                              <MenuItem>
+                                <Button
+                                  colorScheme="purple"
+                                  className="w-full"
+                                  onClick={async () =>
+                                    await updateAdminUser({
+                                      id: member.id as string,
+                                      role: 'LAWYER',
+                                      email: member.email,
+                                      phoneNumber: member.phoneNumber,
+                                      name: member.name,
+                                    })
+                                  }
+                                >
+                                  Change Role
+                                </Button>
+                              </MenuItem>
+                              <MenuItem as={'div'}>
+                                <DialogButton
+                                  title={'Delete'}
+                                  message={'Do you want to Delete the Member?'}
+                                  onConfirm={async () =>
+                                    deleteUser(member.id as string)
+                                  }
+                                  children={'Delete'}
+                                  confirmButtonColorScheme="red"
+                                  // disabled={role === 'ADMIN'}
+                                />
+                              </MenuItem>
+                            </>
+                          )}
                         </MenuList>
                       </Menu>
                     </Td>
@@ -146,17 +167,6 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                         />
                         <MenuList zIndex={50} maxWidth={100}>
                           <MenuItem as={'div'}>
-                            <DialogButton
-                              title={'Delete'}
-                              message={'Do you want to Delete the Member?'}
-                              onConfirm={async () =>
-                                deleteUser(member.id as string)
-                              }
-                              children={'Delete'}
-                              confirmButtonColorScheme="red"
-                            />
-                          </MenuItem>
-                          <MenuItem as={'div'}>
                             <Button
                               colorScheme="purple"
                               className="w-full"
@@ -166,6 +176,36 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                             >
                               View
                             </Button>
+                          </MenuItem>
+                          {role === 'SUPERADMIN' && (
+                            <MenuItem>
+                              <Button
+                                colorScheme="purple"
+                                className="w-full"
+                                onClick={async () =>
+                                  await updateAdminUser({
+                                    id: member.id as string,
+                                    role: 'ADMIN',
+                                    email: member.email,
+                                    phoneNumber: member.phoneNumber,
+                                    name: member.name,
+                                  })
+                                }
+                              >
+                                Change Role
+                              </Button>
+                            </MenuItem>
+                          )}
+                          <MenuItem as={'div'}>
+                            <DialogButton
+                              title={'Delete'}
+                              message={'Do you want to Delete the Member?'}
+                              onConfirm={async () =>
+                                deleteUser(member.id as string)
+                              }
+                              children={'Delete'}
+                              confirmButtonColorScheme="red"
+                            />
                           </MenuItem>
                         </MenuList>
                       </Menu>

@@ -27,6 +27,7 @@ export const useTask = () => {
   const createTaskAndSendEmail = httpsCallable(functions, 'createTaskCloud');
   const [loading, setLoading] = useState(true);
   const [payableTasks, setPayableTasks] = useState<ITask[]>([]);
+  const [clientTasks, setClientTasks] = useState<ITask[]>([]);
 
   const createTask = async (data: Partial<ITask>) => {
     try {
@@ -196,6 +197,30 @@ export const useTask = () => {
     }
   }, []);
 
+  const getTasksByClientId = useCallback(async (id: string) => {
+    try {
+      const taskCollectionRef = collection(db, collectionName);
+      const tasksQuery = query(
+        taskCollectionRef,
+        where('clientDetails.id', '==', id),
+      );
+      const querySnapshot = await getDocs(tasksQuery);
+
+      const taskList: ITask[] = querySnapshot.docs.map((doc) => {
+        const taskData = doc.data() as ITask;
+        return { ...taskData, taskId: doc.id };
+      });
+      setClientTasks(taskList);
+      return taskList;
+    } catch (error) {
+      console.error('Error fetching tasks by case', error);
+      newToast({
+        message: 'Could not fetch tasks',
+        status: 'error',
+      });
+    }
+  }, []);
+
   const getPayableTask = async () => {
     try {
       const taskCollectionRef = collection(db, collectionName);
@@ -248,6 +273,7 @@ export const useTask = () => {
     task,
     allTaskLawyer,
     payableTasks,
+    clientTasks,
     createTask,
     getAllTask,
     getTaskById,
@@ -256,5 +282,6 @@ export const useTask = () => {
     getTasksByLawyerId,
     getTasksByCaseId,
     getPayableTask,
+    getTasksByClientId,
   };
 };

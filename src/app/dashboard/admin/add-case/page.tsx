@@ -123,7 +123,9 @@ const AddCasepage = () => {
               <AddCaseForm
                 lawyers={allTeam}
                 backHref="/dashboard/admin/workspace-admin#case"
-                setActiveStep={setActiveStep}
+                setActiveStep={
+                  setActiveStep as React.Dispatch<React.SetStateAction<number>>
+                }
               />
             </div>
           )}

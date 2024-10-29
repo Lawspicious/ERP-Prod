@@ -80,6 +80,10 @@ const IndividualTask = ({ task }: { task: ITask }) => {
             <TextDisplay label="End Date:" value={task.endDate} />
             <TextDisplay label="End Time:" value={task.timeLimit || 'NA'} />
             <TextDisplay label="Description:" value={task.taskDescription} />
+            <TextDisplay
+              label="Assigned By:"
+              value={task?.createdBy?.name || 'NA'}
+            />
           </SectionHeading>
 
           <Divider />
@@ -115,6 +119,14 @@ const IndividualTask = ({ task }: { task: ITask }) => {
               </div>
             ))}
           </SectionHeading>
+          {task.clientDetails && (
+            <SectionHeading icon={User} title="Client Information">
+              <div key={task.clientDetails.id} className="mb-4">
+                <TextDisplay label="Name:" value={task.clientDetails.name} />
+                <TextDisplay label="Email:" value={task.clientDetails.email} />
+              </div>
+            </SectionHeading>
+          )}
         </VStack>
       </Flex>
       <div className="mt-6 flex w-full items-center justify-center">

@@ -1,5 +1,6 @@
 'use client';
 import { useLoading } from '@/context/loading/loadingContext';
+import { useAuth } from '@/context/user/userContext';
 import { useCases } from '@/hooks/useCasesHook';
 import { useClient } from '@/hooks/useClientHook';
 import { useInvoice } from '@/hooks/useInvoiceHook';
@@ -69,12 +70,15 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
   const { allCases, fetchCasesByStatus } = useCases();
   const { allClients } = useClient();
   const [selectedClientId, setSelectedClientId] = useState('');
+  const { authUser } = useAuth();
+
+  console.log(authUser);
 
   useEffect(() => {
     const handleFetch = async () => {
       setLoading(true);
       await getAllTeam();
-      await await fetchCasesByStatus('RUNNING');
+      await fetchCasesByStatus('RUNNING');
       setLoading(false);
     };
 
@@ -146,15 +150,19 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
       name: lawyer?.name || '',
     }));
 
-    const selectedClient = allClients.find(
-      (client) => (client.id = selectedClientId),
-    );
-    const clientDetails = {
-      id: selectedClient?.id as string,
-      name: selectedClient?.name as string,
-      email: selectedClient?.email as string,
-      mobile: selectedClient?.mobile as string,
-    };
+    let clientDetails = null;
+
+    if (selectedClientId !== '') {
+      const selectedClient = allClients.find(
+        (client) => (client.id = selectedClientId),
+      );
+      clientDetails = {
+        id: selectedClient?.id as string,
+        name: selectedClient?.name as string,
+        email: selectedClient?.email as string,
+        mobile: selectedClient?.mobile as string,
+      };
+    }
 
     const createTaskData: ITask = {
       payable: formInputs.payable,
@@ -169,6 +177,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
       clientDetails: clientDetails ? clientDetails : null,
       taskDescription: formInputs.taskDescription,
       timeLimit: formInputs.timeLimit,
+      createdBy: {
+        id: authUser?.uid as string,
+        name: authUser?.displayName as string,
+      },
       taskType:
         formInputs.otherRelatedTo?.length !== 0
           ? formInputs.otherRelatedTo

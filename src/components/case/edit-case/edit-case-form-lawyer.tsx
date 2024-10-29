@@ -199,7 +199,7 @@ const EditCaseFormLawyer = ({ caseData }: { caseData: ICase }) => {
         <hr className="my-10 h-[0.5px] border-gray-200" />
         {/* Case Files */}
         <div>
-          <FormControl isRequired>
+          <FormControl isRequired isReadOnly>
             <FormLabel>Case Files</FormLabel>
             <Input
               type="text"

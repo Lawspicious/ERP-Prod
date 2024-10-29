@@ -83,36 +83,51 @@ export const useAdminUser = () => {
     }
   }, []);
 
-  const updateAdminUser = useCallback(async (data: IUser) => {
-    const currentUserRole = role;
-    if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
-      try {
-        const docRef = doc(db, 'users', data.id?.toString() as string);
-        await updateDoc(docRef, {
-          role: role,
-          email: data.email,
-          phoneNumber: '+91' + data.phoneNumber,
-          name: data.name,
-        });
-        toast({
-          variant: 'success',
-          title: 'User Updated Successfully',
-        });
-        return true;
-      } catch (error) {
+  const updateAdminUser = useCallback(
+    async ({
+      id,
+      role,
+      email,
+      phoneNumber,
+      name,
+    }: {
+      id: string;
+      role: string;
+      email: string;
+      phoneNumber: string;
+      name: string;
+    }) => {
+      const currentUserRole = role;
+      if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
+        try {
+          const docRef = doc(db, 'users', id?.toString() as string);
+          await updateDoc(docRef, {
+            role: role,
+            email: email,
+            phoneNumber: phoneNumber,
+            name: name,
+          });
+          toast({
+            variant: 'success',
+            title: 'User Updated Successfully',
+          });
+          return true;
+        } catch (error) {
+          toast({
+            variant: 'destructive',
+            title: 'Error in Update Admin User',
+          });
+          console.error(error);
+        }
+      } else {
         toast({
           variant: 'destructive',
-          title: 'Error in Update Admin User',
+          title: "You don't have permission to update Admin Users",
         });
-        console.error(error);
       }
-    } else {
-      toast({
-        variant: 'destructive',
-        title: "You don't have permission to update Admin Users",
-      });
-    }
-  }, []);
+    },
+    [],
+  );
 
   const deleteAdminUser = useCallback(async (userID: string) => {
     const currentUserRole = role;

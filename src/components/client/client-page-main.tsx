@@ -3,6 +3,7 @@ import { useInvoice } from '@/hooks/useInvoiceHook';
 import { ICase } from '@/types/case';
 import { IClient, IClientProspect } from '@/types/client';
 import { IInvoice } from '@/types/invoice';
+import { ITask } from '@/types/task';
 import {
   Box,
   Text,
@@ -15,16 +16,26 @@ import {
   Stack,
   Button,
 } from '@chakra-ui/react';
-import { User, Map, Star, ArrowLeft, Scale } from 'lucide-react';
+import {
+  User,
+  Map,
+  Star,
+  ArrowLeft,
+  Scale,
+  CheckCheck,
+  ReceiptIndianRupee,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 export const ClientPageMain = ({
   client,
   allCases,
+  clientTasks,
 }: {
   client: IClient | IClientProspect;
   allCases: ICase[];
+  clientTasks: ITask[];
 }) => {
   const { role } = useAuth();
   const { allPendingInvoice } = useInvoice();
@@ -139,7 +150,7 @@ export const ClientPageMain = ({
               <Text>No cases available.</Text>
             )}
           </SectionHeading>
-          <SectionHeading icon={Scale} title="Pending Invoice">
+          <SectionHeading icon={ReceiptIndianRupee} title="Pending Invoice">
             {allPendingInvoice && allPendingInvoice.length > 0 ? (
               allPendingInvoice.map((invoice: IInvoice) => (
                 <div
@@ -165,6 +176,34 @@ export const ClientPageMain = ({
               ))
             ) : (
               <Text>No Pending Invoice available.</Text>
+            )}
+          </SectionHeading>
+          <SectionHeading icon={CheckCheck} title="Tasks">
+            {clientTasks && clientTasks.length > 0 ? (
+              clientTasks.map((task: ITask) => (
+                <div
+                  key={task.id}
+                  className="mb-4 w-auto space-y-2 rounded-xl bg-gray-200 p-4"
+                >
+                  <Flex gap={2}>
+                    <Text fontWeight="bold">Task Name: </Text>
+                    <Link
+                      href={`/task/${task.id}`}
+                      target="_blank"
+                      color="purple.900"
+                      className="underline"
+                    >
+                      {task.taskName}
+                    </Link>
+                  </Flex>
+                  <Flex gap={2}>
+                    <Text fontWeight="bold">priority: </Text>
+                    <span color="purple.900 ">{task.priority}</span>
+                  </Flex>
+                </div>
+              ))
+            ) : (
+              <Text>No Task</Text>
             )}
           </SectionHeading>
         </VStack>
