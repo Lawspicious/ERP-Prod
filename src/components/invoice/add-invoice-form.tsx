@@ -96,6 +96,7 @@ const AddInvoiceForm = ({
         );
         clientDetails = client
           ? {
+              id: client.id,
               name: client.name,
               email: client.email,
               mobile: client.mobile,

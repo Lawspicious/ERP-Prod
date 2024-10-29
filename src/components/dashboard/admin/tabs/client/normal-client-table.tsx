@@ -21,6 +21,7 @@ import LoaderComponent from '@/components/ui/loader';
 import { DialogButton } from '@/components/ui/alert-dialog';
 import { MoreVertical, Star } from 'lucide-react';
 import { useLoading } from '@/context/loading/loadingContext';
+import EditClientModal from './edit-client-modal';
 
 const NormalClientTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -134,6 +135,20 @@ const NormalClientTable: React.FC = () => {
                       />
                       <MenuList zIndex={50} maxWidth={100}>
                         <MenuItem as={'div'}>
+                          <Button
+                            colorScheme="purple"
+                            className="w-full"
+                            onClick={() =>
+                              (window.location.href = `/client/${client.id}`)
+                            }
+                          >
+                            View
+                          </Button>
+                        </MenuItem>
+                        <MenuItem as={'div'}>
+                          <EditClientModal client={client} />
+                        </MenuItem>
+                        <MenuItem as={'div'}>
                           <DialogButton
                             title={'Delete'}
                             message={'Do you want to delete the client?'}
@@ -144,17 +159,6 @@ const NormalClientTable: React.FC = () => {
                             confirmButtonColorScheme="red"
                             confirmButtonText="Delete"
                           />
-                        </MenuItem>
-                        <MenuItem as={'div'}>
-                          <Button
-                            colorScheme="purple"
-                            className="w-full"
-                            onClick={() =>
-                              (window.location.href = `/client/${client.id}`)
-                            }
-                          >
-                            View
-                          </Button>
                         </MenuItem>
                       </MenuList>
                     </Menu>

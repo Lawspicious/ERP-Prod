@@ -98,19 +98,11 @@ const IndividualTask = ({ task }: { task: ITask }) => {
             />
             <TextDisplay
               label="Petitioner:"
-              value={task.caseDetails.petition.petitioner}
-            />
-            <TextDisplay
-              label="Petitioner's Advocate:"
-              value={task.caseDetails.petition.advocate}
+              value={task.caseDetails?.petition?.petitioner || 'NA'}
             />
             <TextDisplay
               label="Respondent:"
-              value={task.caseDetails.respondent.respondentee}
-            />
-            <TextDisplay
-              label="Respondent's Advocate:"
-              value={task.caseDetails.respondent.advocate}
+              value={task.caseDetails?.respondent?.respondentee}
             />
           </SectionHeading>
           <Divider />

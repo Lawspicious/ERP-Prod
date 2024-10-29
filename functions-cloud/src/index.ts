@@ -15,6 +15,8 @@ export { onAppointmentWritten } from './modules/appointment/triggers';
 export { scheduledDeadlineCheck } from './modules/task/scheduler';
 export { scheduledDeadlineCheckAppointments } from './modules/appointment/scheduler';
 export { createSessionCookie } from './modules/session/index';
+export { scheduledDeadlineCheckCases } from './modules/case/scheduler';
+export { deleteOldNotifications } from './modules/notifications/deleteOldScheduler';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

@@ -50,7 +50,7 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
       <TabPanels>
         {/* ADMIN Tab */}
         <TabPanel>
-          <Box overflowX={'scroll'}>
+          <Box overflowX={'auto'}>
             <Table variant="striped" colorScheme="blackAlpha">
               <Thead>
                 <Tr>
@@ -63,54 +63,52 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                 </Tr>
               </Thead>
               <Tbody>
-                {getFilteredMembers(['ADMIN', 'SUPERADMIN']).map(
-                  (member, i) => (
-                    <Tr key={i}>
-                      <Td>{i + 1}</Td>
-                      <Td>{member.name}</Td>
-                      <Td>{member.email}</Td>
-                      <Td>{member.phoneNumber}</Td>
-                      <Td>{member.role}</Td>
-                      <Td>
-                        <Menu>
-                          <MenuButton
-                            as={IconButton}
-                            aria-label="Options"
-                            icon={<MoreVertical />}
-                            variant="outline"
-                          />
-                          <MenuList zIndex={50} maxWidth={100}>
-                            {role === 'SUPERADMIN' && (
-                              <MenuItem as={'div'}>
-                                <DialogButton
-                                  title={'Delete'}
-                                  message={'Do you want to Delete the Member?'}
-                                  onConfirm={async () =>
-                                    deleteUser(member.id as string)
-                                  }
-                                  children={'Delete'}
-                                  confirmButtonColorScheme="red"
-                                  // disabled={role === 'ADMIN'}
-                                />
-                              </MenuItem>
-                            )}
+                {getFilteredMembers(['ADMIN']).map((member, i) => (
+                  <Tr key={i}>
+                    <Td>{i + 1}</Td>
+                    <Td>{member.name}</Td>
+                    <Td>{member.email}</Td>
+                    <Td>{member.phoneNumber}</Td>
+                    <Td>{member.role}</Td>
+                    <Td>
+                      <Menu>
+                        <MenuButton
+                          as={IconButton}
+                          aria-label="Options"
+                          icon={<MoreVertical />}
+                          variant="outline"
+                        />
+                        <MenuList zIndex={50} maxWidth={100}>
+                          {role === 'SUPERADMIN' && (
                             <MenuItem as={'div'}>
-                              <Button
-                                colorScheme="purple"
-                                className="w-full"
-                                onClick={() =>
-                                  (window.location.href = `/user/${member.id}`)
+                              <DialogButton
+                                title={'Delete'}
+                                message={'Do you want to Delete the Member?'}
+                                onConfirm={async () =>
+                                  deleteUser(member.id as string)
                                 }
-                              >
-                                View
-                              </Button>
+                                children={'Delete'}
+                                confirmButtonColorScheme="red"
+                                // disabled={role === 'ADMIN'}
+                              />
                             </MenuItem>
-                          </MenuList>
-                        </Menu>
-                      </Td>
-                    </Tr>
-                  ),
-                )}
+                          )}
+                          <MenuItem as={'div'}>
+                            <Button
+                              colorScheme="purple"
+                              className="w-full"
+                              onClick={() =>
+                                (window.location.href = `/user/${member.id}`)
+                              }
+                            >
+                              View
+                            </Button>
+                          </MenuItem>
+                        </MenuList>
+                      </Menu>
+                    </Td>
+                  </Tr>
+                ))}
               </Tbody>
             </Table>
           </Box>
@@ -118,7 +116,7 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
 
         {/* LAWYER Tab */}
         <TabPanel>
-          <Box overflowX={'scroll'}>
+          <Box overflowX={'auto'}>
             <Table variant="striped" colorScheme="blackAlpha">
               <Thead>
                 <Tr>

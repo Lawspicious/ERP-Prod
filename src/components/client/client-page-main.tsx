@@ -1,6 +1,8 @@
 import { useAuth } from '@/context/user/userContext';
+import { useInvoice } from '@/hooks/useInvoiceHook';
 import { ICase } from '@/types/case';
 import { IClient, IClientProspect } from '@/types/client';
+import { IInvoice } from '@/types/invoice';
 import {
   Box,
   Text,
@@ -15,6 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { User, Map, Star, ArrowLeft, Scale } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export const ClientPageMain = ({
   client,
@@ -24,6 +27,8 @@ export const ClientPageMain = ({
   allCases: ICase[];
 }) => {
   const { role } = useAuth();
+  const { allPendingInvoice } = useInvoice();
+
   return (
     <div>
       <Flex
@@ -80,8 +85,8 @@ export const ClientPageMain = ({
             <Flex gap={2}>
               <Text fontWeight="bold">Rating</Text>
               <div className="flex">
-                {Array.from({ length: client.rating }, () => (
-                  <Star fill="yellow" />
+                {Array.from({ length: client.rating }, (index: number) => (
+                  <Star fill="yellow" key={index} />
                 ))}
               </div>
             </Flex>
@@ -132,6 +137,34 @@ export const ClientPageMain = ({
               ))
             ) : (
               <Text>No cases available.</Text>
+            )}
+          </SectionHeading>
+          <SectionHeading icon={Scale} title="Pending Invoice">
+            {allPendingInvoice && allPendingInvoice.length > 0 ? (
+              allPendingInvoice.map((invoice: IInvoice) => (
+                <div
+                  key={invoice.id}
+                  className="mb-4 w-auto space-y-2 rounded-xl bg-gray-200 p-4"
+                >
+                  <Flex gap={2}>
+                    <Text fontWeight="bold">Invoice No: </Text>
+                    <Link
+                      href={`/invoice/${invoice.id}`}
+                      target="_blank"
+                      color="purple.900"
+                      className="underline"
+                    >
+                      {invoice.id}
+                    </Link>
+                  </Flex>
+                  <Flex gap={2}>
+                    <Text fontWeight="bold">Amount: </Text>
+                    <span color="purple.900 ">{invoice.totalAmount}</span>
+                  </Flex>
+                </div>
+              ))
+            ) : (
+              <Text>No Pending Invoice available.</Text>
             )}
           </SectionHeading>
         </VStack>

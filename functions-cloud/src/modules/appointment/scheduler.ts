@@ -3,11 +3,7 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as nodemailer from 'nodemailer';
-
-// // Initialize Firebase Admin SDK
-// if (!admin.apps.length) {
-//   admin.initializeApp();
-// }
+import { IAppointment } from '../../types/ICreateAppointments';
 
 // Setup NodeMailer
 const gmail = process.env.NEXT_PUBLIC_NODEMAILER_GMAIL;
@@ -26,7 +22,12 @@ const transporter = nodemailer.createTransport({
 // Helper function to send emails
 const sendDeadlineReminderEmail = async (
   email: string,
-  appointmentDetails: any,
+  appointmentDetails: {
+    appointmentName: string;
+    endDate: string;
+    lawyerName: string;
+    location: string;
+  },
 ) => {
   const mailOptions = {
     from: 'admin@lawspicious.com',
@@ -49,6 +50,7 @@ export const scheduledDeadlineCheckAppointments = functions
   .pubsub.schedule('every 24 hours')
   .onRun(async (context) => {
     const db = admin.firestore();
+    db.settings({ ignoreUndefinedProperties: true });
 
     // Get the current date and the date 24 hours later in 'YYYY-MM-DD' format
     const currentDate = new Date();
@@ -71,16 +73,17 @@ export const scheduledDeadlineCheckAppointments = functions
       }
 
       // Process each appointment and send email reminders
-      const appointments = appointmentsSnapshot.docs.map((appointmentDoc) =>
-        appointmentDoc.data(),
-      );
+      const appointments = appointmentsSnapshot.docs.map((appointmentDoc) => ({
+        ...(appointmentDoc.data() as IAppointment),
+        id: appointmentDoc.id,
+      }));
 
       await Promise.all(
         appointments.map(async (appointmentData) => {
           const lawyerDetails = appointmentData.lawyerDetails; // Single object
 
-          // Send reminder email to the assigned lawyer
           try {
+            // Send reminder email to the assigned lawyer
             await sendDeadlineReminderEmail(lawyerDetails.email, {
               appointmentName: appointmentData.clientDetails.name,
               endDate: appointmentData.date,
@@ -90,18 +93,41 @@ export const scheduledDeadlineCheckAppointments = functions
             console.log(
               `Reminder email sent to ${lawyerDetails.email} for appointment with: ${appointmentData.clientDetails.name}`,
             );
+
+            // Create a notification document in Firestore
+            await db.collection('notifications').add({
+              appointmentId: appointmentData.id,
+              appointmentName: appointmentData.clientDetails.name,
+              lawyerIds: [lawyerDetails.id],
+              lawyerName: lawyerDetails.name,
+              notificationName: `Tomorrow is the deadline for appointment: ${appointmentData.clientDetails.name}`,
+              endDate: appointmentData.date,
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              status: 'unseen',
+              type: 'Appointment',
+            });
+
+            console.log(
+              `Notification created for appointment: ${appointmentData.clientDetails.name} for lawyer ID: ${lawyerDetails.id}`,
+            );
           } catch (emailError) {
             console.error(
-              `Failed to send email to ${lawyerDetails.email}:`,
+              `Failed to send email or create notification for ${lawyerDetails.email}:`,
               emailError,
             );
           }
         }),
       );
 
+      console.log(
+        'Scheduled deadline check for appointments completed successfully.',
+      );
       return null;
     } catch (error) {
-      console.error('Error fetching appointments or sending emails:', error);
+      console.error(
+        'Error fetching appointments or processing reminders:',
+        error,
+      );
       return null;
     }
   });

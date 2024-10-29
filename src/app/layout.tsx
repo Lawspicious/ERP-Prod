@@ -5,6 +5,7 @@ import React from 'react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { UserProvider } from '@/context/user/userContext';
 import { LoadingProvider } from '@/context/loading/loadingContext';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const robo = Roboto({
   weight: ['100', '300', '400', '500', '700'],
@@ -21,14 +22,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const googleClientId = process.env
+    .NEXT_PUBLIC_GOOGLE_CALENDAR_GCLIENT_ID as string;
+
   return (
     <html lang="en">
       <body className={robo.className}>
-        <LoadingProvider>
-          <UserProvider>
-            <ChakraProvider>{children}</ChakraProvider>
-          </UserProvider>
-        </LoadingProvider>
+        <GoogleOAuthProvider clientId={googleClientId}>
+          <LoadingProvider>
+            <UserProvider>
+              <ChakraProvider>{children}</ChakraProvider>
+            </UserProvider>
+          </LoadingProvider>
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

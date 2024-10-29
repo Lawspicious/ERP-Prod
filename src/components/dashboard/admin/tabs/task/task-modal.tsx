@@ -46,7 +46,7 @@ interface TaskModalProps {
 
 const initialData = {
   taskName: '',
-  startDate: '',
+  startDate: today,
   endDate: '',
   taskStatus: 'PENDING',
   priority: 'LOW',

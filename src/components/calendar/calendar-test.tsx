@@ -4,24 +4,13 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import googleCalendarPlugin from '@fullcalendar/google-calendar'; // Import Google Calendar plugin
+import { useAuth } from '@/context/user/userContext';
 import useCalendarEvents from '@/hooks/useCalendarHook';
-import { useEffect } from 'react';
 
 export const CalendarTest = () => {
-  const { adminCalendarEvents, calendarEvents } = useCalendarEvents();
+  const { calendarEvents, adminCalendarEvents } = useCalendarEvents();
+  const { authUser } = useAuth();
 
-  useEffect(() => {
-    console.log(
-      'Google Calendar API Key:',
-      process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_API_KEY,
-    );
-    console.log(
-      'Google Calendar ID:',
-      process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_SECRET_ID,
-    );
-  }, []);
-
-  // Combine both admin and lawyer events into one array for rendering
   const events = [
     ...calendarEvents.map((event) => ({
       title: event.title,
@@ -45,12 +34,16 @@ export const CalendarTest = () => {
           interactionPlugin,
           listPlugin,
           googleCalendarPlugin,
-        ]} // Include Google Calendar plugin
+        ]}
         googleCalendarApiKey={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_API_KEY} // Use API key from environment
-        events={[
+        eventSources={[
           {
-            googleCalendarId: process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_SECRET_ID, // Replace with your calendar ID
+            // googleCalendarId: authUser?.email as string, // Replace with your calendar ID
+            googleCalendarId: authUser?.email as string,
+            // className: 'gcal-event', // Optional class name for styling
           },
+
+          { events },
         ]}
         headerToolbar={{
           left: 'prev,next today',

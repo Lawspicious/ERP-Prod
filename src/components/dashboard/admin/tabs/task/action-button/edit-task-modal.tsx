@@ -166,7 +166,7 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
       </Button>
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent mx={4}>
+        <ModalContent mx={4} minWidth="fit-content">
           {loading ? (
             <LoaderComponent />
           ) : (

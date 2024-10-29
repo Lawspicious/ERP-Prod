@@ -12,6 +12,7 @@ export interface ICreateTask {
   payable?: boolean;
   amount?: number;
   clientDetails: IClientDetails;
+  createdBy: ICreatorDetails;
 }
 
 interface ILawyer {
@@ -35,4 +36,8 @@ interface IClientDetails {
   email: string;
   phoneNumber: string;
   id: string;
+}
+interface ICreatorDetails {
+  id: string;
+  name: string;
 }

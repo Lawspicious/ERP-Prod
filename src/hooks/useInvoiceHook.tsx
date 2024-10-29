@@ -25,6 +25,7 @@ export const useInvoice = () => {
   const [allInvoices, setAllInvoices] = useState<IInvoice[]>([]);
   const [invoice, setInvoice] = useState<IInvoice | null>(null);
   const [invoicesByBill, setInvoicesByBill] = useState<IInvoice[]>([]);
+  const [allPendingInvoice, setAllPendingInvoice] = useState<IInvoice[]>();
   const [state, newToast] = useToastHook();
   const { authUser, role } = useAuth();
   const { setLoading } = useLoading();
@@ -125,6 +126,7 @@ export const useInvoice = () => {
         message: 'Error Creating Invoice Id',
         status: 'error',
       });
+      console.log(error);
       return null;
     }
   };
@@ -283,10 +285,39 @@ export const useInvoice = () => {
     }
   }, []);
 
+  const getInvoiceByClientId = useCallback(async (id: string) => {
+    try {
+      const invoiceCollectionRef = collection(db, collectionName);
+      const invoiceQuery = query(
+        invoiceCollectionRef,
+        where('clientDetails.id', '==', id),
+        where('paymentStatus', '==', 'unpaid'),
+      );
+      const querySnapshot = await getDocs(invoiceQuery);
+
+      const invoiceList: IInvoice[] = querySnapshot.docs.map((doc) => {
+        const invoiceData = doc.data() as IInvoice;
+        return { ...invoiceData, id: doc.id };
+      });
+
+      setAllPendingInvoice(invoiceList);
+      console.log(invoiceList);
+
+      return invoiceList;
+    } catch (error) {
+      console.error('Error fetching invoices: ', error);
+      newToast({
+        message: 'Could not fetch invoice',
+        status: 'error',
+      });
+    }
+  }, []);
+
   return {
     allInvoices,
     invoice,
     invoicesByBill,
+    allPendingInvoice,
     getAllInvoices,
     createInvoice,
     updateInvoice,
@@ -296,5 +327,6 @@ export const useInvoice = () => {
     getInvoiceByBill,
     getInvoiceByCaseId,
     getInvoiceByPaymentDate,
+    getInvoiceByClientId,
   };
 };

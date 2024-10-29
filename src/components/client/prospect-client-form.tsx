@@ -86,7 +86,7 @@ const ClientProspectForm = () => {
       <FormControl>
         <FormLabel>Mobile</FormLabel>
         <Input
-          type="text"
+          type="number"
           name="mobile"
           placeholder="Enter mobile number"
           value={formInputs.mobile}

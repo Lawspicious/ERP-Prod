@@ -62,6 +62,11 @@ thead {
   border: none !important;
 }
 
+.chakra-modal__header {
+  font-family: 'Cabin', system-ui;
+  font-weight: 700;
+}
+
 @layer base {
   .btn-primary {
     @apply rounded-md bg-indicoPrimary px-4 py-2.5 text-white transition-all duration-300 hover:bg-indicoSecondary disabled:cursor-not-allowed disabled:bg-gray-500 disabled:text-black;
@@ -75,4 +80,24 @@ thead {
   .margin-bottom-content {
     @apply mb-6 md:mb-8 lg:mb-10;
   }
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #212121;
 }

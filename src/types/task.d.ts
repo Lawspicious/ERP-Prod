@@ -1,5 +1,4 @@
 import { IClient, IClientProspect } from './client';
-import { IClientDetails } from './invoice';
 
 export interface ITask {
   id?: string;
@@ -16,6 +15,7 @@ export interface ITask {
   taskDescription: string;
   payable?: boolean;
   amount?: number;
+  createdBy: ICreatorDetails;
 }
 
 interface ILawyer {
@@ -32,4 +32,17 @@ interface ICase {
   respondent: { respondentee: string; advocate: string };
   courtName: string;
   caseNo: string;
+}
+
+interface IClientDetails {
+  id: string;
+  name: string;
+  email: string;
+  id: string;
+  mobile: string;
+}
+
+interface ICreatorDetails {
+  id: string;
+  name: string;
 }

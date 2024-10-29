@@ -1,6 +1,8 @@
 'use client';
 import AddEventModal from '@/components/calendar/add-event-modal';
 import { CalendarMain } from '@/components/calendar/calendar-main';
+import { CalendarTest } from '@/components/calendar/calendar-test';
+import GoogleCalendarPublicModal from '@/components/calendar/calsteps-modal';
 import PageLayout from '@/components/ui/page-layout';
 import { Button, Box, Stack } from '@chakra-ui/react';
 import { ArrowLeft } from 'lucide-react';
@@ -8,7 +10,9 @@ import { ArrowLeft } from 'lucide-react';
 export default function CalendarPage() {
   return (
     <PageLayout screen="margined">
-      <CalendarMain />
+      {/* <CalendarMain /> */}
+      <GoogleCalendarPublicModal />
+      <CalendarTest />
       <Stack
         mt={6}
         spacing={4}

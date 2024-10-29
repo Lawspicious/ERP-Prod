@@ -21,6 +21,7 @@ import {
   TabPanel,
   Button,
   TableCaption,
+  Input, // Chakra UI Input for search
 } from '@chakra-ui/react';
 import { MoreVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -42,34 +43,35 @@ const OrganizationInvoiceTable = ({
   const { deleteInvoice } = useInvoice();
   const { loading, setLoading } = useLoading();
   const [filteredInvoices, setFilteredInvoices] = useState<IInvoice[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>(''); // State for search query
   const router = useRouter();
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const { payableTasks, deleteTasks } = useTask();
 
-  // useEffect(() => {
-  //   const handleFetchInvoice = async () => {
-  //     const data = await getPayableTask();
-  //     setTaskInvoices(data as ITask[]);
-  //   };
-
-  //   handleFetchInvoice();
-  // }, []);
-
+  // Function to filter invoices based on status and search query
   const filterInvoices = (status: string) => {
-    if (status === 'ALL') {
-      setFilteredInvoices(organizationInvoices);
-    } else {
-      setFilteredInvoices(
-        organizationInvoices.filter(
-          (invoice) => invoice.paymentStatus === status,
-        ),
+    let result = organizationInvoices;
+
+    if (status !== 'ALL') {
+      result = result.filter((invoice) => invoice.paymentStatus === status);
+    }
+
+    if (searchQuery) {
+      result = result.filter(
+        (invoice) =>
+          invoice.clientDetails?.name
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          invoice.id?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
+
+    setFilteredInvoices(result);
   };
 
   useEffect(() => {
     filterInvoices(selectedStatus);
-  }, [organizationInvoices, selectedStatus]);
+  }, [organizationInvoices, selectedStatus, searchQuery]);
 
   return (
     <div>
@@ -94,6 +96,12 @@ const OrganizationInvoiceTable = ({
           <TabPanels>
             {Array.from({ length: 3 }, (_, index) => (
               <TabPanel key={index}>
+                <Input
+                  placeholder="Search by Client Name or Invoice No."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  mb={4}
+                />
                 {filteredInvoices?.length === 0 ? (
                   <div className="heading-primary flex h-[40vh] items-center justify-center text-center">
                     No Invoice Found!!
@@ -171,7 +179,12 @@ const OrganizationInvoiceTable = ({
                                   icon={<MoreVertical />}
                                   variant="outline"
                                 />
-                                <MenuList zIndex={50} maxWidth={100}>
+                                <MenuList
+                                  zIndex={50}
+                                  maxWidth={100}
+                                  overflowY={'auto'}
+                                  maxHeight={300}
+                                >
                                   <MenuItem as={'div'}>
                                     <Button
                                       colorScheme="purple"
@@ -245,7 +258,6 @@ const OrganizationInvoiceTable = ({
                         <Th>Amount</Th>
                         <Th>Assigned To</Th>
                         <Th>End Date</Th>
-                        {/* <Th>Action</Th> */}
                       </Tr>
                     </Thead>
                     <Tbody>
@@ -274,7 +286,12 @@ const OrganizationInvoiceTable = ({
                                 icon={<MoreVertical />}
                                 variant="outline"
                               />
-                              <MenuList zIndex={50} maxWidth={100}>
+                              <MenuList
+                                zIndex={50}
+                                maxWidth={100}
+                                maxHeight={300}
+                                overflowY={'auto'}
+                              >
                                 <MenuItem as={'div'}>
                                   <DialogButton
                                     title={'Delete'}
@@ -306,7 +323,6 @@ const OrganizationInvoiceTable = ({
   );
 };
 
-// Specify allowed roles for this page
-const allowedRoles = ['SUPERADMIN', 'ADMIN']; // Add roles that should have access
+const allowedRoles = ['SUPERADMIN'];
 
 export default withAuth(OrganizationInvoiceTable, allowedRoles);

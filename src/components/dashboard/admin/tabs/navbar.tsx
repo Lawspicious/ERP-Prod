@@ -1,17 +1,25 @@
 'use client';
 import { useAuth } from '@/context/user/userContext';
+import { useNotification } from '@/hooks/useNotificationHook';
 import {
   Avatar,
   Badge,
+  Box,
   Button,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
   DrawerContent,
+  DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
+  IconButton,
+  Text,
+  useDisclosure,
+  VStack,
 } from '@chakra-ui/react';
 import {
+  BellIcon,
   Calendar,
   CalendarPlus,
   Handshake,
@@ -26,9 +34,25 @@ import {
 import React, { useEffect, useState } from 'react';
 
 const Navbar = () => {
-  const [isOpen, setISOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState('home');
   const { logout, authUser, role } = useAuth();
+  const { allNotifications, updateNotificationStatus } = useNotification();
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] =
+    useState<boolean>(false);
+
+  const handleOpenNotificationDrawer = () => {
+    try {
+      allNotifications.map(
+        async (notification) =>
+          await updateNotificationStatus(notification.id as string, 'seen'),
+      );
+      setIsNotificationDrawerOpen(false);
+    } catch (error) {
+      console.log('error');
+    }
+  };
 
   useEffect(() => {
     const onHashChanged = () => {
@@ -58,9 +82,37 @@ const Navbar = () => {
         size={30}
         color="#6B46C1"
         className="cursor-pointer lg:hidden"
-        onClick={() => setISOpen(true)}
+        onClick={() => setIsSidebarOpen(true)}
       />
+
       <div className="flex items-center justify-end gap-4">
+        <Box position="relative">
+          <IconButton
+            icon={<BellIcon />}
+            aria-label="Notifications"
+            onClick={() => setIsNotificationDrawerOpen(true)}
+            size="lg"
+            bgColor={'transparent'}
+            _hover={{ backgroundColor: 'transparent' }}
+          />
+          {allNotifications.filter((notf) => notf.status === 'unseen').length >
+            0 && (
+            <Badge
+              position="absolute"
+              top="-1"
+              right="-1"
+              colorScheme="red"
+              borderRadius="full"
+              fontSize="0.8em"
+              px={2}
+            >
+              {
+                allNotifications.filter((notf) => notf.status === 'unseen')
+                  .length
+              }
+            </Badge>
+          )}
+        </Box>
         <Calendar
           onClick={() => (window.location.href = '/calendar')}
           cursor={'pointer'}
@@ -72,7 +124,11 @@ const Navbar = () => {
           onClick={() => (window.location.href = `/user/${authUser?.uid}`)}
         />
       </div>
-      <Drawer isOpen={isOpen} placement="left" onClose={() => setISOpen(false)}>
+      <Drawer
+        isOpen={isSidebarOpen}
+        placement="left"
+        onClose={() => setIsSidebarOpen(false)}
+      >
         <DrawerOverlay />
         <DrawerContent bgColor={'#2f2f2f'}>
           <DrawerCloseButton autoFocus={false} _focus={{ outline: 0 }}>
@@ -189,6 +245,62 @@ const Navbar = () => {
               </Button>
             </div>
           </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+      <Drawer
+        onClose={() => handleOpenNotificationDrawer()}
+        isOpen={isNotificationDrawerOpen}
+      >
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>Notifications</DrawerHeader>
+
+          <DrawerBody>
+            <VStack spacing={4} align="stretch">
+              {allNotifications.length > 0 ? (
+                allNotifications.map((notification) => (
+                  <Box
+                    key={notification.id}
+                    p={4}
+                    shadow="md"
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    bg={notification.status === 'unseen' ? 'gray.100' : 'white'}
+                    cursor={'pointer'}
+                    _hover={{ backgroundColor: 'gray.100' }}
+                    onClick={() =>
+                      (window.location.href = `/${notification.type.toLowerCase()}/${notification.appointmentId || notification.taskId || notification.caseId}`)
+                    }
+                  >
+                    <Text fontWeight="semibold">
+                      {notification.notificationName}
+                    </Text>
+                    {notification.caseNo && (
+                      <Text>Case No: {notification.caseNo}</Text>
+                    )}
+                    {notification.taskName && (
+                      <Text>Task: {notification.taskName}</Text>
+                    )}
+                    {notification.appointmentName && (
+                      <Text>Appointment: {notification.appointmentName}</Text>
+                    )}
+                    <Text fontSize="sm" color="gray.500">
+                      Status: {notification.status}
+                    </Text>
+                  </Box>
+                ))
+              ) : (
+                <Text>No notifications available.</Text>
+              )}
+            </VStack>
+          </DrawerBody>
+
+          <DrawerFooter>
+            <Text fontSize="sm" color="gray.500">
+              End of notifications
+            </Text>
+          </DrawerFooter>
         </DrawerContent>
       </Drawer>
     </div>

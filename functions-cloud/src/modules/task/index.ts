@@ -20,6 +20,7 @@ export const createTaskCloud = onCall(
       amount,
       timeLimit,
       clientDetails,
+      createdBy,
     }: Partial<ICreateTask> = request.data;
 
     try {
@@ -44,6 +45,7 @@ export const createTaskCloud = onCall(
         amount,
         timeLimit,
         clientDetails,
+        createdBy,
         createdAt: admin.firestore.FieldValue.serverTimestamp(), // Use Firestore timestamp
       });
 

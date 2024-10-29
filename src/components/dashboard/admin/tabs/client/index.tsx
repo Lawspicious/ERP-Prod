@@ -1,12 +1,20 @@
 'use client';
-import { Button, useDisclosure } from '@chakra-ui/react';
+import {
+  Button,
+  Flex,
+  Grid,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  useDisclosure,
+} from '@chakra-ui/react';
 import ShowClientTable from './show-client-table';
 import TabLayout from '../tab-layout';
 import { useRouter } from 'next/navigation';
-import { useClient } from '@/hooks/useClientHook';
-import { useEffect } from 'react';
-import LoaderComponent from '@/components/ui/loader';
-import { useLoading } from '@/context/loading/loadingContext';
 
 const ClientTab = () => {
   const router = useRouter();

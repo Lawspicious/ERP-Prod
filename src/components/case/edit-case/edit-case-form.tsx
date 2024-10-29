@@ -148,8 +148,8 @@ const EditCaseForm = ({
             </FormControl>
           </section>
           <section className="flex flex-col gap-6">
-            <FormControl isRequired>
-              <FormLabel>First Hearing Date</FormLabel>
+            <FormControl>
+              <FormLabel>Next Hearing Date</FormLabel>
               <Input
                 type="date"
                 name="nextHearing"
@@ -284,7 +284,7 @@ const EditCaseForm = ({
           <Button
             colorScheme="purple"
             onClick={() =>
-              (window.location.href = '/dashboard/admin/workspace-admin#cases')
+              (window.location.href = '/dashboard/admin/workspace-admin#case')
             }
           >
             Back

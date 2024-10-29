@@ -24,9 +24,6 @@ const useCalendarEvents = () => {
   const userId = authUser?.uid;
   const toast = useToast();
 
-  /**
-   * Create a new event and store it inside the events subcollection for the user
-   */
   const createNewEvent = useCallback(
     async (event: Partial<ICalendarEvent>) => {
       if (!userId) return;
@@ -108,7 +105,7 @@ const useCalendarEvents = () => {
         start: doc.data().date, // Assuming date is a Firestore Timestamp
         resourceId: doc.id,
         color: 'purple',
-        url: `/http://lawspicious.verecel.app/dashboard/lawyer/workspace-lawyer#appointment`,
+        url: `/http://erp.lawspicious/dashboard/lawyer/workspace-lawyer#appointment`,
       }));
       //Fetch other events
       const eventsSnapshot = await getDocs(eventsQuery);
@@ -117,7 +114,7 @@ const useCalendarEvents = () => {
         start: doc.data().start, // Assuming date is a Firestore Timestamp
         resourceId: doc.id,
         color: 'orange',
-        url: `/http://lawspicious.verecel.app/dashboard/lawyer/workspace-lawyer#task`,
+        url: `/http://erp.lawspicious/dashboard/lawyer/workspace-lawyer#task`,
       }));
       // Set the events state
       setCalendarEvents([
@@ -140,7 +137,6 @@ const useCalendarEvents = () => {
 
     const tasksQuery = query(
       collection(db, 'tasks'),
-      where('priority', '==', 'HIGH'),
       where('taskStatus', '==', 'PENDING'),
     );
     const casesQuery = query(
@@ -189,7 +185,7 @@ const useCalendarEvents = () => {
         start: doc.data().date, // Assuming date is a Firestore Timestamp
         resourceId: doc.id,
         color: 'purple',
-        url: `/http://lawspicious.verecel.app/dashboard/admin/workspace-admin#appointment`,
+        url: `/http://erp.lawspicious/dashboard/admin/workspace-admin#appointment`,
       }));
 
       //Fetch Invoices
@@ -199,7 +195,7 @@ const useCalendarEvents = () => {
         start: doc.data().dueDate, // Assuming date is a Firestore Timestamp
         resourceId: doc.id,
         color: 'blue',
-        url: `/http://lawspicious.verecel.app/dashboard/admin/workspace-admin#invoice`,
+        url: `/http://erp.lawspicious/dashboard/admin/workspace-admin#invoice`,
       }));
 
       //Fetch other events
@@ -209,7 +205,7 @@ const useCalendarEvents = () => {
         start: doc.data().start, // Assuming date is a Firestore Timestamp
         resourceId: doc.id,
         color: 'orange',
-        url: `/http://lawspicious.verecel.app/dashboard/admin/workspace-admin#task`,
+        url: `/http://erp.lawspicious/dashboard/admin/workspace-admin#task`,
       }));
       // Set the events state
       setAdminCalendarEvents([

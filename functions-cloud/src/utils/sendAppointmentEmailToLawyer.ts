@@ -7,8 +7,6 @@ export const sendAppointmentEmailToLawyerNodeMailer = async (
 ) => {
   const gmail = process.env.NEXT_PUBLIC_NODEMAILER_GMAIL;
   const pass = process.env.NEXT_PUBLIC_NODEMAILER_PASS;
-  // console.log('Gmail:', process.env.NODEMAILER_GMAIL);
-  // console.log('Password:', process.env.NODEMAILER_PASS);
 
   if (!gmail || !pass) {
     throw new Error('Gmail or password not set in environment variables.');
@@ -56,9 +54,9 @@ export const sendAppointmentEmailToLawyerNodeMailer = async (
           <h2>Hello, <strong>${emailParams.lawyerName}</strong></h2>
           <p>${emailParams.message.body}</p>
           <div class="appointment-details">
-            <p><strong>Appointment Time:</strong> ${emailParams.appointmentId}</p>
-            <p><strong>Appointment Date:</strong> ${emailParams.appointmentType}</p>
-            <p><strong>Appointment Location:</strong> ${emailParams.appointmentName}</p>
+              <p><strong>Appointment Location:</strong> ${emailParams.location}</p>
+            <p><strong>Appointment Time:</strong> ${emailParams.time}</p>
+             <p><strong>Appointment Date:</strong> ${emailParams.date}</p>
             <p><strong>Client Name:</strong> ${emailParams.clientName}</p>
           </div>
           <p>Please log into your Lawspicious dashboard for more details and to take further action.</p>

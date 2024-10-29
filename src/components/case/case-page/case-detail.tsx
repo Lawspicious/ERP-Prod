@@ -68,7 +68,7 @@ const CaseDetail = ({ caseData }: { caseData: ICase }) => {
   };
   return (
     <div>
-      <h1 className="heading-primary mb-4">Case #{caseData.caseId}</h1>
+      <h1 className="heading-primary mb-4">Case #{caseData.caseNo}</h1>
 
       <Stack spacing={6} className="margin-bottom-content">
         {/* Case Details Section */}

@@ -115,7 +115,7 @@ const EditCaseFormLawyer = ({ caseData }: { caseData: ICase }) => {
           </section>
           <section className="flex flex-col gap-6">
             <FormControl isRequired>
-              <FormLabel>First Hearing Date</FormLabel>
+              <FormLabel>Next Hearing Date</FormLabel>
               <Input
                 type="date"
                 name="nextHearing"
