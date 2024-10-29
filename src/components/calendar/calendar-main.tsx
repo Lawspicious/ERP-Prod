@@ -3,6 +3,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
+
 import { Box } from '@chakra-ui/react';
 import useCalendarEvents from '@/hooks/useCalendarHook';
 

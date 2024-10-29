@@ -16,8 +16,6 @@ import {
 import { ArrowLeft, PlusCircle } from 'lucide-react';
 import useCalendarEvents from '@/hooks/useCalendarHook';
 
-// Assuming the hook is stored in this path
-
 const AddEventModal = () => {
   const { createNewEvent } = useCalendarEvents();
   const { isOpen, onOpen, onClose } = useDisclosure();
