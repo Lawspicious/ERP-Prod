@@ -29,6 +29,7 @@ const HomeTab = () => {
     handleFetchCases();
     setLoading(false);
   }, []);
+  console.log(allCases.length);
 
   return (
     <TabLayout>

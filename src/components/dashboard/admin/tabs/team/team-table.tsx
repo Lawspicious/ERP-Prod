@@ -95,7 +95,7 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                           </MenuItem>
                           {role === 'SUPERADMIN' && (
                             <>
-                              <MenuItem>
+                              <MenuItem as={'div'}>
                                 <Button
                                   colorScheme="purple"
                                   className="w-full"
@@ -179,7 +179,7 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                             </Button>
                           </MenuItem>
                           {role === 'SUPERADMIN' && (
-                            <MenuItem>
+                            <MenuItem as={'div'}>
                               <Button
                                 colorScheme="purple"
                                 className="w-full"
