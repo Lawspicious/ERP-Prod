@@ -30,7 +30,8 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
   const [tabIndex, setTabIndex] = useState(0);
   const { deleteUser } = useUser();
   const { role } = useAuth();
-  const { updateAdminUser } = useAdminUser();
+  // const { updateAdminUser } = useAdminUser();
+  const { updateUser } = useUser();
 
   const getFilteredMembers = (role: string[]) => {
     return allTeam.filter((member) => role.includes(member.role));
@@ -99,13 +100,13 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                                   colorScheme="purple"
                                   className="w-full"
                                   onClick={async () =>
-                                    await updateAdminUser({
+                                    await updateUser({
                                       id: member.id as string,
                                       role: 'LAWYER',
                                       email: member.email,
                                       phoneNumber: member.phoneNumber,
                                       name: member.name,
-                                    })
+                                    } as IUser)
                                   }
                                 >
                                   Change Role
@@ -183,13 +184,13 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                                 colorScheme="purple"
                                 className="w-full"
                                 onClick={async () =>
-                                  await updateAdminUser({
+                                  await updateUser({
                                     id: member.id as string,
                                     role: 'ADMIN',
                                     email: member.email,
                                     phoneNumber: member.phoneNumber,
                                     name: member.name,
-                                  })
+                                  } as IUser)
                                 }
                               >
                                 Change Role

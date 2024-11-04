@@ -17,10 +17,10 @@ const HomeTab = () => {
   useEffect(() => {
     const handleFetchCases = async () => {
       const _decidedCase = await fetchCasesByStatus('DECIDED');
-      await fetchCasesByPriority('HIGH');
+      const _highPriorityCases = await fetchCasesByPriority('HIGH');
 
       setHighPriorityCases(_decidedCase?.length || 0);
-      setDecidedCases(_decidedCase?.length || 0);
+      setDecidedCases(_highPriorityCases?.length || 0);
     };
     setLoading(true);
     getClientByType('normal');

@@ -9,23 +9,23 @@ import { useEffect, useState } from 'react';
 import { ICase } from '@/types/case';
 import { get } from 'http';
 import { useLoading } from '@/context/loading/loadingContext';
+import { useDocument } from '@/hooks/shared/useDocument';
 const HomeTab = () => {
-  // const {allClients, allCases, highPriorityCases, decidedCases} = useDashboardData();
   const { normalClient } = useClient();
   const { allCases, fetchCasesByStatus, fetchCasesByPriority } = useCases();
   const [highPriorityCases, setHighPriorityCases] = useState<number>(0);
   const [decidedCases, setDecidedCases] = useState<number>(0);
   const { loading, setLoading } = useLoading();
+
   useEffect(() => {
     const handleFetchCases = async () => {
       const _decidedCase = await fetchCasesByStatus('DECIDED');
-      await fetchCasesByPriority('HIGH');
+      const _highPriorityCases = await fetchCasesByPriority('HIGH');
 
-      setHighPriorityCases(_decidedCase?.length || 0);
+      setHighPriorityCases(_highPriorityCases?.length || 0);
       setDecidedCases(_decidedCase?.length || 0);
     };
     setLoading(true);
-    // getClientByType('normal');
     handleFetchCases();
     setLoading(false);
   }, []);

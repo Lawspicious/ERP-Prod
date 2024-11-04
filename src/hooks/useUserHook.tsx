@@ -54,7 +54,7 @@ export const useUser = () => {
       const result = await updateUserCred({
         uid: data.id,
         name: data.name,
-        email: data.name,
+        email: data.email,
         role: data.role,
         phoneNumber: data.phoneNumber,
       });

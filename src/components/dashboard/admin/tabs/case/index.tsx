@@ -70,6 +70,7 @@ const CaseTab = () => {
 
   const transformedData = useMemo(() => {
     return allCases.map((caseData, index) => {
+      const _nextHearing: any = caseData?.nextHearing;
       const endDate = caseData?.nextHearing
         ? parseISO(caseData?.nextHearing)
         : null;
@@ -79,10 +80,14 @@ const CaseTab = () => {
         ? differenceInCalendarDays(endDate, today)
         : null;
 
-      // Determine the color based on how near the end date is
+      // Determine the color based on how near the end date is or if the end date is missing
       let rowColor = ''; // Default color
-      if (daysUntilEnd !== null && daysUntilEnd <= 2) {
-        rowColor = 'bg-red-300'; // If the end date is within 2 days
+      if (
+        daysUntilEnd === null ||
+        daysUntilEnd <= 2 ||
+        _nextHearing === 'Unknown'
+      ) {
+        rowColor = 'bg-red-300'; // If the end date is within 2 days or missing
       }
 
       return {

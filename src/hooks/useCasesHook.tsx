@@ -272,7 +272,7 @@ export const useCases = () => {
         return { ...caseData, caseId: doc.id };
       });
 
-      setAllCases(casesList);
+      // setAllCases(casesList);
       return casesList;
     } catch (error) {
       console.error('Error fetching cases by priority date: ', error);

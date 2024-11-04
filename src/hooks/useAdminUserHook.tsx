@@ -19,9 +19,9 @@ export const useAdminUser = () => {
   const { role } = useAuth();
   const toast = useToast();
   const { createUser, resetUserPassword } = useUser();
-  const currentUserRole = role;
 
   const fetchAdminUsers = useCallback(async () => {
+    const currentUserRole = role;
     if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
       try {
         const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
@@ -49,6 +49,7 @@ export const useAdminUser = () => {
   }, []);
 
   const createAdminUser = useCallback(async (data: IUser) => {
+    const currentUserRole = role;
     if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
       try {
         const response = await createUser(data);
@@ -96,6 +97,7 @@ export const useAdminUser = () => {
       phoneNumber: string;
       name: string;
     }) => {
+      const currentUserRole = role;
       if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
         try {
           const docRef = doc(db, 'users', id?.toString() as string);
@@ -128,6 +130,7 @@ export const useAdminUser = () => {
   );
 
   const deleteAdminUser = useCallback(async (userID: string) => {
+    const currentUserRole = role;
     if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
       try {
         await deleteDoc(doc(db, 'users', userID));
@@ -152,6 +155,7 @@ export const useAdminUser = () => {
 
   const resetPassword = useCallback(
     async (email: string, name: string, message: string) => {
+      const currentUserRole = role;
       if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
         try {
           // setIsResetPasswordOpen(true);

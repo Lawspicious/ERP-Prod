@@ -57,8 +57,9 @@ const CaseTab = () => {
 
   const transformedData = useMemo(() => {
     return allCasesLawyer.map((caseData, index) => {
-      const endDate = caseData.nextHearing
-        ? parseISO(caseData.nextHearing)
+      const _nextHearing: any = caseData?.nextHearing;
+      const endDate = caseData?.nextHearing
+        ? parseISO(caseData?.nextHearing)
         : null;
 
       // Calculate the difference between the current date and the end date
@@ -66,21 +67,27 @@ const CaseTab = () => {
         ? differenceInCalendarDays(endDate, today)
         : null;
 
-      // Determine the color based on how near the end date is
+      // Determine the color based on how near the end date is or if the end date is missing
       let rowColor = ''; // Default color
-      if (daysUntilEnd !== null && daysUntilEnd <= 2) {
-        rowColor = 'bg-red-300'; // If the end date is within 2 days
+      if (
+        daysUntilEnd === null ||
+        daysUntilEnd <= 2 ||
+        _nextHearing === 'Unknown'
+      ) {
+        rowColor = 'bg-red-300'; // If the end date is within 2 days or missing
       }
+
       return {
         No: `${index + 1}`, // No as index
-        id: caseData.caseId,
-        caseRegistration: `CaseNo:${caseData.caseNo} \nType:${caseData.caseType}`, // Case Details
-        courtDetails: `Court:${caseData.courtName || 'NA'} `,
-        petitionVsRespondent: `${caseData.petition.petitioner}\nvs\n${caseData.respondent.respondentee}`, // Petitioner vs Respondent
-        nextDate: caseData.nextHearing || 'TBD', // Next Hearing Date
-        allotedClient: caseData.clientDetails.name,
-        status: caseData.caseStatus, // Status
-        priority: caseData.priority,
+        id: caseData?.caseId,
+        caseDetails: `CaseNo:${caseData?.caseNo} \nType:${caseData?.caseType}`, // Case Details
+        courtDetails: `Court:${caseData?.courtName || 'NA'} `, // Court details
+        petitionVsRespondent: `${caseData?.petition?.petitioner || 'NA'}\nvs\n${caseData?.respondent?.respondentee || 'NA'}`, // Petitioner vs Respondent
+        nextDate: caseData?.nextHearing || 'TBD', // Next Hearing Date
+        status: caseData?.caseStatus, // Status
+        clientName: caseData?.clientDetails?.name || 'NA',
+        priority: caseData?.priority,
+        allotedLaywer: caseData?.lawyer?.name || 'NA',
         rowColor,
       };
     });
