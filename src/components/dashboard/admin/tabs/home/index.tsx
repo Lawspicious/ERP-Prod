@@ -16,6 +16,8 @@ const HomeTab = () => {
   const [highPriorityCases, setHighPriorityCases] = useState<number>(0);
   const [decidedCases, setDecidedCases] = useState<number>(0);
   const { loading, setLoading } = useLoading();
+  const { getDocumentCount } = useDocument();
+  const [caseCount, setCaseCount] = useState<any>();
 
   useEffect(() => {
     const handleFetchCases = async () => {
@@ -27,9 +29,10 @@ const HomeTab = () => {
     };
     setLoading(true);
     handleFetchCases();
+    const _count = getDocumentCount('cases');
+    setCaseCount(_count);
     setLoading(false);
   }, []);
-  console.log(allCases.length);
 
   return (
     <TabLayout>
@@ -45,7 +48,7 @@ const HomeTab = () => {
 
         <DashboardCard
           title="Cases"
-          value={allCases.length}
+          value={caseCount}
           description="Total Cases."
           Icon={Scale}
           iconProps={{ size: 60 }}
