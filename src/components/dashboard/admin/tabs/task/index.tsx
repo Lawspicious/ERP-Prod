@@ -37,7 +37,7 @@ const TaskTab = () => {
   }, [isChecked]);
 
   const taskColumns = [
-    // { key: 'No', label: 'No', sortable: false },
+    { key: 'No', label: 'No', sortable: true },
     { key: 'taskName', label: 'Task Name', sortable: true },
     { key: 'relatedTo', label: 'Related To', sortable: true },
     {

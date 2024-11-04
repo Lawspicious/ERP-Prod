@@ -88,6 +88,10 @@ const NormalClientTable: React.FC = () => {
           <Table variant="striped" colorScheme="blackAlpha">
             <Thead>
               <Tr>
+                <Th cursor="pointer" onClick={() => handleSort('index')}>
+                  Sl No.
+                  {sortDirection === 'asc' ? ' ▲' : ' ▼'}
+                </Th>
                 <Th cursor="pointer" onClick={() => handleSort('name')}>
                   Name
                   {sortDirection === 'asc' ? ' ▲' : ' ▼'}
@@ -113,6 +117,7 @@ const NormalClientTable: React.FC = () => {
             <Tbody>
               {sortedData.map((client, index) => (
                 <Tr key={index}>
+                  <Td>{index + 1}</Td>
                   <Td>{client.name}</Td>
                   <Td>{client.email}</Td>
                   {/* <Td>{client.gender}</Td> */}

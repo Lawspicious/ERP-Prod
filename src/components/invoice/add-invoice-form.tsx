@@ -27,7 +27,11 @@ import { useTeam } from '@/hooks/useTeamHook';
 import { IUser } from '@/types/user';
 
 //Add Invoices as needed
-export const serviceList = ['Service A', 'Service B', 'Service C'];
+export const serviceList = [
+  'professional charges',
+  'consolidated charges',
+  'Reimbursements (exclusive of GST)',
+];
 
 const AddInvoiceForm = ({
   allClients,

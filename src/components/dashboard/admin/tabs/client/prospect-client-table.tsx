@@ -30,6 +30,7 @@ import { DialogButton } from '@/components/ui/alert-dialog';
 import { MoreVertical, Star } from 'lucide-react';
 import { useLoading } from '@/context/loading/loadingContext';
 import EditClientModal from './edit-client-modal';
+import { setIndexConfiguration } from 'firebase/firestore';
 
 const ProspectClientTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,6 +77,7 @@ const ProspectClientTable: React.FC = () => {
   // }, []);
 
   const columns = [
+    { key: 'slno', label: 'Sl No', sortable: true },
     { key: 'name', label: 'Name', sortable: false },
     { key: 'mobile', label: 'Mobile', sortable: false },
     { key: 'location', label: 'Location', sortable: false },
@@ -118,6 +120,7 @@ const ProspectClientTable: React.FC = () => {
             <Tbody>
               {sortedData.map((client, index) => (
                 <Tr key={index}>
+                  <Td>{index + 1}</Td>
                   <Td>{client.name}</Td>
                   <Td>{client.mobile}</Td>
                   <Td>{client.location}</Td>
