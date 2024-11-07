@@ -1,3 +1,4 @@
+'use client';
 import {
   Tab,
   TabList,
@@ -17,13 +18,15 @@ import CaseDetail from './case-detail';
 import { ICase } from '@/types/case';
 import TransferCaseButton from '@/components/ui/transfer-case-button';
 import CaseHistoryTable from './case-history';
-import { MoreVertical } from 'lucide-react';
+import { ArrowLeft, MoreVertical } from 'lucide-react';
 import { useAuth } from '@/context/user/userContext';
 import CaseTask from './case-task';
 import CaseInvoiceTable from './case-invoice';
+import { useRouter } from 'next/navigation';
 
 const IndividualCase = ({ caseData }: { caseData: ICase }) => {
   const { role } = useAuth();
+  const router = useRouter();
   return (
     <Tabs variant="enclosed">
       <Flex justify={'space-between'} gap={4}>
@@ -50,6 +53,20 @@ const IndividualCase = ({ caseData }: { caseData: ICase }) => {
                   <TransferCaseButton caseDetails={caseData} />
                 </MenuItem>
               )}
+              <MenuItem as={'div'}>
+                <Button
+                  leftIcon={<ArrowLeft />}
+                  colorScheme="blue"
+                  className="w-full"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/${role === 'SUPERADMIN' ? 'admin' : role?.toLowerCase()}/workspace-${role === 'SUPERADMIN' ? 'admin' : role?.toLowerCase()}#case`,
+                    )
+                  }
+                >
+                  Back
+                </Button>
+              </MenuItem>
             </MenuList>
           </Menu>
         </div>
@@ -59,6 +76,18 @@ const IndividualCase = ({ caseData }: { caseData: ICase }) => {
             {(role === 'ADMIN' || role === 'SUPERADMIN') && (
               <TransferCaseButton caseDetails={caseData} />
             )}
+            <Button
+              leftIcon={<ArrowLeft />}
+              colorScheme="blue"
+              className="w-full"
+              onClick={() =>
+                router.push(
+                  `/dashboard/${role === 'SUPERADMIN' ? 'admin' : role?.toLowerCase()}/workspace-${role === 'SUPERADMIN' ? 'admin' : role?.toLowerCase()}#case`,
+                )
+              }
+            >
+              Back
+            </Button>
           </div>
         </div>
       </Flex>

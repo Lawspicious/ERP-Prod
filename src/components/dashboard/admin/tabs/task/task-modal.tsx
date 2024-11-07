@@ -71,7 +71,6 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
   const { allClients } = useClient();
   const [selectedClientId, setSelectedClientId] = useState('');
   const { authUser } = useAuth();
-
   useEffect(() => {
     const handleFetch = async () => {
       setLoading(true);

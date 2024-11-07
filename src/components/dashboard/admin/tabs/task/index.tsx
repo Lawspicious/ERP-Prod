@@ -37,7 +37,7 @@ const TaskTab = () => {
   }, [isChecked]);
 
   const taskColumns = [
-    { key: 'No', label: 'No', sortable: true },
+    { key: 'No', label: 'No', sortable: false },
     { key: 'taskName', label: 'Task Name', sortable: true },
     { key: 'relatedTo', label: 'Related To', sortable: true },
     {
@@ -56,82 +56,47 @@ const TaskTab = () => {
     const today = new Date();
     const prevDate = today.setDate(today.getDate() - 1);
 
-    if (isChecked) {
-      return allTaskLawyer.map((taskData, index) => {
-        const endDate = taskData.endDate ? parseISO(taskData.endDate) : null;
+    return allTask.map((taskData, index) => {
+      const endDate = taskData.endDate ? parseISO(taskData.endDate) : null;
 
-        // Calculate the difference between the current date and the end date
-        const daysUntilEnd = endDate
-          ? differenceInCalendarDays(endDate, today)
-          : null;
+      // Calculate the difference between the current date and the end date
+      const daysUntilEnd = endDate
+        ? differenceInCalendarDays(endDate, today)
+        : null;
 
-        // Determine the color based on how near the end date is
-        let rowColor = ''; // Default color
-        if (isBefore(endDate as Date, prevDate)) {
-          rowColor = 'bg-red-400';
-        } else if (daysUntilEnd !== null && daysUntilEnd <= 2) {
-          rowColor = 'bg-red-200'; // If the end date is within 2 days
-        }
+      let rowColor = '';
+      if (taskData.taskStatus === 'COMPLETED') {
+        rowColor = '';
+      } else if (
+        isBefore(endDate as Date, prevDate) ||
+        (daysUntilEnd !== null && daysUntilEnd <= 2)
+      ) {
+        rowColor = isBefore(endDate as Date, prevDate)
+          ? 'bg-red-400'
+          : 'bg-red-200';
+      }
 
-        return {
-          No: `${index + 1}`, // No as index
-          id: taskData.id,
-          taskName: taskData.taskName, // Task Name
-          relatedTo: taskData.caseDetails.caseId
-            ? `CaseNo:${taskData.caseDetails.caseNo}`
-            : 'Other',
-          petitionVsRespondent: taskData.caseDetails?.caseId
-            ? `${taskData.caseDetails.petition.petitioner || 'NA'}\nvs\n${taskData.caseDetails.respondent.respondentee || 'NA'}`
-            : 'N/A',
-          startDate: taskData.startDate || 'TBD', // Start Date
-          endDate: taskData.endDate || 'TBD', // End Date
-          member:
-            taskData.lawyerDetails?.map((lawyer) => lawyer.name).join(', ') ||
-            'No Lawyers Assigned',
-          status: taskData.taskStatus, // Status
-          priority: taskData.priority, // Priority
-          rowColor, // Row color based on end date proximity
-        };
-      });
-    } else {
-      return allTask.map((taskData, index) => {
-        const endDate = taskData.endDate ? parseISO(taskData.endDate) : null;
-
-        // Calculate the difference between the current date and the end date
-        const daysUntilEnd = endDate
-          ? differenceInCalendarDays(endDate, today)
-          : null;
-
-        // Determine the color based on how near the end date is
-        let rowColor = ''; // Default color
-        if (isBefore(endDate as Date, prevDate)) {
-          rowColor = 'bg-red-400';
-        } else if (daysUntilEnd !== null && daysUntilEnd <= 2) {
-          rowColor = 'bg-red-200'; // If the end date is within 2 days
-        }
-
-        return {
-          No: `${index + 1}`, // No as index
-          id: taskData.id,
-          taskName: taskData.taskName, // Task Name
-          relatedTo: taskData.caseDetails.caseId
-            ? `CaseNo:${taskData.caseDetails.caseNo}`
-            : 'Other',
-          petitionVsRespondent: taskData.caseDetails?.caseId
-            ? `${taskData.caseDetails.petition.petitioner || 'NA'}\nvs\n${taskData.caseDetails.respondent.respondentee || 'NA'}`
-            : 'N/A',
-          startDate: taskData.startDate || 'TBD', // Start Date
-          endDate: taskData.endDate || 'TBD', // End Date
-          member:
-            taskData.lawyerDetails?.map((lawyer) => lawyer.name).join(', ') ||
-            'No Lawyers Assigned',
-          status: taskData.taskStatus, // Status
-          priority: taskData.priority, // Priority
-          rowColor, // Row color based on end date proximity
-        };
-      });
-    }
-  }, [allTask, allTaskLawyer]);
+      return {
+        No: `${index + 1}`, // No as index
+        id: taskData.id,
+        taskName: taskData.taskName, // Task Name
+        relatedTo: taskData.caseDetails.caseId
+          ? `CaseNo:${taskData.caseDetails.caseNo}`
+          : 'Other',
+        petitionVsRespondent: taskData.caseDetails?.caseId
+          ? `${taskData.caseDetails.petition.petitioner || 'NA'}\nvs\n${taskData.caseDetails.respondent.respondentee || 'NA'}`
+          : 'N/A',
+        startDate: taskData.startDate || 'TBD', // Start Date
+        endDate: taskData.endDate || 'TBD', // End Date
+        member:
+          taskData.lawyerDetails?.map((lawyer) => lawyer.name).join(', ') ||
+          'No Lawyers Assigned',
+        status: taskData.taskStatus, // Status
+        priority: taskData.priority, // Priority
+        rowColor, // Row color based on end date proximity
+      };
+    });
+  }, [allTask]);
 
   const taskActionButtons = (id: string): ReactElement[] => [
     <DialogButton

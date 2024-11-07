@@ -14,14 +14,6 @@ import {
   MenuList,
   Button,
   Box,
-  Flex,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Grid,
   useDisclosure,
 } from '@chakra-ui/react';
 import { useClient } from '@/hooks/useClientHook';
@@ -30,7 +22,6 @@ import { DialogButton } from '@/components/ui/alert-dialog';
 import { MoreVertical, Star } from 'lucide-react';
 import { useLoading } from '@/context/loading/loadingContext';
 import EditClientModal from './edit-client-modal';
-import { setIndexConfiguration } from 'firebase/firestore';
 
 const ProspectClientTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,12 +63,7 @@ const ProspectClientTable: React.FC = () => {
     }
   };
 
-  // useEffect(() => {
-  //   getClientByType('prospect');
-  // }, []);
-
   const columns = [
-    { key: 'slno', label: 'Sl No', sortable: true },
     { key: 'name', label: 'Name', sortable: false },
     { key: 'mobile', label: 'Mobile', sortable: false },
     { key: 'location', label: 'Location', sortable: false },
@@ -103,6 +89,7 @@ const ProspectClientTable: React.FC = () => {
           <Table variant="striped" colorScheme="blackAlpha">
             <Thead>
               <Tr>
+                <Th>SL No.</Th>
                 {columns.map((col) => (
                   <Th
                     key={col.key}

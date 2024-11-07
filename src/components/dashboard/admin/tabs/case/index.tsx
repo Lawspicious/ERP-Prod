@@ -80,14 +80,13 @@ const CaseTab = () => {
         ? differenceInCalendarDays(endDate, today)
         : null;
 
-      // Determine the color based on how near the end date is or if the end date is missing
-      let rowColor = ''; // Default color
+      let rowColor = '';
       if (
-        daysUntilEnd === null ||
-        daysUntilEnd <= 2 ||
-        _nextHearing === 'Unknown'
+        caseData?.caseStatus !== 'DECIDED' && // Ensure case is not "Decided"
+        ((daysUntilEnd !== null && daysUntilEnd <= 2) ||
+          _nextHearing === 'Unknown')
       ) {
-        rowColor = 'bg-red-300'; // If the end date is within 2 days or missing
+        rowColor = 'bg-red-300';
       }
 
       return {

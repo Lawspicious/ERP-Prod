@@ -1,6 +1,8 @@
 import { IAppointment } from '@/types/appointments';
 import { useEffect, useState } from 'react';
 import { useToastHook } from './shared/useToastHook';
+import { logEvent } from 'firebase/analytics';
+
 import {
   addDoc,
   collection,
@@ -14,8 +16,9 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db } from '@/lib/config/firebase.config';
+import { analytics, db } from '@/lib/config/firebase.config';
 import { useLoading } from '@/context/loading/loadingContext';
+import { logCustomEvent } from './shared/log-event';
 
 const collectionName = 'appointments';
 
@@ -92,6 +95,8 @@ export const useAppointment = () => {
     try {
       const docRef = doc(db, collectionName, id);
       await deleteDoc(docRef);
+      await logCustomEvent('lawspicious_event');
+
       newToast({
         message: 'Appointment Deleted Successfully',
         status: 'success',

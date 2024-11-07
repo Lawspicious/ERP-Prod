@@ -8,6 +8,7 @@ import {
   Input,
   Select,
   Textarea,
+  useToast,
 } from '@chakra-ui/react';
 import { ICase, ILawyer } from '@/types/case';
 import { IUser } from '@/types/user';
@@ -64,6 +65,7 @@ const AddCaseForm = ({
   const { loading, setLoading } = useLoading();
   const { allClients } = useClient();
   const [isOtherCaseType, setIsOtherCaseType] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     if (selectedLawyerId !== '') {
@@ -124,10 +126,25 @@ const AddCaseForm = ({
           },
         ],
       };
-      console.log(_createCaseData);
       await createCase(_createCaseData as ICase);
+      toast({
+        title: 'Success',
+        description: 'Case created successfully',
+        status: 'success',
+        duration: 3000,
+        position: 'top',
+        isClosable: true,
+      });
     } catch (error) {
       console.log(error);
+      toast({
+        title: 'Error',
+        description: 'Case can not created',
+        status: 'error',
+        duration: 3000,
+        position: 'top',
+        isClosable: true,
+      });
     }
     setLoading(false);
   };

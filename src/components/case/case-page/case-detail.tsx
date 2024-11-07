@@ -16,33 +16,6 @@ import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 
-// const caseData = {
-//   caseId: 'C-003',
-//   caseType: 'Criminal',
-//   fillingNo: '54321',
-//   regNo: 'REG-2024-003',
-//   regDate: '2024-03-10',
-//   CNRNo: 'CNR-135792468',
-//   hearings: [
-//     { date: '2024-04-05', remarks: 'Preliminary hearing' },
-//     { date: '2024-05-20', remarks: 'Witness testimony' },
-//   ],
-//   nextHearing: '2024-06-15',
-//   decision: 'Pending',
-//   caseStatus: 'RUNNING',
-//   judge: 'Judge C',
-//   courtName: 'High Court',
-//   petition: { petitioner: 'Robert Lee', advocate: 'Advocate Davis' },
-//   respondent: { respondentee: 'Sophia Turner', advocate: 'Advocate Wilson' },
-//   FIR: {
-//     FIRNo: 'FIR-654321',
-//     policeStation: 'West Police Station',
-//     FIRDate: '2024-02-25',
-//   },
-//   caseFiles: 'case-file-link-3',
-//   priority: 'LOW',
-// };
-
 const CaseDetail = ({ caseData }: { caseData: ICase }) => {
   const router = useRouter();
   const { role } = useAuth();
@@ -248,17 +221,6 @@ const CaseDetail = ({ caseData }: { caseData: ICase }) => {
       </Stack>
 
       <Flex align={'center'} gap={4} justify={'center'}>
-        <Button
-          leftIcon={<ArrowLeft />}
-          colorScheme="blue"
-          onClick={() =>
-            router.push(
-              `/dashboard/${role === 'SUPERADMIN' ? 'admin' : role?.toLowerCase()}/workspace-${role === 'SUPERADMIN' ? 'admin' : role?.toLowerCase()}#case`,
-            )
-          }
-        >
-          Back
-        </Button>
         <Button
           colorScheme="purple"
           onClick={() =>

@@ -8,6 +8,7 @@ import {
   Box,
   Checkbox,
   Textarea,
+  useToast,
 } from '@chakra-ui/react';
 import { IClientProspect } from '@/types/client';
 import { useClient } from '@/hooks/useClientHook';
@@ -36,6 +37,7 @@ const ClientProspectForm = () => {
   const [formInputs, setFormInputs] = useState<IClientProspect>({
     ...initialData,
   });
+  const toast = useToast();
   const { loading, setLoading } = useLoading();
   const { createClient } = useClient();
 
@@ -54,7 +56,27 @@ const ClientProspectForm = () => {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
-    await createClient(formInputs);
+    try {
+      await createClient(formInputs);
+      toast({
+        title: 'Success',
+        description: 'Case created successfully',
+        status: 'success',
+        duration: 3000,
+        position: 'top',
+        isClosable: true,
+      });
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'Case can not created',
+        status: 'error',
+        duration: 3000,
+        position: 'top',
+        isClosable: true,
+      });
+    }
+
     setFormInputs({ ...initialData });
     setLoading(false);
   };

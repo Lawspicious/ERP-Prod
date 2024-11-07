@@ -18,7 +18,7 @@ const TaskTab = () => {
   const { authUser } = useAuth();
 
   const taskColumns = [
-    { key: 'No', label: 'No', sortable: true },
+    // { key: 'No', label: 'No', sortable: false },
     { key: 'taskName', label: 'Task Name', sortable: true },
     { key: 'relatedTo', label: 'Related To', sortable: true },
     {

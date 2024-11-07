@@ -6,6 +6,7 @@ import {
   Button,
   Select,
   Textarea,
+  useToast,
 } from '@chakra-ui/react';
 import { IClient } from '@/types/client';
 import { useToastHook } from '@/hooks/shared/useToastHook';
@@ -31,7 +32,7 @@ const ClientForm = () => {
   const [formInputs, setFormInputs] = useState<IClient>({ ...initialData });
   const { loading, setLoading } = useLoading();
   const { createClient } = useClient();
-
+  const toast = useToast();
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -47,7 +48,27 @@ const ClientForm = () => {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
-    await createClient({ ...formInputs, createdAt: Date.now() });
+    try {
+      await createClient(formInputs);
+      toast({
+        title: 'Success',
+        description: 'Case created successfully',
+        status: 'success',
+        duration: 3000,
+        position: 'top',
+        isClosable: true,
+      });
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'Case can not created',
+        status: 'error',
+        duration: 3000,
+        position: 'top',
+        isClosable: true,
+      });
+    }
+
     setFormInputs({ ...initialData });
     setLoading(false);
   };

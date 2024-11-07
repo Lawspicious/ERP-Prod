@@ -323,6 +323,6 @@ const OrganizationInvoiceTable = ({
   );
 };
 
-const allowedRoles = ['SUPERADMIN', 'ADMIN'];
+const allowedRoles = ['SUPERADMIN'];
 
 export default withAuth(OrganizationInvoiceTable, allowedRoles);

@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore';
 import { app, db } from '@/lib/config/firebase.config';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { useLoading } from '@/context/loading/loadingContext';
 
 const collectionName = 'cases';
 
@@ -29,6 +30,7 @@ export const useCases = () => {
   const [state, newToast] = useToastHook();
   const functions = getFunctions(app, 'asia-south1');
   const createCaseAndSendEmail = httpsCallable(functions, 'createCaseCloud');
+  const { loading, setLoading } = useLoading();
 
   const getAllCases = useCallback(async () => {
     // if (role === 'LAWYER') {
@@ -125,6 +127,7 @@ export const useCases = () => {
       });
       return;
     }
+
     try {
       const result = await createCaseAndSendEmail({ ...data });
       console.log('Case Created and Email Sent -->', result.data);

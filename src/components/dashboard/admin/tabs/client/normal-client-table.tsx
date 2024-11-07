@@ -14,6 +14,7 @@ import {
   Button,
   IconButton,
   Box,
+  useDisclosure,
 } from '@chakra-ui/react';
 import { useClient } from '@/hooks/useClientHook';
 
@@ -88,10 +89,7 @@ const NormalClientTable: React.FC = () => {
           <Table variant="striped" colorScheme="blackAlpha">
             <Thead>
               <Tr>
-                <Th cursor="pointer" onClick={() => handleSort('index')}>
-                  Sl No.
-                  {sortDirection === 'asc' ? ' ▲' : ' ▼'}
-                </Th>
+                <Th>SL No.</Th>
                 <Th cursor="pointer" onClick={() => handleSort('name')}>
                   Name
                   {sortDirection === 'asc' ? ' ▲' : ' ▼'}
