@@ -1,5 +1,4 @@
 'use client';
-import EditCaseForm from '@/components/case/edit-case/edit-case-form';
 import EditCaseFormLawyer from '@/components/case/edit-case/edit-case-form-lawyer';
 import withAuth from '@/components/shared/hoc-middlware';
 import LoaderComponent from '@/components/ui/loader';
