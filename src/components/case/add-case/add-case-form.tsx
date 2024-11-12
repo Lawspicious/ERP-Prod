@@ -20,7 +20,7 @@ import { useLoading } from '@/context/loading/loadingContext';
 import { today } from '@/lib/utils/todayDate';
 import { caseTypes } from '@/db/caseTypes';
 
-const initialFormData = {
+export const initialFormData = {
   caseNo: '',
   caseType: '',
   regDate: today,

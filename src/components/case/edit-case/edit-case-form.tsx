@@ -17,9 +17,11 @@ import {
   Flex,
   Checkbox,
   Textarea,
+  useToast,
 } from '@chakra-ui/react';
 import { ArrowLeft } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { initialFormData } from '../add-case/add-case-form';
 
 const EditCaseForm = ({
   caseData,
@@ -28,13 +30,14 @@ const EditCaseForm = ({
   caseData: ICase;
   lawyers: IUser[];
 }) => {
-  const [formInputs, setFormInputs] = useState({ ...caseData });
+  const [formInputs, setFormInputs] = useState({ ...initialFormData } as ICase);
   const [selectedLawyerId, setSelectedLawyerId] = useState<string>('');
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const { loading, setLoading } = useLoading();
   const { allClients } = useClient();
   const { updateCase } = useCases();
   const [isOtherCaseType, setIsOtherCaseType] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     if (selectedLawyerId !== '') {
@@ -74,6 +77,10 @@ const EditCaseForm = ({
     }
   }, [selectedClientId]);
 
+  useEffect(() => {
+    setFormInputs(caseData);
+  }, [caseData]);
+
   const handleInputChange = (e: any) => {
     const { name, value } = e.target;
     setFormInputs({
@@ -82,7 +89,8 @@ const EditCaseForm = ({
     });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
     await updateCase(caseData.caseId as string, formInputs as Partial<ICase>);
   };
 

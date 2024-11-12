@@ -21,7 +21,7 @@ export const useNotification = () => {
   );
   const { loading, setLoading } = useLoading();
   const [state, newToast] = useToastHook();
-  const { authUser } = useAuth();
+  const { authUser, role } = useAuth();
 
   useEffect(() => {
     const notificationQuery = query(
