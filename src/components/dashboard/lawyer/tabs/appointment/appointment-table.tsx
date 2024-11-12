@@ -76,7 +76,10 @@ const AppointmentTableLawyer = ({
                         className="w-full"
                         colorScheme="purple"
                         onClick={() =>
-                          (window.location.href = `/appointment/${appointment.id}`)
+                          window.open(
+                            `/appointment/${appointment.id}`,
+                            '_blank',
+                          )
                         }
                       >
                         View

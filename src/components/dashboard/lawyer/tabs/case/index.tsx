@@ -112,7 +112,7 @@ const CaseTab = () => {
     <Button
       colorScheme="purple"
       className="w-full"
-      onClick={() => router.push(`/dashboard/lawyer/edit-case/${id}`)}
+      onClick={() => window.open(`/dashboard/lawyer/edit-case/${id}`, '_blank')}
     >
       Edit
     </Button>,
@@ -120,7 +120,7 @@ const CaseTab = () => {
       colorScheme="purple"
       mt={2}
       className="w-full"
-      onClick={() => router.push(`/case/${id}`)}
+      onClick={() => window.open(`/case/${id}`, '_blank')}
     >
       View
     </Button>,

@@ -138,7 +138,7 @@ const NormalClientTableLawyer: React.FC = () => {
                             colorScheme="purple"
                             className="w-full"
                             onClick={() =>
-                              (window.location.href = `/client/${client.id}`)
+                              window.open(`/client/${client.id}`, '_blank')
                             }
                           >
                             View

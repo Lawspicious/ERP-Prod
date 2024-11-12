@@ -111,7 +111,7 @@ const TaskTab = () => {
     <Button
       colorScheme="purple"
       className="w-full"
-      onClick={() => (window.location.href = `/task/${id}`)}
+      onClick={() => window.open(`/task/${id}`, '_blank')}
     >
       View
     </Button>,

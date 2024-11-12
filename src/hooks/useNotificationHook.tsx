@@ -24,10 +24,19 @@ export const useNotification = () => {
   const { authUser, role } = useAuth();
 
   useEffect(() => {
-    const notificationQuery = query(
-      collection(db, collectionName),
-      where('lawyerIds', 'array-contains', authUser?.uid),
-    );
+    // Define the query based on the user's role
+    let notificationQuery;
+
+    if (role === 'SUPERADMIN') {
+      // If role is SUPERADMIN, fetch all notifications
+      notificationQuery = query(collection(db, collectionName));
+    } else {
+      // Otherwise, query based on lawyerIds
+      notificationQuery = query(
+        collection(db, collectionName),
+        where('lawyerIds', 'array-contains', authUser?.uid),
+      );
+    }
 
     // Subscribe to changes in notifications
     const unsubscribe = onSnapshot(
@@ -45,7 +54,6 @@ export const useNotification = () => {
       (error) => {
         console.error('Error fetching notifications:', error);
         setLoading(false);
-        newToast();
         newToast({
           message: 'Could not fetch notification',
           status: 'error',
@@ -55,7 +63,7 @@ export const useNotification = () => {
 
     // Cleanup listener on component unmount
     return () => unsubscribe();
-  }, []);
+  }, [role, authUser?.uid]);
 
   const updateNotificationStatus = async (
     id: string,

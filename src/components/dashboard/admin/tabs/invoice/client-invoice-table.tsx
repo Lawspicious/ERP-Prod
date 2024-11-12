@@ -197,7 +197,10 @@ const ClientInvoiceTable = ({
                                         colorScheme="purple"
                                         className="w-full"
                                         onClick={() =>
-                                          (window.location.href = `/dashboard/admin/duplicate-invoice/${invoice.id}`)
+                                          window.open(
+                                            `/dashboard/admin/duplicate-invoice/${invoice.id}`,
+                                            '_blank',
+                                          )
                                         }
                                       >
                                         Duplicate
