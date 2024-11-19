@@ -110,7 +110,7 @@ const PrintLawyerInvoiceButton = ({
                     <p>Pay to:</p>
                     <p>Abhradip Jha</p>
                     <p>State Bank of India (Siriti- Muchipara Branch)</p>
-                    <p>Acc no. 33140676929</p>
+                    <p>Acc no. 33140676926</p>
                     <p>IFSC- SBIN0011533</p>
                     <p>PAN- AYBPJ1201F</p>
             

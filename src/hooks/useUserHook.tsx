@@ -1,10 +1,11 @@
 import { IUser } from '@/types/user';
 import { useState } from 'react';
 import { useToastHook } from './shared/useToastHook';
-import { app, auth } from '@/lib/config/firebase.config';
-import { sendPasswordResetEmail } from 'firebase/auth';
+import { app } from '@/lib/config/firebase.config';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useLoading } from '@/context/loading/loadingContext';
+import { ILogEventInterface, useLog } from './shared/useLog';
+import { useAuth } from '@/context/user/userContext';
 
 const collectionName = 'users';
 
@@ -12,11 +13,13 @@ export const useUser = () => {
   const [user, setUser] = useState<IUser | null>(null);
   const [state, newToast] = useToastHook();
   const { loading, setLoading } = useLoading();
+  const { authUser, role } = useAuth();
 
   const functions = getFunctions(app, 'asia-south1');
   const createUserAndSetClaim = httpsCallable(functions, 'createUserCloud');
   const updateUserCred = httpsCallable(functions, 'updateUserCredCloud');
   const deleteUserCloud = httpsCallable(functions, 'deleteUserCloud');
+  const { createLogEvent } = useLog();
   const resetUserPasswordCloud = httpsCallable(
     functions,
     'resetUserPasswordCloud',
@@ -39,6 +42,18 @@ export const useUser = () => {
         status: 'success',
         message: 'User Created Successfully',
       });
+      if (authUser) {
+        await createLogEvent({
+          userId: authUser?.uid,
+          action: 'CREATE',
+          eventDetails: `New User ${data.name} Created`,
+          user: {
+            name: authUser?.displayName,
+            email: authUser?.email,
+            role: role,
+          },
+        } as ILogEventInterface);
+      }
       return result;
     } catch (error) {
       console.error('Error creating  user:', error);
@@ -62,6 +77,18 @@ export const useUser = () => {
         status: 'success',
         message: 'User Updated Successfully',
       });
+      if (authUser) {
+        await createLogEvent({
+          userId: authUser?.uid,
+          action: 'UPDATE',
+          eventDetails: `${data.name} User Updated`,
+          user: {
+            name: authUser?.displayName,
+            email: authUser?.email,
+            role: role,
+          },
+        } as ILogEventInterface);
+      }
     } catch (error) {
       console.error('Error updating user:', error);
       newToast({
@@ -80,6 +107,18 @@ export const useUser = () => {
         status: 'success',
         message: 'User Deleted Successfully',
       });
+      if (authUser) {
+        await createLogEvent({
+          userId: authUser?.uid,
+          action: 'DELETE',
+          eventDetails: `User Deleted`,
+          user: {
+            name: authUser?.displayName,
+            email: authUser?.email,
+            role: role,
+          },
+        } as ILogEventInterface);
+      }
     } catch (error) {
       console.error('Error deleted user:', error);
       newToast({

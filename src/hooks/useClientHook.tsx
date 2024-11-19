@@ -16,6 +16,7 @@ import { IClient, IClientProspect } from '@/types/client';
 import { useAuth } from '@/context/user/userContext';
 import { useToastHook } from './shared/useToastHook';
 import { useLoading } from '@/context/loading/loadingContext';
+import { useLog, ILogEventInterface } from './shared/useLog';
 
 const collectionName = 'clients';
 
@@ -29,6 +30,7 @@ export const useClient = () => {
   const { authUser, role } = useAuth();
   const [state, newToast] = useToastHook();
   const { setLoading, loading } = useLoading();
+  const { createLogEvent } = useLog();
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -197,6 +199,18 @@ export const useClient = () => {
           message: 'Client Created Successfully',
           status: 'success',
         });
+        if (authUser) {
+          await createLogEvent({
+            userId: authUser?.uid,
+            action: 'CREATE',
+            eventDetails: `New Client ${data.name} Created`,
+            user: {
+              name: authUser?.displayName,
+              email: authUser?.email,
+              role: role,
+            },
+          } as ILogEventInterface);
+        }
       } catch (error) {
         console.error('Error adding client:', error);
         newToast({
@@ -225,6 +239,18 @@ export const useClient = () => {
           message: 'Client Updated Successfully',
           status: 'success',
         });
+        if (authUser) {
+          await createLogEvent({
+            userId: authUser?.uid,
+            action: 'UPDATE',
+            eventDetails: `Client ${id || ''} Updated`,
+            user: {
+              name: authUser?.displayName,
+              email: authUser?.email,
+              role: role,
+            },
+          } as ILogEventInterface);
+        }
       } catch (error) {
         console.error('Error updating client:', error);
         newToast({
@@ -253,6 +279,18 @@ export const useClient = () => {
           message: 'Client Deleted Successfully',
           status: 'success',
         });
+        if (authUser) {
+          await createLogEvent({
+            userId: authUser?.uid,
+            action: 'DELETE',
+            eventDetails: `Client ${id} Deleted`,
+            user: {
+              name: authUser?.displayName,
+              email: authUser?.email,
+              role: role,
+            },
+          } as ILogEventInterface);
+        }
       } catch (error) {
         console.error('Error deleting client:', error);
         newToast({

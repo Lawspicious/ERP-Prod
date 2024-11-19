@@ -18,6 +18,7 @@ import { IInvoice } from '@/types/invoice';
 import { useAuth } from '@/context/user/userContext';
 import { useToastHook } from './shared/useToastHook';
 import { useLoading } from '@/context/loading/loadingContext';
+import { useLog, ILogEventInterface } from './shared/useLog';
 
 const collectionName = 'invoices';
 
@@ -29,6 +30,7 @@ export const useInvoice = () => {
   const [state, newToast] = useToastHook();
   const { authUser, role } = useAuth();
   const { setLoading } = useLoading();
+  const { createLogEvent } = useLog();
 
   const prefix = `LAWSP-${new Date().getFullYear()}-`;
 
@@ -151,6 +153,18 @@ export const useInvoice = () => {
           message: 'Invoice Created Successfully',
           status: 'success',
         });
+        if (authUser) {
+          await createLogEvent({
+            userId: authUser?.uid,
+            action: 'CREATE',
+            eventDetails: `New Invoice ${docId} Created`,
+            user: {
+              name: authUser?.displayName,
+              email: authUser?.email,
+              role: role,
+            },
+          } as ILogEventInterface);
+        }
       } catch (error) {
         console.error('Error adding invoice:', error);
         newToast({
@@ -178,6 +192,18 @@ export const useInvoice = () => {
           message: 'Invoice Updated Successfully',
           status: 'success',
         });
+        if (authUser) {
+          await createLogEvent({
+            userId: authUser?.uid,
+            action: 'UPDATE',
+            eventDetails: `Invoice ${id} Updated`,
+            user: {
+              name: authUser?.displayName,
+              email: authUser?.email,
+              role: role,
+            },
+          } as ILogEventInterface);
+        }
       } catch (error) {
         console.error('Error updating invoice:', error);
         newToast({
@@ -196,6 +222,18 @@ export const useInvoice = () => {
           message: 'Permission Denied',
           status: 'error',
         });
+        if (authUser) {
+          await createLogEvent({
+            userId: authUser?.uid,
+            action: 'DELETE',
+            eventDetails: `Invoice Deleted`,
+            user: {
+              name: authUser?.displayName,
+              email: authUser?.email,
+              role: role,
+            },
+          } as ILogEventInterface);
+        }
         return;
       }
 

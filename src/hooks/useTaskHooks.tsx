@@ -15,6 +15,8 @@ import {
 } from 'firebase/firestore';
 import { useToastHook } from './shared/useToastHook';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { useAuth } from '@/context/user/userContext';
+import { useLog, ILogEventInterface } from './shared/useLog';
 
 const collectionName = 'tasks';
 
@@ -28,6 +30,8 @@ export const useTask = () => {
   const [loading, setLoading] = useState(true);
   const [payableTasks, setPayableTasks] = useState<ITask[]>([]);
   const [clientTasks, setClientTasks] = useState<ITask[]>([]);
+  const { authUser, role } = useAuth();
+  const { createLogEvent } = useLog();
 
   const createTask = async (data: Partial<ITask>) => {
     try {
@@ -37,6 +41,18 @@ export const useTask = () => {
         message: 'Task Created Successfully',
         status: 'success',
       });
+      if (authUser) {
+        await createLogEvent({
+          userId: authUser?.uid,
+          action: 'CREATE',
+          eventDetails: `New task ${data.taskName} Created`,
+          user: {
+            name: authUser?.displayName,
+            email: authUser?.email,
+            role: role,
+          },
+        } as ILogEventInterface);
+      }
     } catch (error) {
       console.error('Error creating Task:', error);
       newToast({
@@ -128,6 +144,18 @@ export const useTask = () => {
         message: 'Task Updated Successfullly!',
         status: 'success',
       });
+      if (authUser) {
+        await createLogEvent({
+          userId: authUser?.uid,
+          action: 'UPDATE',
+          eventDetails: `Task ${data.taskName || ''} Updated`,
+          user: {
+            name: authUser?.displayName,
+            email: authUser?.email,
+            role: role,
+          },
+        } as ILogEventInterface);
+      }
     } catch (error) {
       console.error('Error updating task: ', error);
       newToast({
@@ -145,6 +173,18 @@ export const useTask = () => {
         message: 'Task Deleted Successfullly!',
         status: 'success',
       });
+      if (authUser) {
+        await createLogEvent({
+          userId: authUser?.uid,
+          action: 'DELETE',
+          eventDetails: `Task Deleted`,
+          user: {
+            name: authUser?.displayName,
+            email: authUser?.email,
+            role: role,
+          },
+        } as ILogEventInterface);
+      }
     } catch (error) {
       console.error('Error deleting task: ', error);
       newToast({

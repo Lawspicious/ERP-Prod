@@ -32,6 +32,7 @@ import {
   X,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { Logs } from 'lucide-react';
 
 const Navbar = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -86,6 +87,10 @@ const Navbar = () => {
       />
 
       <div className="flex items-center justify-end gap-4">
+        <Logs
+          onClick={() => (window.location.href = '/logs')}
+          cursor="pointer"
+        />
         <Box position="relative">
           <IconButton
             icon={<BellIcon />}
