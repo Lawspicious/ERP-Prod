@@ -20,4 +20,5 @@ export interface IAppointment {
   clientDetails: ClientDetails;
   lawyerDetails: LawyerDetails;
   status: 'PENDING' | 'COMPLETED';
+  description: string;
 }

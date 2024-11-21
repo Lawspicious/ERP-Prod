@@ -18,6 +18,7 @@ import {
 import { app, db } from '@/lib/config/firebase.config';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useLoading } from '@/context/loading/loadingContext';
+import { useLog, ILogEventInterface } from './shared/useLog';
 
 const collectionName = 'cases';
 
@@ -30,7 +31,7 @@ export const useCases = () => {
   const [state, newToast] = useToastHook();
   const functions = getFunctions(app, 'asia-south1');
   const createCaseAndSendEmail = httpsCallable(functions, 'createCaseCloud');
-  const { loading, setLoading } = useLoading();
+  const { createLogEvent } = useLog();
 
   const getAllCases = useCallback(async () => {
     // if (role === 'LAWYER') {
@@ -135,6 +136,18 @@ export const useCases = () => {
         message: 'Case Created Successfully',
         status: 'success',
       });
+      if (authUser) {
+        await createLogEvent({
+          userId: authUser?.uid,
+          action: 'CREATE',
+          eventDetails: `New Case ${data.caseNo} Created`,
+          user: {
+            name: authUser?.displayName,
+            email: authUser?.email,
+            role: role,
+          },
+        } as ILogEventInterface);
+      }
       return result;
     } catch (error) {
       console.error('Error creating case:', error);
@@ -160,6 +173,18 @@ export const useCases = () => {
         message: 'Case Deleted Successfully',
         status: 'success',
       });
+      if (authUser) {
+        await createLogEvent({
+          userId: authUser?.uid,
+          action: 'DELETE',
+          eventDetails: `Case Deleted`,
+          user: {
+            name: authUser?.displayName,
+            email: authUser?.email,
+            role: role,
+          },
+        } as ILogEventInterface);
+      }
     } catch (error) {
       console.error('Error deleting case: ', error);
       newToast({
@@ -177,6 +202,18 @@ export const useCases = () => {
         message: 'Case Updated Successfully',
         status: 'success',
       });
+      if (authUser) {
+        await createLogEvent({
+          userId: authUser?.uid,
+          action: 'UPDATE',
+          eventDetails: `Case Updated`,
+          user: {
+            name: authUser?.displayName,
+            email: authUser?.email,
+            role: role,
+          },
+        } as ILogEventInterface);
+      }
     } catch (error) {
       console.error('Error updating case: ', error);
       newToast({

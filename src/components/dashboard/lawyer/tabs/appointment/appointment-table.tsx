@@ -45,6 +45,7 @@ const AppointmentTableLawyer = ({
             <Th>Time</Th>
             <Th>Date</Th>
             <Th>Location</Th>
+            <Th>Description</Th>
             <Th>Status</Th>
             <Th>Action</Th>
           </Tr>
@@ -58,6 +59,7 @@ const AppointmentTableLawyer = ({
               <Td>{appointment.time}</Td>
               <Td>{appointment.date}</Td>
               <Td>{appointment.location}</Td>
+              <Td>{appointment.description || 'N/A'}</Td>
               <Td>{appointment.status}</Td>
               <Td>
                 <Menu>

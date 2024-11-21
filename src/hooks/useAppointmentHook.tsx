@@ -16,9 +16,10 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { analytics, db } from '@/lib/config/firebase.config';
+import { db } from '@/lib/config/firebase.config';
 import { useLoading } from '@/context/loading/loadingContext';
-import { logCustomEvent } from './shared/log-event';
+import { useAuth } from '@/context/user/userContext';
+import { useLog, ILogEventInterface } from './shared/useLog';
 
 const collectionName = 'appointments';
 
@@ -30,6 +31,8 @@ export const useAppointment = () => {
   const [appointment, setAppointment] = useState<IAppointment | null>(null);
   const [state, newToast] = useToastHook();
   const { setLoading } = useLoading();
+  const { authUser, role } = useAuth();
+  const { createLogEvent } = useLog();
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -64,6 +67,18 @@ export const useAppointment = () => {
         message: 'New Appointment Created',
         status: 'success',
       });
+      if (authUser) {
+        await createLogEvent({
+          userId: authUser?.uid,
+          action: 'CREATE',
+          eventDetails: `New appointment created`,
+          user: {
+            name: authUser?.displayName,
+            email: authUser?.email,
+            role: role,
+          },
+        } as ILogEventInterface);
+      }
     } catch (e) {
       console.error('Error adding appointment: ', e);
       newToast({
@@ -95,12 +110,23 @@ export const useAppointment = () => {
     try {
       const docRef = doc(db, collectionName, id);
       await deleteDoc(docRef);
-      await logCustomEvent('lawspicious_event');
 
       newToast({
         message: 'Appointment Deleted Successfully',
         status: 'success',
       });
+      if (authUser) {
+        await createLogEvent({
+          userId: authUser?.uid,
+          action: 'DELETE',
+          eventDetails: `Appointment Deleted`,
+          user: {
+            name: authUser?.displayName,
+            email: authUser?.email,
+            role: role,
+          },
+        } as ILogEventInterface);
+      }
     } catch (e) {
       console.error('Error deleting appointment: ', e);
       newToast({
@@ -118,6 +144,18 @@ export const useAppointment = () => {
         message: 'Appointment Updated Successfully',
         status: 'success',
       });
+      if (authUser) {
+        await createLogEvent({
+          userId: authUser?.uid,
+          action: 'UPDATE',
+          eventDetails: `Appointment Updated`,
+          user: {
+            name: authUser?.displayName,
+            email: authUser?.email,
+            role: role,
+          },
+        } as ILogEventInterface);
+      }
     } catch (e) {
       console.error('Error updating appointment: ', e);
       newToast({

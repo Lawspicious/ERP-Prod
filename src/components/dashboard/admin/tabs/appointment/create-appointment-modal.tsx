@@ -14,6 +14,7 @@ import {
   Select,
   useDisclosure,
   Spinner,
+  Textarea,
 } from '@chakra-ui/react';
 import { useTeam } from '@/hooks/useTeamHook';
 import { useClient } from '@/hooks/useClientHook';
@@ -29,6 +30,7 @@ const initialData = {
   clientId: '',
   lawyerId: '',
   status: 'PENDING',
+  description: '',
 };
 
 const CreateAppointmentModal = () => {
@@ -71,6 +73,7 @@ const CreateAppointmentModal = () => {
         time: appointment.time,
         date: appointment.date,
         location: appointment.location,
+        description: appointment.description,
         clientDetails: {
           id: selectedClient?.id as string,
           name: selectedClient?.name,
@@ -180,6 +183,16 @@ const CreateAppointmentModal = () => {
                         ))}
                     </optgroup>
                   </Select>
+                </FormControl>
+                <FormControl mt={4}>
+                  <FormLabel>Description</FormLabel>
+                  <Textarea
+                    name="description"
+                    rows={3}
+                    placeholder="Enter description..."
+                    value={appointment.description}
+                    onChange={handleInputChange}
+                  />
                 </FormControl>
               </ModalBody>
               <ModalFooter>
