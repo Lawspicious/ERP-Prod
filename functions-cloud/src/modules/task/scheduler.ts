@@ -109,8 +109,9 @@ export const scheduledDeadlineCheck = functions
               notificationName: `Tomorrow is the deadline for task: ${taskData.taskName}`,
               endDate: taskData.endDate,
               createdAt: admin.firestore.FieldValue.serverTimestamp(),
-              status: 'unseen',
               type: 'Task',
+              seenBy: [''],
+              clearedBy: [''],
             });
 
             console.log(

@@ -14,7 +14,11 @@ export { onTaskWritten } from './modules/task/triggers';
 export { onAppointmentWritten } from './modules/appointment/triggers';
 export { scheduledDeadlineCheck } from './modules/task/scheduler';
 export { scheduledDeadlineCheckAppointments } from './modules/appointment/scheduler';
-export { createSessionCookie } from './modules/session/index';
+export {
+  createSessionCookie,
+  revokeSessionCookie,
+  verifySessionCookie,
+} from './modules/session/index';
 export { scheduledDeadlineCheckCases } from './modules/case/scheduler';
 export { deleteOldNotifications } from './modules/notifications/deleteOldScheduler';
 

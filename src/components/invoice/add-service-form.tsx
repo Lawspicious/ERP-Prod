@@ -9,8 +9,9 @@ import {
   Input,
 } from '@chakra-ui/react';
 import React from 'react';
-import { serviceList } from './add-invoice-form';
+import { serviceList, serviceList2 } from './add-invoice-form';
 import { useToastHook } from '@/hooks/shared/useToastHook';
+import AutocompleteTextbox from '../ui/auto-complete-textbox';
 
 interface AddServiceFormProps {
   services: IService[];
@@ -93,15 +94,23 @@ const AddServiceForm = ({
                 </Checkbox>
                 <FormControl>
                   <FormLabel>Name</FormLabel>
-                  {toggleOtherInput ? (
-                    <Input
+                  {/* {toggleOtherInput ? (
+                    <> */}
+                  {/* <Input
                       type="text"
                       name="name"
                       placeholder="Enter Service Name"
                       value={service.name}
                       onChange={(e) => handleChange(e, i)}
-                    />
-                  ) : (
+                    /> */}
+
+                  <AutocompleteTextbox
+                    options={serviceList2}
+                    handleChange={(e) => handleChange(e, i)}
+                    placeholder="Enter Service Name"
+                  />
+
+                  {/* ) : (
                     <Select
                       placeholder="Select Service"
                       name="name"
@@ -114,7 +123,7 @@ const AddServiceForm = ({
                         </option>
                       ))}
                     </Select>
-                  )}
+                  )} */}
                 </FormControl>
               </div>
 

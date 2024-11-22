@@ -11,7 +11,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { useToastHook } from './shared/useToastHook';
+import { useToastHook } from '../../src/hooks/shared/useToastHook';
 
 const collectionName = 'notifications';
 

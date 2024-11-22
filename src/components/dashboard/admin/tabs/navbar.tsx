@@ -1,11 +1,12 @@
 'use client';
 import { useAuth } from '@/context/user/userContext';
-import { useNotification } from '@/hooks/useNotificationHook';
+import { useNotification } from '../../../../../test/notification/useNotificationHook';
 import {
   Avatar,
   Badge,
   Box,
   Button,
+  CloseButton,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
@@ -13,6 +14,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
+  Icon,
   IconButton,
   Text,
   useDisclosure,
@@ -22,6 +24,7 @@ import {
   BellIcon,
   Calendar,
   CalendarPlus,
+  CrossIcon,
   Handshake,
   House,
   ListChecks,
@@ -29,25 +32,44 @@ import {
   Newspaper,
   Scale,
   Users,
+  View,
   X,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Logs } from 'lucide-react';
+import { useNotif } from '../../../../hooks/useNotif';
 
 const Navbar = () => {
   const [activeTab, setActiveTab] = useState('home');
   const { logout, authUser, role } = useAuth();
-  const { allNotifications, updateNotificationStatus } = useNotification();
+  // const { allNotifications, updateNotificationStatus } = useNotification();
+  const {
+    clearNotification,
+    markAsSeen,
+    newNotif,
+    seenNotif,
+    clearAllNotifications,
+  } = useNotif();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] =
     useState<boolean>(false);
 
+  // const handleOpenNotificationDrawer = () => {
+  //   try {
+  //     allNotifications.map(
+  //       async (notification) =>
+  //         await updateNotificationStatus(notification.id as string, 'seen'),
+  //     );
+  //     setIsNotificationDrawerOpen(false);
+  //   } catch (error) {
+  //     console.log('error');
+  //   }
+  // };
   const handleOpenNotificationDrawer = () => {
     try {
-      allNotifications.map(
-        async (notification) =>
-          await updateNotificationStatus(notification.id as string, 'seen'),
+      newNotif.map(
+        async (notification) => await markAsSeen(notification.id as string),
       );
       setIsNotificationDrawerOpen(false);
     } catch (error) {
@@ -100,8 +122,7 @@ const Navbar = () => {
             bgColor={'transparent'}
             _hover={{ backgroundColor: 'transparent' }}
           />
-          {allNotifications.filter((notf) => notf.status === 'unseen').length >
-            0 && (
+          {newNotif.length > 0 && (
             <Badge
               position="absolute"
               top="-1"
@@ -111,10 +132,7 @@ const Navbar = () => {
               fontSize="0.8em"
               px={2}
             >
-              {
-                allNotifications.filter((notf) => notf.status === 'unseen')
-                  .length
-              }
+              {newNotif.length}
             </Badge>
           )}
         </Box>
@@ -258,26 +276,47 @@ const Navbar = () => {
       >
         <DrawerOverlay />
         <DrawerContent>
-          <DrawerCloseButton />
-          <DrawerHeader>Notifications</DrawerHeader>
+          <DrawerCloseButton className="text-white" />
+          <DrawerHeader className="bg-purple-500">
+            <h1 className="font-bold text-white">Notification</h1>{' '}
+            <Button
+              colorScheme="purple"
+              className="w-full"
+              my={8}
+              onClick={clearAllNotifications}
+            >
+              Clear All Notification
+            </Button>
+          </DrawerHeader>
 
           <DrawerBody>
             <VStack spacing={4} align="stretch">
-              {allNotifications.length > 0 ? (
-                allNotifications.map((notification) => (
+              {newNotif.length > 0 ? (
+                newNotif.map((notification) => (
                   <Box
                     key={notification.id}
                     p={4}
                     shadow="md"
                     borderWidth="1px"
                     borderRadius="lg"
-                    bg={notification.status === 'unseen' ? 'gray.100' : 'white'}
+                    bg={'gray.100'}
                     cursor={'pointer'}
                     _hover={{ backgroundColor: 'gray.100' }}
-                    onClick={() =>
-                      (window.location.href = `/${notification.type.toLowerCase()}/${notification.appointmentId || notification.taskId || notification.caseId}`)
-                    }
+                    className="div flex flex-col"
                   >
+                    <Box className="flex justify-between">
+                      <View
+                        onClick={() =>
+                          (window.location.href = `/${notification.type.toLowerCase()}/${notification.appointmentId || notification.taskId || notification.caseId}`)
+                        }
+                        className="hover:text-purple-500"
+                      />
+                      <CloseButton
+                        onClick={() => {
+                          clearNotification(notification.id as string);
+                        }}
+                      />
+                    </Box>
                     <Text fontWeight="semibold">
                       {notification.notificationName}
                     </Text>
@@ -291,12 +330,58 @@ const Navbar = () => {
                       <Text>Appointment: {notification.appointmentName}</Text>
                     )}
                     <Text fontSize="sm" color="gray.500">
-                      Status: {notification.status}
+                      Status: New
                     </Text>
                   </Box>
                 ))
               ) : (
-                <Text>No notifications available.</Text>
+                <Text>No new notifications available.</Text>
+              )}
+              {seenNotif.length > 0 ? (
+                seenNotif.map((notification) => (
+                  <Box
+                    key={notification.id}
+                    p={4}
+                    shadow="md"
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    bg={'white'}
+                    cursor={'pointer'}
+                    _hover={{ backgroundColor: 'gray.100' }}
+                    className="div flex flex-col"
+                  >
+                    <Box className="flex justify-between">
+                      <View
+                        onClick={() =>
+                          (window.location.href = `/${notification.type.toLowerCase()}/${notification.appointmentId || notification.taskId || notification.caseId}`)
+                        }
+                        className="hover:text-purple-500"
+                      />
+                      <CloseButton
+                        onClick={() => {
+                          clearNotification(notification.id as string);
+                        }}
+                      />
+                    </Box>
+                    <Text fontWeight="semibold">
+                      {notification.notificationName}
+                    </Text>
+                    {notification.caseNo && (
+                      <Text>Case No: {notification.caseNo}</Text>
+                    )}
+                    {notification.taskName && (
+                      <Text>Task: {notification.taskName}</Text>
+                    )}
+                    {notification.appointmentName && (
+                      <Text>Appointment: {notification.appointmentName}</Text>
+                    )}
+                    <Text fontSize="sm" color="gray.500">
+                      Status: Seen
+                    </Text>
+                  </Box>
+                ))
+              ) : (
+                <Text></Text>
               )}
             </VStack>
           </DrawerBody>

@@ -21,44 +21,78 @@ const PrintLawyerInvoiceButton = ({
                 <style>
                     body {
                         font-family: Arial, sans-serif;
-                        margin: 40px;
+                        margin: 20px;
+                        font-size: 12px;
                     }
-            
+
                     .header {
                         text-align: left;
+                        margin-bottom: 10px;
                     }
-            
+
                     .header h1 {
-                        font-size: 22px;
+                        font-size: 18px;
+                        margin-bottom: 5px;
                     }
-            
+
+                    .header p {
+                        margin: 2px 0;
+                    }
+
+                    hr {
+                        border: 0;
+                        height: 1px;
+                        background: black;
+                        margin: 10px 0;
+                    }
+
                     .details-table {
                         width: 100%;
-                        margin-bottom: 20px;
+                        margin-bottom: 15px;
                     }
-            
+
                     .details-table td {
-                        padding: 5px 0;
+                        padding: 4px 0;
                     }
-            
+
                     .description-table {
                         width: 100%;
                         border-collapse: collapse;
-                        margin-bottom: 20px;
+                        margin-bottom: 15px;
                     }
-            
-                    .description-table th, .description-table td {
+
+                    .description-table th, 
+                    .description-table td {
                         border: 1px solid black;
-                        padding: 8px;
+                        padding: 6px;
                         text-align: left;
                     }
-            
+
+                    .description-table th {
+                        background-color: #f3f4f6;
+                    }
+
                     .footer {
+                        margin-top: 15px;
+                    }
+
+                    .footer p {
+                        margin: 2px 0;
+                    }
+
+                    .total-row td {
+                        font-weight: bold;
+                        text-transform: uppercase;
+                    }
+
+                    .signature {
+                        text-align: right;
                         margin-top: 20px;
                     }
-            
-                    .total {
-                        font-weight: bold;
+
+                    .signature img {
+                        height: 40px;
+                        margin-bottom: 5px;
                     }
                 </style>
             </head>
@@ -71,14 +105,14 @@ const PrintLawyerInvoiceButton = ({
                     <p>8017173320 | jhaabhradip7@gmail.com</p>
                     <hr>
                 </div>
-            
+
                 <table class="details-table">
                     <tr>
                         <td><strong>Date:</strong> ${today}</td>
                         <td><strong>Bill to:</strong> ${invoiceData?.clientDetails?.name}</td>
                     </tr>
                 </table>
-            
+
                 <table class="description-table">
                     <thead>
                         <tr>
@@ -88,24 +122,24 @@ const PrintLawyerInvoiceButton = ({
                         </tr>
                     </thead>
                     <tbody>
-                    ${invoiceData.services
-                      .map(
-                        (service) => `
-                        <tr>
-                            <td>${service.name}</td>
-                            <td>${service.description}</td>
-                            <td>Rs. ${service.amount}/-</td>
+                        ${invoiceData.services
+                          .map(
+                            (service) => `
+                            <tr>
+                                <td>${service.name}</td>
+                                <td>${service.description}</td>
+                                <td>Rs. ${service.amount}/-</td>
+                            </tr>
+                        `,
+                          )
+                          .join('')}
+                        <tr class="total-row">
+                            <td colspan="2">Total: ${converter.toWords(invoiceData.totalAmount).toUpperCase()}</td>
+                            <td>Rs. ${invoiceData.totalAmount}/-</td>
                         </tr>
-                    `,
-                      )
-                      .join('')}
-                    <tr class="total">
-                        <td colspan="2">Total: ${converter.toWords(invoiceData.totalAmount).toUpperCase()}</td>
-                        <td>Rs. ${invoiceData.totalAmount}/-</td>
-                    </tr>
                     </tbody>
                 </table>
-            
+
                 <div class="footer">
                     <p>Pay to:</p>
                     <p>Abhradip Jha</p>
@@ -113,15 +147,15 @@ const PrintLawyerInvoiceButton = ({
                     <p>Acc no. 33140676926</p>
                     <p>IFSC- SBIN0011533</p>
                     <p>PAN- AYBPJ1201F</p>
-            
-                    <p style="text-align:right;">
-                        <img src="/sign.jpg"  style="height: 50px;">
-                        <br>
-                        Abhradip Jha
-                    </p>
+
+                    <div class="signature">
+                        <img src="/sign.jpg" alt="Signature">
+                        <p>Abhradip Jha</p>
+                    </div>
                 </div>
             </body>
             </html>
+
             `;
 
       // Open print window and write content
