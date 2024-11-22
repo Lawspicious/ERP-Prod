@@ -16,4 +16,6 @@ export interface INotifications {
   clientDetails?: IClientDetails;
   location?: string;
   status: 'unseen' | 'seen';
+  seenBy: string[];
+  clearedBy: string[];
 }

@@ -101,8 +101,9 @@ export const scheduledDeadlineCheckCases = functions
                   : `No upcoming hearing scheduled for case: ${caseData.caseNo}`,
                 nextHearing: nextHearing || 'Not Scheduled',
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                status: 'unseen',
                 type: 'Case',
+                seenBy: [''],
+                clearedBy: [''],
               });
 
               console.log(

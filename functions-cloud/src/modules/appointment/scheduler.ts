@@ -103,8 +103,9 @@ export const scheduledDeadlineCheckAppointments = functions
               notificationName: `Tomorrow is the deadline for appointment: ${appointmentData.clientDetails.name}`,
               endDate: appointmentData.date,
               createdAt: admin.firestore.FieldValue.serverTimestamp(),
-              status: 'unseen',
               type: 'Appointment',
+              seenBy: [''],
+              clearedBy: [''],
             });
 
             console.log(
