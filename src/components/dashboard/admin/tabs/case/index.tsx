@@ -101,6 +101,7 @@ const CaseTab = () => {
         priority: caseData?.priority,
         allotedLaywer: caseData?.lawyer?.name || 'NA',
         rowColor,
+        deleteName: caseData?.caseNo,
       };
     });
   }, [allCases]);
@@ -118,11 +119,11 @@ const CaseTab = () => {
     }
   }, [transformedData]);
 
-  const actionButtons = (id: string): ReactElement[] => [
+  const actionButtons = (id: string, deleteName: string): ReactElement[] => [
     <DialogButton
       title={'Delete'}
       message={'Do you want to delete the case?'}
-      onConfirm={async () => deleteCase(id)}
+      onConfirm={async () => deleteCase(id, deleteName)}
       children={'Delete'}
       confirmButtonColorScheme="red"
       confirmButtonText="Delete"

@@ -91,7 +91,11 @@ const EditCaseForm = ({
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    await updateCase(caseData.caseId as string, formInputs as Partial<ICase>);
+    await updateCase(
+      caseData.caseId as string,
+      formInputs as Partial<ICase>,
+      caseData.caseNo,
+    );
   };
 
   return loading ? (

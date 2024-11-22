@@ -149,7 +149,11 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
         ...formData,
         lawyerDetails: selectedLawyers,
       };
-      await updateTask(taskId, updatedFormData as ITask);
+      await updateTask(
+        taskId,
+        updatedFormData as ITask,
+        task?.taskName as string,
+      );
       if (formData.payable) {
         await handleCreateInvoice();
       }

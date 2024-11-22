@@ -160,7 +160,7 @@ const ProspectClientTable: React.FC = () => {
                             title={'Delete'}
                             message={'Do you want to delete the client?'}
                             onConfirm={async () =>
-                              deleteClient(client.id as string)
+                              deleteClient(client.id as string, client.name)
                             }
                             children={'Delete'}
                             confirmButtonColorScheme="red"

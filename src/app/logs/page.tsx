@@ -37,16 +37,6 @@ const LogsPage = () => {
     getLogsByUserandDate(selectedUser, selectedDate);
   }, [router, selectedDate, selectedUser]);
 
-  // const filteredLogs = logs.filter((log) => {
-  //     const matchesUser =
-  //         selectedUser === "All Users" || log.userInfo.username === selectedUser;
-  //     const matchesDate =
-  //         !selectedDate || log.date === selectedDate; // Match if no date or date matches
-  //     return matchesUser && matchesDate;
-  // });
-  // Sample data
-
-  // Action color mapping
   const getBadgeColor = (action: string) => {
     switch (action) {
       case 'CREATE':

@@ -40,7 +40,7 @@ const AppointmentTable = ({
         <Thead>
           <Tr>
             <Th>No</Th>
-            <Th>Client</Th>
+            <Th>Client/Other</Th>
             <Th>Lawyer</Th>
             <Th>Time</Th>
             <Th>Date</Th>
@@ -54,7 +54,11 @@ const AppointmentTable = ({
           {appointments.map((appointment, index) => (
             <Tr key={appointment.id}>
               <Td>{index + 1}</Td>
-              <Td>{appointment.clientDetails.name}</Td>
+              <Td>
+                {appointment.clientDetails
+                  ? appointment.clientDetails.name
+                  : appointment.otherRelatedTo}
+              </Td>
               <Td>{appointment.lawyerDetails.name}</Td>
               <Td>{appointment.time}</Td>
               <Td>{appointment.date}</Td>

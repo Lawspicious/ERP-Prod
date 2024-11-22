@@ -203,7 +203,7 @@ export const useClient = () => {
           await createLogEvent({
             userId: authUser?.uid,
             action: 'CREATE',
-            eventDetails: `New Client ${data.name} Created`,
+            eventDetails: `New Client Created - ${data.name}`,
             user: {
               name: authUser?.displayName,
               email: authUser?.email,
@@ -223,7 +223,11 @@ export const useClient = () => {
   );
 
   const updateClient = useCallback(
-    async (id: string, updatedData: Partial<IClient | IClientProspect>) => {
+    async (
+      id: string,
+      updatedData: Partial<IClient | IClientProspect>,
+      name: string,
+    ) => {
       if (!authUser || role === 'LAWYER') {
         newToast({
           message: 'Permission Denied',
@@ -243,7 +247,7 @@ export const useClient = () => {
           await createLogEvent({
             userId: authUser?.uid,
             action: 'UPDATE',
-            eventDetails: `Client ${id || ''} Updated`,
+            eventDetails: `Client Updated - ${name}`,
             user: {
               name: authUser?.displayName,
               email: authUser?.email,
@@ -263,7 +267,7 @@ export const useClient = () => {
   );
 
   const deleteClient = useCallback(
-    async (id: string) => {
+    async (id: string, name: string) => {
       if (!authUser || role === 'LAWYER') {
         newToast({
           message: 'Permission Denied',
@@ -283,7 +287,7 @@ export const useClient = () => {
           await createLogEvent({
             userId: authUser?.uid,
             action: 'DELETE',
-            eventDetails: `Client ${id} Deleted`,
+            eventDetails: `Client Deleted - ${name}`,
             user: {
               name: authUser?.displayName,
               email: authUser?.email,

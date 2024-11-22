@@ -17,8 +17,9 @@ export interface IAppointment {
   time: string;
   date: string;
   location: string;
-  clientDetails: ClientDetails;
+  clientDetails?: ClientDetails | null;
   lawyerDetails: LawyerDetails;
   status: 'PENDING' | 'COMPLETED';
   description: string;
+  otherRelatedTo: string;
 }

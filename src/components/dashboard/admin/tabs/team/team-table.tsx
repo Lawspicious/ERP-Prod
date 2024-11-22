@@ -125,7 +125,10 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                                       'Do you want to Delete the Member?'
                                     }
                                     onConfirm={async () =>
-                                      deleteUser(member.id as string)
+                                      deleteUser(
+                                        member.id as string,
+                                        member.name,
+                                      )
                                     }
                                     children={'Delete'}
                                     confirmButtonColorScheme="red"
@@ -211,7 +214,7 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                                 title={'Delete'}
                                 message={'Do you want to Delete the Member?'}
                                 onConfirm={async () =>
-                                  deleteUser(member.id as string)
+                                  deleteUser(member.id as string, member.name)
                                 }
                                 children={'Delete'}
                                 confirmButtonColorScheme="red"

@@ -15,6 +15,7 @@ import {
   useDisclosure,
   Spinner,
   Textarea,
+  Checkbox,
 } from '@chakra-ui/react';
 import { useTeam } from '@/hooks/useTeamHook';
 import { useClient } from '@/hooks/useClientHook';
@@ -31,6 +32,7 @@ const initialData = {
   lawyerId: '',
   status: 'PENDING',
   description: '',
+  otherRelatedTo: '',
 };
 
 const CreateAppointmentModal = () => {
@@ -40,6 +42,7 @@ const CreateAppointmentModal = () => {
   const { allClients, getAllClients } = useClient();
   const { createAppointment } = useAppointment();
   const { loading, setLoading } = useLoading();
+  const [otherCheck, setOtherCheck] = useState(false);
 
   useEffect(() => {
     const handleFetchData = async () => {
@@ -61,31 +64,37 @@ const CreateAppointmentModal = () => {
 
   const handleCreateAppointment = async () => {
     setLoading(true);
-    const selectedClient = allClients.find(
-      (client) => client.id === appointment.clientId,
-    );
+    let selectedClient = null;
+    if (appointment.clientId !== '') {
+      selectedClient = allClients.find(
+        (client) => client.id === appointment.clientId,
+      );
+    }
     const selectedLawyer = allTeam.find(
       (team) => team.id === appointment.lawyerId,
     );
 
-    if (selectedClient && selectedLawyer) {
+    if (selectedLawyer) {
       const appointmentData: IAppointment = {
         time: appointment.time,
         date: appointment.date,
         location: appointment.location,
         description: appointment.description,
-        clientDetails: {
-          id: selectedClient?.id as string,
-          name: selectedClient?.name,
-          mobile: selectedClient?.mobile,
-          email: selectedClient?.email,
-        },
+        clientDetails: selectedClient
+          ? {
+              id: selectedClient?.id as string,
+              name: selectedClient?.name,
+              mobile: selectedClient?.mobile,
+              email: selectedClient?.email,
+            }
+          : null,
         lawyerDetails: {
           id: selectedLawyer?.id as string,
           name: selectedLawyer?.name,
           phoneNumber: selectedLawyer?.phoneNumber,
           email: selectedLawyer?.email,
         },
+        otherRelatedTo: appointment.otherRelatedTo,
         status: appointment.status as 'PENDING' | 'COMPLETED',
       };
       await createAppointment(appointmentData);
@@ -138,6 +147,26 @@ const CreateAppointmentModal = () => {
                     onChange={handleInputChange}
                   />
                 </FormControl>
+                <div className="mt-4">
+                  <Checkbox
+                    isChecked={otherCheck}
+                    onChange={() => setOtherCheck(!otherCheck)}
+                  >
+                    Other Related
+                  </Checkbox>
+                  {otherCheck && (
+                    <FormControl mt={4}>
+                      <FormLabel>Other related Field</FormLabel>
+                      <Input
+                        type="text"
+                        name="otherRelatedTo"
+                        placeholder="Enter Other Related Field"
+                        value={appointment.otherRelatedTo}
+                        onChange={handleInputChange}
+                      />
+                    </FormControl>
+                  )}
+                </div>
                 <FormControl mt={4}>
                   <FormLabel>Client</FormLabel>
                   <Select
@@ -153,6 +182,7 @@ const CreateAppointmentModal = () => {
                     ))}
                   </Select>
                 </FormControl>
+
                 <FormControl mt={4}>
                   <FormLabel>Team Members</FormLabel>
                   <Select

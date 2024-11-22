@@ -40,8 +40,14 @@ export const useLog = () => {
       await addDoc(logCollectionRef, {
         userId,
         user,
-        date: new Date(Date.now()).toISOString().split('T')[0],
-        time: new Date().toLocaleTimeString(),
+        date: new Date()
+          .toLocaleDateString('en-GB')
+          .split('/')
+          .reverse()
+          .join('-'),
+        time: new Date()
+          .toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+          .replace(/AM|PM/, ''),
         action,
         eventDetails,
       });
@@ -50,22 +56,10 @@ export const useLog = () => {
     }
   };
 
-  const getAllLogs = async () => {
-    try {
-      const logSnap = await getDocs(logCollectionRef);
-
-      const logList = logSnap.docs.map((doc) => ({
-        ...doc.data(),
-      }));
-      setAllLogs(logList as ILogEventInterface[]);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const getLogsByUserandDate = useCallback(
     async (userId?: string, date?: string) => {
       try {
+        console.log(userId, date);
         setLoading(true);
         const conditions = [];
 
@@ -79,11 +73,11 @@ export const useLog = () => {
         const logQuery = conditions.length
           ? query(
               logCollectionRef,
-              ...conditions,
               orderBy('date', 'desc'),
+              ...conditions,
               limit(100),
             )
-          : logCollectionRef;
+          : query(logCollectionRef, orderBy('date', 'desc'));
 
         const logSnap = await getDocs(logQuery);
 
@@ -103,7 +97,7 @@ export const useLog = () => {
   return {
     allLogs,
     createLogEvent,
-    getAllLogs,
+    // getAllLogs,
     getLogsByUserandDate,
   };
 };

@@ -85,13 +85,13 @@ const AddServiceForm = ({
             </section>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Checkbox
+                {/* <Checkbox
                   mb={4}
                   onChange={() => setToggleOtherInput(!toggleOtherInput)}
                   checked={toggleOtherInput}
                 >
                   Other Service?
-                </Checkbox>
+                </Checkbox> */}
                 <FormControl>
                   <FormLabel>Name</FormLabel>
                   {/* {toggleOtherInput ? (

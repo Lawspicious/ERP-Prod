@@ -94,15 +94,19 @@ const TaskTab = () => {
         status: taskData.taskStatus, // Status
         priority: taskData.priority, // Priority
         rowColor, // Row color based on end date proximity
+        deleteName: taskData.taskName,
       };
     });
   }, [allTask]);
 
-  const taskActionButtons = (id: string): ReactElement[] => [
+  const taskActionButtons = (
+    id: string,
+    deleteName: string,
+  ): ReactElement[] => [
     <DialogButton
       title={'Delete'}
       message={'Do you want to delete the task?'}
-      onConfirm={async () => deleteTasks(id)}
+      onConfirm={async () => deleteTasks(id, deleteName)}
       children={'Delete'}
       confirmButtonColorScheme="red"
       confirmButtonText="Delete"
