@@ -31,7 +31,6 @@ export const serviceList = ['Service A', 'Service B', 'Service C'];
 export const serviceList2 = [
   { label: 'Apple', value: 'apple' },
   { label: 'Banana', value: 'banana' },
-  { label: 'tormaa', value: 'ki chuth' },
 ];
 
 const AddInvoiceForm = ({
