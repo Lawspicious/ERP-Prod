@@ -21,6 +21,7 @@ export {
 } from './modules/session/index';
 export { scheduledDeadlineCheckCases } from './modules/case/scheduler';
 export { deleteOldNotifications } from './modules/notifications/deleteOldScheduler';
+export { deleteOldLogs } from './modules/logs/deleteOldScheduler';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

@@ -109,10 +109,7 @@ const Navbar = () => {
       />
 
       <div className="flex items-center justify-end gap-4">
-        <Logs
-          onClick={() => (window.location.href = '/logs')}
-          cursor="pointer"
-        />
+        <Logs onClick={() => window.open('/logs')} cursor="pointer" />
         <Box position="relative">
           <IconButton
             icon={<BellIcon />}
@@ -136,15 +133,12 @@ const Navbar = () => {
             </Badge>
           )}
         </Box>
-        <Calendar
-          onClick={() => (window.location.href = '/calendar')}
-          cursor={'pointer'}
-        />
+        <Calendar onClick={() => window.open('/calendar')} cursor={'pointer'} />
         <Avatar
           name={authUser?.displayName || 'admin'}
           cursor={'pointer'}
           size={'sm'}
-          onClick={() => (window.location.href = `/user/${authUser?.uid}`)}
+          onClick={() => window.open(`/user/${authUser?.uid}`)}
         />
       </div>
       <Drawer
