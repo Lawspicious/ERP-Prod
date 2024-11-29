@@ -6,7 +6,7 @@ export const createSessionCookie = onCall(
   { region: 'asia-south1', cors: true },
   async (request) => {
     const idToken = request.data.idToken; // ID Token sent from the client
-    const expiresIn = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+    const expiresIn = 5 * 60 * 1000; // 1 mins in milliseconds
 
     try {
       // Validate the ID Token and create a session cookie

@@ -181,7 +181,7 @@ const useCalendarEvents = () => {
       //Fetch appointments
       const appointmentSnapshot = await getDocs(appointmentsQuery);
       const appointmentEvents = appointmentSnapshot.docs.map((doc) => ({
-        title: `Appointment with Client : ${doc.data().clientDetails.name}`,
+        title: `Appointment with Client : ${doc.data().clientDetails?.name}`,
         start: doc.data().date, // Assuming date is a Firestore Timestamp
         resourceId: doc.id,
         color: 'purple',
