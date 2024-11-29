@@ -1,20 +1,7 @@
-'use client';
-import AutocompleteTextbox from '@/components/ui/auto-complete-textbox';
+import React from 'react';
 
-const MyComponent = () => {
-  const fruitOptions = [
-    { label: 'Apple', value: 'apple' },
-    { label: 'Banana', value: 'banana' },
-    { label: 'tormaa', value: 'ki chuth' },
-  ];
-
-  return (
-    <AutocompleteTextbox
-      options={fruitOptions}
-      onChange={(value) => console.log(value)}
-      placeholder="Select a fruit"
-    />
-  );
+const Page = () => {
+  return <div>Page</div>;
 };
 
-export default MyComponent;
+export default Page;

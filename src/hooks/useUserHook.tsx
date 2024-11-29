@@ -98,7 +98,7 @@ export const useUser = () => {
     }
   };
 
-  const deleteUser = async (id: string) => {
+  const deleteUser = async (id: string, name: string) => {
     try {
       const result = await deleteUserCloud({
         userId: id,
@@ -111,7 +111,7 @@ export const useUser = () => {
         await createLogEvent({
           userId: authUser?.uid,
           action: 'DELETE',
-          eventDetails: `User Deleted`,
+          eventDetails: `User Deleted - ${name}`,
           user: {
             name: authUser?.displayName,
             email: authUser?.email,

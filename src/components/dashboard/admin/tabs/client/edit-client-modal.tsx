@@ -65,7 +65,7 @@ const EditClientModal = ({ client }: EditClientModalProps) => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    await updateClient(client.id as string, formInputs);
+    await updateClient(client.id as string, formInputs, client.name);
     onClose();
   };
 

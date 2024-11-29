@@ -45,7 +45,7 @@ export const useTask = () => {
         await createLogEvent({
           userId: authUser?.uid,
           action: 'CREATE',
-          eventDetails: `New task ${data.taskName} Created`,
+          eventDetails: `New task Created - ${data.taskName}`,
           user: {
             name: authUser?.displayName,
             email: authUser?.email,
@@ -136,7 +136,11 @@ export const useTask = () => {
     }
   };
 
-  const updateTask = async (id: string, data: Partial<ITask>) => {
+  const updateTask = async (
+    id: string,
+    data: Partial<ITask>,
+    taskName: string,
+  ) => {
     try {
       const taskDocRef = doc(db, collectionName, id);
       await updateDoc(taskDocRef, { ...data });
@@ -148,7 +152,7 @@ export const useTask = () => {
         await createLogEvent({
           userId: authUser?.uid,
           action: 'UPDATE',
-          eventDetails: `Task ${data.taskName || ''} Updated`,
+          eventDetails: `Task Updated - ${taskName}`,
           user: {
             name: authUser?.displayName,
             email: authUser?.email,
@@ -165,7 +169,7 @@ export const useTask = () => {
     }
   };
 
-  const deleteTasks = async (id: string) => {
+  const deleteTasks = async (id: string, taskName: string) => {
     try {
       const taskDocRef = doc(db, collectionName, id);
       await deleteDoc(taskDocRef);
@@ -177,7 +181,7 @@ export const useTask = () => {
         await createLogEvent({
           userId: authUser?.uid,
           action: 'DELETE',
-          eventDetails: `Task Deleted`,
+          eventDetails: `Task Deleted - ${taskName}`,
           user: {
             name: authUser?.displayName,
             email: authUser?.email,

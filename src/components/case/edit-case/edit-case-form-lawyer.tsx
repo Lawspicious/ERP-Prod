@@ -49,7 +49,7 @@ const EditCaseFormLawyer = ({ caseData }: { caseData: ICase }) => {
     setLoading(true);
     e.preventDefault();
     if (caseData.caseId) {
-      await updateCase(caseData?.caseId, formInputs);
+      await updateCase(caseData?.caseId, formInputs, caseData.caseNo);
     }
     setLoading(false);
   };

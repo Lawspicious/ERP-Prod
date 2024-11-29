@@ -39,7 +39,7 @@ interface DisplayTableProps {
   columns: Column[];
   tabField: string; // Field used for tab generation
   otherField?: string;
-  actionButton: (id: string) => ReactElement[]; // Action buttons callback
+  actionButton: (id: string, deletename: string) => ReactElement[]; // Action buttons callback
   tableStyle?: {
     colKey: string;
     style: string;
@@ -158,7 +158,7 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
                     variant="outline"
                   />
                   <MenuList zIndex={50} maxWidth={100}>
-                    {actionButton(row.id).map((action, i) => (
+                    {actionButton(row.id, row.deleteName).map((action, i) => (
                       <MenuItem as={'div'} key={i}>
                         {action}
                       </MenuItem>

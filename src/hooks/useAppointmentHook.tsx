@@ -71,7 +71,7 @@ export const useAppointment = () => {
         await createLogEvent({
           userId: authUser?.uid,
           action: 'CREATE',
-          eventDetails: `New appointment created`,
+          eventDetails: `New Appointment Created`,
           user: {
             name: authUser?.displayName,
             email: authUser?.email,

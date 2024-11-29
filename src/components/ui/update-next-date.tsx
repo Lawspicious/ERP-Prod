@@ -18,6 +18,7 @@ import {
 import { CalendarDays } from 'lucide-react';
 import { useCases } from '@/hooks/useCasesHook';
 import { ICase } from '@/types/case';
+import caseData from '@/db/dummydb';
 
 interface ITransferProps {
   caseDetails: ICase;
@@ -41,10 +42,14 @@ const UpdateNextDateButton = ({ caseDetails }: ITransferProps) => {
       },
     ];
 
-    await updateCase(caseDetails.caseId as string, {
-      nextHearing: selectedDate as 'YYYY-MM-DD',
-      hearings: updatedHearings,
-    });
+    await updateCase(
+      caseDetails.caseId as string,
+      {
+        nextHearing: selectedDate as 'YYYY-MM-DD',
+        hearings: updatedHearings,
+      },
+      caseDetails.caseNo,
+    );
     onClose();
   };
 

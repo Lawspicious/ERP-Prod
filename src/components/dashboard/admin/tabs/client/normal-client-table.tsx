@@ -156,7 +156,10 @@ const NormalClientTable: React.FC = () => {
                             title={'Delete'}
                             message={'Do you want to delete the client?'}
                             onConfirm={async () =>
-                              deleteClient(client.id as string)
+                              deleteClient(
+                                client.id as string,
+                                client.name as string,
+                              )
                             }
                             children={'Delete'}
                             confirmButtonColorScheme="red"

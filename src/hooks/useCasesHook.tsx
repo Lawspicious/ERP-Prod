@@ -140,7 +140,7 @@ export const useCases = () => {
         await createLogEvent({
           userId: authUser?.uid,
           action: 'CREATE',
-          eventDetails: `New Case ${data.caseNo} Created`,
+          eventDetails: `New Case Created - ${data.caseNo}`,
           user: {
             name: authUser?.displayName,
             email: authUser?.email,
@@ -158,7 +158,7 @@ export const useCases = () => {
     }
   };
 
-  const deleteCase = async (id: string) => {
+  const deleteCase = async (id: string, caseNo: string) => {
     if (!authUser || (role !== 'ADMIN' && role !== 'SUPERADMIN')) {
       newToast({
         message: 'Permission Denied',
@@ -177,7 +177,7 @@ export const useCases = () => {
         await createLogEvent({
           userId: authUser?.uid,
           action: 'DELETE',
-          eventDetails: `Case Deleted`,
+          eventDetails: `Case Deleted - ${caseNo}`,
           user: {
             name: authUser?.displayName,
             email: authUser?.email,
@@ -194,7 +194,11 @@ export const useCases = () => {
     }
   };
 
-  const updateCase = async (id: string, data: Partial<ICase>) => {
+  const updateCase = async (
+    id: string,
+    data: Partial<ICase>,
+    caseNo: string,
+  ) => {
     try {
       const caseDocRef = doc(db, collectionName, id);
       await updateDoc(caseDocRef, { ...data });
@@ -206,7 +210,7 @@ export const useCases = () => {
         await createLogEvent({
           userId: authUser?.uid,
           action: 'UPDATE',
-          eventDetails: `Case Updated`,
+          eventDetails: `Case Updated - ${caseNo}`,
           user: {
             name: authUser?.displayName,
             email: authUser?.email,

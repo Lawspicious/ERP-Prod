@@ -15,14 +15,14 @@ import {
   useDisclosure,
   Spinner,
   Textarea,
+  Checkbox,
 } from '@chakra-ui/react';
 import { useTeam } from '@/hooks/useTeamHook';
 import { useClient } from '@/hooks/useClientHook';
 import { useAppointment } from '@/hooks/useAppointmentHook';
 import { IAppointment } from '@/types/appointments';
 import { useLoading } from '@/context/loading/loadingContext';
-import { useUser } from '@/hooks/useUserHook';
-import { useAuth } from '@/context/user/userContext';
+import { IUser } from '@/types/user';
 
 const initialData = {
   time: '',
@@ -32,22 +32,23 @@ const initialData = {
   lawyerId: '',
   status: 'PENDING',
   description: '',
+  otherRelatedTo: '',
 };
 
-const CreateAppointmentModalLawyer = () => {
+const CreateAppointmentModal = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [appointment, setAppointment] = useState({ ...initialData });
+  const { allTeam, getAllTeam } = useTeam();
   const { allClients, getAllClients } = useClient();
   const { createAppointment } = useAppointment();
   const { loading, setLoading } = useLoading();
-  const { getUserById, user } = useTeam();
-  const { authUser } = useAuth();
+  const [otherCheck, setOtherCheck] = useState(false);
 
   useEffect(() => {
     const handleFetchData = async () => {
       setLoading(true);
       await getAllClients();
-      await getUserById(authUser?.uid as string);
+      await getAllTeam();
       setLoading(false);
     };
     handleFetchData();
@@ -63,32 +64,44 @@ const CreateAppointmentModalLawyer = () => {
 
   const handleCreateAppointment = async () => {
     setLoading(true);
-    const selectedClient = allClients.find(
-      (client) => client.id === appointment.clientId,
+
+    let selectedClient = null;
+    if (appointment.clientId !== '') {
+      selectedClient = allClients.find(
+        (client) => client.id === appointment.clientId,
+      );
+    }
+    const selectedLawyer = allTeam.find(
+      (team) => team.id === appointment.lawyerId,
     );
 
-    if (selectedClient && user) {
+    if (selectedLawyer) {
       const appointmentData: IAppointment = {
         time: appointment.time,
         date: appointment.date,
         location: appointment.location,
         description: appointment.description,
-        clientDetails: {
-          id: selectedClient?.id as string,
-          name: selectedClient?.name,
-          mobile: selectedClient?.mobile,
-          email: selectedClient?.email,
-        },
+        clientDetails: selectedClient
+          ? {
+              id: selectedClient?.id as string,
+              name: selectedClient?.name,
+              mobile: selectedClient?.mobile,
+              email: selectedClient?.email,
+            }
+          : null,
         lawyerDetails: {
-          id: authUser?.uid as string,
-          name: user?.name,
-          phoneNumber: user?.phoneNumber,
-          email: user?.email,
+          id: selectedLawyer?.id as string,
+          name: selectedLawyer?.name,
+          phoneNumber: selectedLawyer?.phoneNumber,
+          email: selectedLawyer?.email,
         },
+        otherRelatedTo: appointment.otherRelatedTo,
         status: appointment.status as 'PENDING' | 'COMPLETED',
       };
       await createAppointment(appointmentData);
       setAppointment(initialData);
+    } else {
+      alert('Select Team Member');
     }
     setLoading(false);
   };
@@ -137,6 +150,26 @@ const CreateAppointmentModalLawyer = () => {
                     onChange={handleInputChange}
                   />
                 </FormControl>
+                <div className="mt-4">
+                  <Checkbox
+                    isChecked={otherCheck}
+                    onChange={() => setOtherCheck(!otherCheck)}
+                  >
+                    Other Related
+                  </Checkbox>
+                  {otherCheck && (
+                    <FormControl mt={4}>
+                      <FormLabel>Other related Field</FormLabel>
+                      <Input
+                        type="text"
+                        name="otherRelatedTo"
+                        placeholder="Enter Other Related Field"
+                        value={appointment.otherRelatedTo}
+                        onChange={handleInputChange}
+                      />
+                    </FormControl>
+                  )}
+                </div>
                 <FormControl mt={4}>
                   <FormLabel>Client</FormLabel>
                   <Select
@@ -152,12 +185,44 @@ const CreateAppointmentModalLawyer = () => {
                     ))}
                   </Select>
                 </FormControl>
+
+                <FormControl mt={4} isRequired>
+                  <FormLabel>Team Members</FormLabel>
+                  <Select
+                    name="lawyerId"
+                    placeholder="Select Team Member"
+                    value={appointment.lawyerId}
+                    onChange={handleInputChange}
+                  >
+                    {/* Group for Lawyers */}
+                    <optgroup label="Lawyers">
+                      {allTeam
+                        .filter((team: IUser) => team.role === 'LAWYER')
+                        .map((lawyer: IUser) => (
+                          <option key={lawyer.id} value={lawyer.id}>
+                            {lawyer.name}
+                          </option>
+                        ))}
+                    </optgroup>
+
+                    {/* Group for Admins */}
+                    <optgroup label="Admins">
+                      {allTeam
+                        .filter((team: IUser) => team.role === 'ADMIN')
+                        .map((admin: IUser) => (
+                          <option key={admin.id} value={admin.id}>
+                            {admin.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                  </Select>
+                </FormControl>
                 <FormControl mt={4}>
                   <FormLabel>Description</FormLabel>
                   <Textarea
                     name="description"
-                    placeholder="Enter description..."
                     rows={3}
+                    placeholder="Enter description..."
                     value={appointment.description}
                     onChange={handleInputChange}
                   />
@@ -183,4 +248,4 @@ const CreateAppointmentModalLawyer = () => {
   );
 };
 
-export default CreateAppointmentModalLawyer;
+export default CreateAppointmentModal;

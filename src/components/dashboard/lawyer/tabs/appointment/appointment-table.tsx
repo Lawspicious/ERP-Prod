@@ -54,7 +54,10 @@ const AppointmentTableLawyer = ({
           {appointments.map((appointment, index) => (
             <Tr key={appointment.id}>
               <Td>{index + 1}</Td>
-              <Td>{appointment.clientDetails.name}</Td>
+              <Td>
+                {appointment?.clientDetails?.name ||
+                  appointment?.otherRelatedTo}
+              </Td>
               <Td>{appointment.lawyerDetails.name}</Td>
               <Td>{appointment.time}</Td>
               <Td>{appointment.date}</Td>
