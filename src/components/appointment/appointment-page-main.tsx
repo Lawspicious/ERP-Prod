@@ -55,17 +55,22 @@ export const IndividualAppointment = ({
           <Divider />
 
           {/* Client Details Section */}
-          <SectionHeading icon={User} title="Client Details">
-            <TextDisplay label="Name:" value={appointment.clientDetails.name} />
-            <TextDisplay
-              label="Email:"
-              value={appointment.clientDetails.email}
-            />
-            <TextDisplay
-              label="Mobile:"
-              value={appointment.clientDetails.mobile}
-            />
-          </SectionHeading>
+          {appointment.clientDetails && (
+            <SectionHeading icon={User} title="Client Details">
+              <TextDisplay
+                label="Name:"
+                value={appointment?.clientDetails?.name}
+              />
+              <TextDisplay
+                label="Email:"
+                value={appointment?.clientDetails?.email}
+              />
+              <TextDisplay
+                label="Mobile:"
+                value={appointment?.clientDetails?.mobile}
+              />
+            </SectionHeading>
+          )}
 
           <Divider />
 

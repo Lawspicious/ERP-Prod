@@ -299,7 +299,10 @@ const OrganizationInvoiceTable = ({
                                       'Do you want to delete the invoice?'
                                     }
                                     onConfirm={async () =>
-                                      deleteTasks(task.id as string)
+                                      deleteTasks(
+                                        task.id as string,
+                                        task.taskName,
+                                      )
                                     }
                                     children={'Delete'}
                                     confirmButtonColorScheme="red"

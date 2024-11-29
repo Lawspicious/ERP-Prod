@@ -52,14 +52,18 @@ const TransferCaseButton = ({ caseDetails }: ITransferProps) => {
     const _lawyer = allTeam.find((lawyer) => lawyer.id == selectedLawyerId);
     // Update the case with the selected lawyer's ID
     if (_lawyer) {
-      await updateCase(caseDetails.caseId as string, {
-        lawyer: {
-          name: _lawyer?.name,
-          email: _lawyer?.email,
-          phoneNumber: _lawyer?.phoneNumber,
-          id: _lawyer?.id as string,
+      await updateCase(
+        caseDetails.caseId as string,
+        {
+          lawyer: {
+            name: _lawyer?.name,
+            email: _lawyer?.email,
+            phoneNumber: _lawyer?.phoneNumber,
+            id: _lawyer?.id as string,
+          },
         },
-      });
+        caseDetails.caseNo,
+      );
     }
     setLoading(false);
     onClose();
