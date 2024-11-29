@@ -64,6 +64,7 @@ const CreateAppointmentModal = () => {
 
   const handleCreateAppointment = async () => {
     setLoading(true);
+
     let selectedClient = null;
     if (appointment.clientId !== '') {
       selectedClient = allClients.find(
@@ -99,6 +100,8 @@ const CreateAppointmentModal = () => {
       };
       await createAppointment(appointmentData);
       setAppointment(initialData);
+    } else {
+      alert('Select Team Member');
     }
     setLoading(false);
   };
@@ -183,7 +186,7 @@ const CreateAppointmentModal = () => {
                   </Select>
                 </FormControl>
 
-                <FormControl mt={4}>
+                <FormControl mt={4} isRequired>
                   <FormLabel>Team Members</FormLabel>
                   <Select
                     name="lawyerId"

@@ -15,6 +15,7 @@ import {
   Flex,
   Input,
   Select,
+  TableCaption,
 } from '@chakra-ui/react';
 import PageLayout from '@/components/ui/page-layout';
 import withAuth from '@/components/shared/hoc-middlware';
@@ -29,13 +30,20 @@ const LogsPage = () => {
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const router = useRouter();
-  const { getLogsByUserandDate, allLogs } = useLog();
+  const {
+    getLogsByUserandDate,
+    allLogs,
+    currentPage,
+    pageSize,
+    prevPage,
+    nextPage,
+  } = useLog();
   const { allUser } = useTeam();
   const { loading } = useLoading();
 
   useEffect(() => {
     getLogsByUserandDate(selectedUser, selectedDate);
-  }, [router, selectedDate, selectedUser]);
+  }, [router, selectedDate, selectedUser, getLogsByUserandDate]);
 
   const getBadgeColor = (action: string) => {
     switch (action) {
@@ -109,9 +117,26 @@ const LogsPage = () => {
           </div>
           <Box className="overflow-x-auto rounded-lg bg-white p-4 shadow-md">
             <Table variant="striped" colorScheme="gray">
+              <TableCaption>
+                <div className="flex items-center justify-center gap-6">
+                  <Button
+                    colorScheme="purple"
+                    onClick={() => prevPage(selectedUser, selectedDate)}
+                    disabled={currentPage === 0}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    colorScheme="purple"
+                    onClick={nextPage}
+                    disabled={allLogs.length < pageSize}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </TableCaption>
               <Thead>
                 <Tr>
-                  <Th>Sl No</Th>
                   <Th>Action</Th>
                   <Th>Event Details</Th>
                   <Th>Event Date</Th>
@@ -122,7 +147,6 @@ const LogsPage = () => {
               <Tbody>
                 {allLogs.map((log, index) => (
                   <Tr key={index}>
-                    <Td>{index + 1}</Td>
                     <Td>
                       <Badge colorScheme={getBadgeColor(log.action)}>
                         {log.action}

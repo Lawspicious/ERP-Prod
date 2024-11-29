@@ -7,9 +7,11 @@ import {
   limit,
   orderBy,
   query,
+  startAfter,
+  startAt,
   where,
 } from 'firebase/firestore';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface ILogEventInterface {
   userId: string;
@@ -29,6 +31,10 @@ export const useLog = () => {
   const [allLogs, setAllLogs] = useState<ILogEventInterface[]>([]);
   const logCollectionRef = collection(db, collectionName);
   const { loading, setLoading } = useLoading();
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize] = useState(20); // Number of logs per page
+  const [lastVisible, setLastVisible] = useState<any>(null); // Last document of current page
+  const [firstVisible, setFirstVisible] = useState<any>(null);
 
   const createLogEvent = async ({
     userId,
@@ -59,45 +65,120 @@ export const useLog = () => {
   const getLogsByUserandDate = useCallback(
     async (userId?: string, date?: string) => {
       try {
-        console.log(userId, date);
         setLoading(true);
         const conditions = [];
 
         if (userId && userId !== '') {
           conditions.push(where('userId', '==', userId));
         }
-        if (date && date != '') {
+        if (date && date !== '') {
           conditions.push(where('date', '==', date));
         }
 
-        const logQuery = conditions.length
-          ? query(
-              logCollectionRef,
-              orderBy('date', 'desc'),
-              ...conditions,
-              limit(100),
-            )
-          : query(logCollectionRef, orderBy('date', 'desc'));
+        // Create query with pagination
+        let logQuery;
+
+        if (currentPage === 0) {
+          logQuery = query(
+            logCollectionRef,
+            orderBy('date', 'desc'),
+
+            ...conditions,
+            limit(pageSize),
+          );
+        } else {
+          logQuery = query(
+            logCollectionRef,
+            orderBy('date', 'desc'),
+
+            ...conditions,
+            startAfter(lastVisible), // Start after the last visible document
+            limit(pageSize),
+          );
+        }
 
         const logSnap = await getDocs(logQuery);
-
-        const logList = logSnap.docs.map((doc) => ({
+        const logList: ILogEventInterface[] = logSnap.docs.map((doc) => ({
+          id: doc.id,
           ...doc.data(),
-        }));
-        setAllLogs(logList as ILogEventInterface[]);
+        })) as unknown as ILogEventInterface[];
+
+        if (logList.length > 0) {
+          setAllLogs(logList);
+          setLastVisible(logSnap.docs[logSnap.docs.length - 1]);
+          setFirstVisible(logSnap.docs[0]);
+        }
       } catch (error) {
-        console.log(error);
+        console.error('Error fetching logs:', error);
       } finally {
         setLoading(false);
       }
     },
-    [],
+    [currentPage, pageSize],
   );
+
+  const nextPage = () => {
+    if (allLogs.length === pageSize) {
+      // Only go to next page if there are enough logs
+      setCurrentPage(currentPage + 1);
+      getLogsByUserandDate(); // Fetch next logs
+    }
+  };
+
+  const prevPage = async (userId?: string, date?: string) => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+      try {
+        setLoading(true);
+
+        const conditions = []; // Recreate conditions based on your filters
+
+        if (userId && userId !== '') {
+          // Assuming userId is in scope
+          conditions.push(where('userId', '==', userId));
+        }
+        if (date && date !== '') {
+          // Assuming date is in scope
+          conditions.push(where('date', '==', date));
+        }
+
+        const logQuery = query(
+          logCollectionRef,
+          orderBy('date', 'desc'),
+
+          ...conditions,
+          startAt(firstVisible), // Start at the first visible document of the previous page
+          limit(pageSize),
+        );
+
+        const logSnap = await getDocs(logQuery);
+        const logList = logSnap.docs.map((doc) => ({
+          id: doc.id,
+
+          ...doc.data(),
+        }));
+
+        if (logList.length > 0) {
+          setAllLogs(logList as any);
+          setLastVisible(logSnap.docs[logSnap.docs.length - 1] as any); // Update last visible document
+          setFirstVisible(logSnap.docs[0] as any); // Update first visible document
+        }
+      } catch (error) {
+        console.error('Error fetching logs:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   return {
     allLogs,
+    currentPage,
+    pageSize,
+    nextPage,
+    prevPage,
     createLogEvent,
-    // getAllLogs,
+    setCurrentPage,
     getLogsByUserandDate,
   };
 };

@@ -56,10 +56,10 @@ const AppointmentTable = ({
               <Td>{index + 1}</Td>
               <Td>
                 {appointment.clientDetails
-                  ? appointment.clientDetails.name
-                  : appointment.otherRelatedTo}
+                  ? appointment.clientDetails?.name
+                  : appointment?.otherRelatedTo}
               </Td>
-              <Td>{appointment.lawyerDetails.name}</Td>
+              <Td>{appointment.lawyerDetails?.name}</Td>
               <Td>{appointment.time}</Td>
               <Td>{appointment.date}</Td>
               <Td>{appointment.location}</Td>
