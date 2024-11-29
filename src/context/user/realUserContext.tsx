@@ -1,6 +1,6 @@
 'use client';
 
-import { auth, db, functions } from '@/lib/config/firebase.config';
+import { app, auth } from '@/lib/config/firebase.config';
 import FirebaseAuth, {
   ApplicationVerifier,
   MultiFactorError,
@@ -9,9 +9,9 @@ import FirebaseAuth, {
   PhoneMultiFactorGenerator,
   getMultiFactorResolver,
   onAuthStateChanged,
+  setPersistence,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
 import {
   createContext,
   useCallback,
@@ -21,15 +21,14 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@chakra-ui/react';
-import { Loader } from 'lucide-react';
-import { httpsCallable } from 'firebase/functions';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 interface UserContextValue {
   authUser: FirebaseAuth.User | null;
   getRole: (userId: string) => Promise<void>;
   role: string | undefined;
   signin: (
-    username: string,
+    email: string,
     password: string,
     recaptcha: FirebaseAuth.ApplicationVerifier,
   ) => Promise<void>;
@@ -40,7 +39,7 @@ interface UserContextValue {
   isAuthLoading: boolean;
 }
 
-const defaultValues = {
+const defaultValues: UserContextValue = {
   authUser: null,
   signin: async () => {},
   role: undefined,
@@ -54,33 +53,22 @@ const defaultValues = {
 
 const UserContext = createContext<UserContextValue>(defaultValues);
 
-export const UserProviderSsss = ({ children }: any) => {
+export const UserProviderSSS = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const [authUser, setAuthUser] = useState<FirebaseAuth.User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [verificationIdState, setVerificationIdState] = useState<string>();
   const [resolverState, setResolverState] = useState<MultiFactorResolver>();
   const [role, setRole] = useState<string | undefined>();
-  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const router = useRouter();
   const toast = useToast();
-
-  const fetchUser = useCallback(
-    async (userId: string) => {
-      console.log('fetching admin user');
-      try {
-        const docRef = doc(db, `users/${userId}`);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          console.log('Admin User Exists');
-        } else {
-          console.log('No such document!');
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    },
-    [authUser],
+  const functions = getFunctions(app, 'asia-south1');
+  const generateAuthStateToken = httpsCallable(
+    functions,
+    'createSessionCookie',
   );
 
   const signin = async (
@@ -89,12 +77,20 @@ export const UserProviderSsss = ({ children }: any) => {
     recaptcha: FirebaseAuth.ApplicationVerifier | undefined,
   ) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password).then(
-        async (value: FirebaseAuth.UserCredential) => {
-          const userID = value.user.uid;
-          await fetchUser(userID);
-        },
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
       );
+
+      // Generate a session cookie
+      const idToken = await userCredential.user.getIdToken();
+      const sessionResponse: any = await generateAuthStateToken({ idToken });
+      const { sessionCookie, expiresAt } = sessionResponse.data;
+
+      // Store session data in sessionStorage
+      sessionStorage.setItem('sessionCookie', sessionCookie);
+      sessionStorage.setItem('sessionCookieExp', expiresAt.toString());
 
       toast({
         title: 'Login Successful',
@@ -103,160 +99,90 @@ export const UserProviderSsss = ({ children }: any) => {
         position: 'top',
         isClosable: true,
       });
+
+      // setAuthUser(userCredential.user);
+      // getRole(userCredential.user.uid);
     } catch (e: any) {
       console.error(e);
       await handleMFA(e, recaptcha);
-      if (e.code === 'auth/invalid-credential') {
-        toast({
-          title: 'Invalid Credential',
-          status: 'error',
-          duration: 3000,
-          position: 'top',
-          isClosable: true,
-        });
-      }
-      if (e.code === 'auth/invalid-email') {
-        toast({
-          title: 'Invalid Email',
-          status: 'error',
-          duration: 3000,
-          position: 'top',
-          isClosable: true,
-        });
-      }
+
+      const errorMessage =
+        e.code === 'auth/invalid-credential'
+          ? 'Invalid Credential'
+          : e.code === 'auth/invalid-email'
+            ? 'Invalid Email'
+            : 'Login Failed';
+
+      toast({
+        title: errorMessage,
+        status: 'error',
+        duration: 3000,
+        position: 'top',
+        isClosable: true,
+      });
     }
   };
 
-  async function handleMFA(
-    response: any,
+  const handleMFA = async (
+    response: MultiFactorError,
     recaptcha: ApplicationVerifier | undefined,
-  ) {
+  ) => {
     if (!recaptcha) {
       console.log('Recaptcha not initialized');
       return;
     }
 
-    if (response.code === 'auth/multi-factor-auth-required' && recaptcha) {
-      const data = await verifyUserMfa(response, recaptcha, 0);
-      if (!data) {
-        console.log('Something went wrong.');
-      } else {
-        const { verificationId, resolver } = data;
+    if (response.code === 'auth/multi-factor-auth-required') {
+      const resolver = getMultiFactorResolver(auth, response);
+      const phoneAuthProvider = new PhoneAuthProvider(auth);
+      const phoneInfoOptions = {
+        multiFactorHint: resolver.hints[0],
+        session: resolver.session,
+      };
+
+      try {
+        const verificationId = await phoneAuthProvider.verifyPhoneNumber(
+          phoneInfoOptions,
+          recaptcha,
+        );
         setVerificationIdState(verificationId);
         setResolverState(resolver);
+      } catch (e) {
+        console.error(e);
       }
-    } else {
-      console.log('Something went wrong');
     }
-  }
+  };
 
-  const verifyUserMfa = useCallback(
-    async (
-      error: MultiFactorError,
-      recaptchaVerifier: ApplicationVerifier,
-      selectedIndex: number,
-    ) => {
-      const resolver = getMultiFactorResolver(auth, error);
-      // console.log('Resolver:', resolver);
-      if (
-        resolver.hints[selectedIndex].factorId ===
-        PhoneMultiFactorGenerator.FACTOR_ID
-      ) {
-        const phoneInfoOptions = {
-          multiFactorHint: resolver.hints[selectedIndex],
-          session: resolver.session,
-        };
+  const verifyOTPcode = async (code: string) => {
+    if (resolverState && verificationIdState) {
+      try {
+        const phoneAuthCredential = PhoneAuthProvider.credential(
+          verificationIdState,
+          code,
+        );
+        const assertion =
+          PhoneMultiFactorGenerator.assertion(phoneAuthCredential);
+        await resolverState.resolveSignIn(assertion);
 
-        const phoneAuthProvider = new PhoneAuthProvider(auth);
-        try {
-          const verificationId = await phoneAuthProvider.verifyPhoneNumber(
-            phoneInfoOptions,
-            recaptchaVerifier,
-          );
-          return { verificationId, resolver };
-        } catch (e: any) {
-          if (e.code === 'auth/user-token-expired') {
-            toast({
-              title: 'Authentication Expired',
-              status: 'error',
-              duration: 3000,
-              position: 'top',
-              isClosable: true,
-            });
-          }
-          if (e.code === 'auth/second-factor-already-in-use') {
-            toast({
-              title: 'Second Factor Already In Use',
-              status: 'error',
-              duration: 3000,
-              position: 'top',
-              isClosable: true,
-            });
-          }
-          if (e.code === 'auth/too-many-requests') {
-            toast({
-              title: 'Too Many Requests',
-              status: 'error',
-              duration: 3000,
-              position: 'top',
-              isClosable: true,
-            });
-          }
-
-          console.error(e);
-          return false;
-        }
-      }
-    },
-    [],
-  );
-
-  // This Function is used inside the verifyOTP Function
-  async function verifyUserEnrolled(
-    verificationMFA: { verificationId: string; resolver: MultiFactorResolver },
-    verificationCode: string,
-  ) {
-    const { verificationId, resolver } = verificationMFA;
-    const credentials = PhoneAuthProvider.credential(
-      verificationId,
-      verificationCode,
-    );
-    const multiFactorAssertion =
-      PhoneMultiFactorGenerator.assertion(credentials);
-    // console.log(multiFactorAssertion);
-    try {
-      await resolver.resolveSignIn(multiFactorAssertion);
-      return true;
-    } catch (e: any) {
-      console.error(e);
-      if (e.code === 'auth/invalid-verification-code') {
         toast({
-          title: 'Invalid Verification Code',
+          title: 'MFA Verification Successful',
+          status: 'success',
+          duration: 3000,
+          position: 'top',
+          isClosable: true,
+        });
+
+        router.push('/dashboard');
+      } catch (e) {
+        console.error(e);
+        toast({
+          title: 'MFA Verification Failed',
           status: 'error',
           duration: 3000,
           position: 'top',
           isClosable: true,
         });
       }
-      return false;
-    }
-  }
-
-  const verifyOTPcode = async (code: string) => {
-    setIsLoading(true);
-    const response = await verifyUserEnrolled(
-      {
-        verificationId: verificationIdState!,
-        resolver: resolverState!,
-      },
-      code,
-    );
-
-    if (response) {
-      setIsLoading(false);
-      router.push('/dashboard');
-    } else {
-      console.log('Something went wrong.');
     }
   };
 
@@ -277,34 +203,57 @@ export const UserProviderSsss = ({ children }: any) => {
 
   const logout = async () => {
     await auth.signOut();
-    setResolverState(undefined);
-    setVerificationIdState(undefined);
+    sessionStorage.removeItem('sessionCookie');
+    sessionStorage.removeItem('sessionCookieExp');
+    setAuthUser(null);
+    setRole('');
     router.push('/');
   };
 
-  // useEffect(() => {
-  //   const res = auth.onAuthStateChanged((user) => {
-  //     if (user) {
-  //       setAuthUser(user);
-  //       getRole(user.uid);
-  //     }
-  //     setIsLoading(false);
-  //   });
-  //   return res;
-  // }, []);
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Assuming you fetch the role from somewhere (e.g., Firestore)
+        const expiresAt = sessionStorage.getItem('sessionCookieExp');
+        const currentTime = Date.now();
 
-        setAuthUser(user);
-        getRole(user.uid); // Or fetch the user's role
+        if (expiresAt && currentTime >= parseInt(expiresAt)) {
+          logout();
+          toast({
+            title: 'Session Expired',
+            description: 'Please log in again.',
+            status: 'warning',
+            duration: 3000,
+            position: 'top',
+            isClosable: true,
+          });
+        } else {
+          setAuthUser(user);
+          await getRole(user.uid);
+
+          if (expiresAt) {
+            const timeout = setTimeout(
+              () => {
+                logout();
+                toast({
+                  title: 'Session Expired',
+                  description: 'Please log in again.',
+                  status: 'warning',
+                  duration: 3000,
+                  position: 'top',
+                  isClosable: true,
+                });
+              },
+              parseInt(expiresAt) - currentTime,
+            );
+
+            return () => clearTimeout(timeout);
+          }
+        }
       } else {
         setAuthUser(null);
         setRole('');
       }
-      setIsAuthLoading(false); // Finished initializing
+      setIsAuthLoading(false);
     });
 
     return () => unsubscribe();
@@ -316,11 +265,12 @@ export const UserProviderSsss = ({ children }: any) => {
     getRole,
     role,
     logout,
-    verificationIdState,
     resolverState,
+    verificationIdState,
     verifyOTPcode,
     isAuthLoading,
   };
+
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
 

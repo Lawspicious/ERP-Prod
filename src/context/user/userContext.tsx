@@ -1,6 +1,6 @@
 'use client';
 
-import { app, auth, db, functions } from '@/lib/config/firebase.config';
+import { auth, db, functions } from '@/lib/config/firebase.config';
 import FirebaseAuth, {
   ApplicationVerifier,
   MultiFactorError,
@@ -9,7 +9,6 @@ import FirebaseAuth, {
   PhoneMultiFactorGenerator,
   getMultiFactorResolver,
   onAuthStateChanged,
-  setPersistence,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -23,7 +22,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useToast } from '@chakra-ui/react';
 import { Loader } from 'lucide-react';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
 
 interface UserContextValue {
   authUser: FirebaseAuth.User | null;
@@ -64,43 +63,25 @@ export const UserProvider = ({ children }: any) => {
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const router = useRouter();
   const toast = useToast();
-  const functions = getFunctions(app, 'asia-south1');
-  // const generateAuthStateToken = httpsCallable(functions, 'createSessionCookie');
-  // const verifySessionCookies = httpsCallable(functions, 'verifySessionCookie');
 
-  // const fetchUser = useCallback(
-  //   async (userId: string) => {
-  //     console.log('fetching admin user');
-  //     try {
-  //       const docRef = doc(db, `users/${userId}`);
-  //       const docSnap = await getDoc(docRef);
+  const fetchUser = useCallback(
+    async (userId: string) => {
+      console.log('fetching admin user');
+      try {
+        const docRef = doc(db, `users/${userId}`);
+        const docSnap = await getDoc(docRef);
 
-  //       if (docSnap.exists()) {
-  //         console.log('Admin User Exists');
-  //       } else {
-  //         console.log('No such document!');
-  //       }
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   },
-  //   [authUser],
-  // );
-
-  // const verifySession = async (sessionCookie: any) => {
-  //   try {
-  //     const result = await verifySessionCookies({ sessionCookie });
-  //     return result.data; // Return user data if session is valid
-  //   } catch (error) {
-  //     console.error('Session expired or invalid', error);
-  //     return null; // Return null if session is invalid
-  //   }
-  // };
-
-  interface SessionResponseData {
-    sessionCookie: string;
-    expiresAt: number; // Expiration timestamp (optional, depending on the response)
-  }
+        if (docSnap.exists()) {
+          console.log('Admin User Exists');
+        } else {
+          console.log('No such document!');
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    [authUser],
+  );
 
   const signin = async (
     email: string,
@@ -111,14 +92,7 @@ export const UserProvider = ({ children }: any) => {
       await signInWithEmailAndPassword(auth, email, password).then(
         async (value: FirebaseAuth.UserCredential) => {
           const userID = value.user.uid;
-          // await fetchUser(userID);
-          //Generate a session cookie
-          // const sessionResponse  = await generateAuthStateToken({ idToken: await value.user.getIdToken() as string });
-          // console.log('Session Cookie:', sessionResponse.data);
-
-          // const cookie  = sessionResponse?.data as SessionResponseData
-          // sessionStorage.setItem('sessionCookie', cookie.sessionCookie)
-          // sessionStorage.setItem('sessionCookieExp', cookie.expiresAt.toString() as string )
+          await fetchUser(userID);
         },
       );
 
@@ -308,6 +282,17 @@ export const UserProvider = ({ children }: any) => {
     router.push('/');
   };
 
+  // useEffect(() => {
+  //   const res = auth.onAuthStateChanged((user) => {
+  //     if (user) {
+  //       setAuthUser(user);
+  //       getRole(user.uid);
+  //     }
+  //     setIsLoading(false);
+  //   });
+  //   return res;
+  // }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -324,48 +309,6 @@ export const UserProvider = ({ children }: any) => {
 
     return () => unsubscribe();
   }, []);
-
-  // useEffect(() => {
-  //   const initializeAuth = async () => {
-  //     const user = auth.currentUser;
-  //     if (user) {
-  //       setAuthUser(user);
-  //       await getRole(user.uid);
-  //     } else {
-  //       setAuthUser(null);
-  //       setRole(undefined);
-  //     }
-  //     setIsAuthLoading(false);
-  //   };
-
-  //   initializeAuth();
-  // }, []);
-
-  // useEffect(() => {
-  //   const unsubscribe = onAuthStateChanged(auth, async (user) => {
-  //     if (user) {
-  //       // Assuming user is logged in, check the session cookie or token validity
-  //       const sessionCookie = sessionStorage.getItem('sessionCookie'); // Get ID token to verify session
-  //       console.log(sessionCookie)
-  //       const userData = await verifySession(sessionCookie); // Check if the session is valid
-  //       console.log(userData)
-  //       if (userData) {
-  //         setAuthUser(user); // Set authenticated user
-  //         getRole(user.uid) || ''; // Set user role (or fetch it if needed)
-  //       } else {
-  //         setAuthUser(null); // Invalid session, log out user
-  //         setRole('');
-  //         router.push('/login'); // Redirect to login page
-  //       }
-  //     } else {
-  //       setAuthUser(null); // User is not authenticated
-  //       setRole('');
-  //     }
-  //     setIsAuthLoading(false); // Set loading state to false
-  //   });
-
-  //   return () => unsubscribe(); // Clean up the listener when the component is unmounted
-  // }, []);
 
   const value: UserContextValue = {
     authUser,
