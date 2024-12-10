@@ -42,15 +42,16 @@ const CaseTab = () => {
 
   const columns = [
     { key: 'No', label: 'No', sortable: false },
-    { key: 'caseRegistration', label: 'Case Details', sortable: true },
-    { key: 'courtDetails', label: 'Court Details', sortable: true },
+    { key: 'caseDetails', label: 'Case Details', sortable: true },
+    // { key: 'courtDetails', label: 'Court Details', sortable: true },
+    { key: 'allotedLaywer', label: 'Lawyer', sortable: true },
     {
       key: 'petitionVsRespondent',
       label: 'Pet vs Resp',
       sortable: false,
     },
     { key: 'nextDate', label: 'Next Date', sortable: true },
-    { key: 'allotedClient', label: 'Client', sortable: true },
+    { key: 'clientName', label: 'Client', sortable: true },
     // { key: 'status', label: 'Status', sortable: true },
     { key: 'priority', label: 'Priority', sortable: true },
   ];

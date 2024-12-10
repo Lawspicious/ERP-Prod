@@ -227,30 +227,79 @@ export const useCases = () => {
     }
   };
 
-  const fetchCasesByLawyerId = async (lawyerId: string) => {
-    try {
-      const casesCollectionRef = collection(db, collectionName);
-      const casesQuery = query(
-        casesCollectionRef,
-        where('lawyer.id', '==', lawyerId),
-      );
-      const querySnapshot = await getDocs(casesQuery);
+  // const fetchCasesByLawyerId = useCallback (async (lawyerId: string) => {
+  //   try {
+  //     const casesCollectionRef = collection(db, collectionName);
+  //     const casesQuery = query(
+  //       casesCollectionRef,
+  //       where('lawyer.id', '==', lawyerId),
+  //     );
+  //     const querySnapshot = await getDocs(casesQuery);
 
-      const casesList: ICase[] = querySnapshot.docs.map((doc) => {
-        const caseData = doc.data() as ICase;
-        return { ...caseData, caseId: doc.id };
-      });
-      setAllCasesLawyer(casesList);
-      setAllCases(casesList);
-      return casesList;
-    } catch (error) {
-      console.error('Error fetching cases by lawyerId: ', error);
-      newToast({
-        message: 'Could not fetch case',
-        status: 'error',
-      });
-    }
-  };
+  //     const casesList: ICase[] = querySnapshot.docs.map((doc) => {
+  //       const caseData = doc.data() as ICase;
+  //       return { ...caseData, caseId: doc.id };
+  //     });
+  //     setAllCasesLawyer(casesList);
+  //     setAllCases(casesList);
+  //     return casesList;
+  //   } catch (error) {
+  //     console.error('Error fetching cases by lawyerId: ', error);
+  //     newToast({
+  //       message: 'Could not fetch case',
+  //       status: 'error',
+  //     });
+  //   }
+  // },[allCasesLawyer]);
+
+  const fetchCasesByLawyerId = useCallback(
+    (lawyerId: string) => {
+      try {
+        const casesCollectionRef = collection(db, collectionName);
+        const casesQuery = query(
+          casesCollectionRef,
+          where('lawyer.id', '==', lawyerId), // Filter cases by lawyer ID
+        );
+
+        // Set up a real-time listener
+        const unsubscribe = onSnapshot(
+          casesQuery,
+          (querySnapshot) => {
+            const casesList: ICase[] = querySnapshot.docs.map((doc) => {
+              const caseData = doc.data() as ICase;
+              return { ...caseData, caseId: doc.id };
+            });
+
+            // Update state with the fetched cases
+            setAllCasesLawyer(casesList);
+            setAllCases(casesList);
+          },
+          (error) => {
+            console.error(
+              'Error fetching cases by lawyerId in real-time:',
+              error,
+            );
+            newToast({
+              message: 'Could not fetch cases in real-time.',
+              status: 'error',
+            });
+          },
+        );
+
+        return unsubscribe; // Return the unsubscribe function for cleanup
+      } catch (error) {
+        console.error(
+          'Error initializing real-time listener for cases:',
+          error,
+        );
+        newToast({
+          message: 'Could not initialize case listener.',
+          status: 'error',
+        });
+      }
+    },
+    [collectionName], // Dependency array
+  );
 
   const fetchCasesByUpcomingHearing = async (limitNumber: number = 10) => {
     try {
@@ -316,7 +365,7 @@ export const useCases = () => {
         return { ...caseData, caseId: doc.id };
       });
 
-      // setAllCases(casesList);
+      setAllCases(casesList);
       return casesList;
     } catch (error) {
       console.error('Error fetching cases by priority date: ', error);

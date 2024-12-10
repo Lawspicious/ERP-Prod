@@ -170,7 +170,12 @@ const OrganizationInvoiceTable = ({
                             <Td>{invoice.totalAmount || 'NA'}</Td>
                             <Td>{invoice.paymentStatus}</Td>
                             {/* @ts-ignore */}
-                            <Td>{invoice.teamMember?.name || 'NA'}</Td>
+                            {/* <Td>{invoice.teamMember[3].name || 'NA'}</Td> */}
+                            <Td>
+                              {invoice?.teamMember?.map((member) => (
+                                <text className="p-1">{member.name}</text>
+                              )) || 'NA'}
+                            </Td>
                             <Td>
                               <Menu>
                                 <MenuButton
@@ -254,7 +259,7 @@ const OrganizationInvoiceTable = ({
                       <Tr>
                         <Th>No</Th>
                         <Th>Task Name</Th>
-                        <Th>Case No</Th>
+                        <Th>Case No / Related To</Th>
                         <Th>Amount</Th>
                         <Th>Assigned To</Th>
                         <Th>End Date</Th>
@@ -326,6 +331,6 @@ const OrganizationInvoiceTable = ({
   );
 };
 
-const allowedRoles = ['SUPERADMIN'];
+const allowedRoles = ['SUPERADMIN', 'ADMIN'];
 
 export default withAuth(OrganizationInvoiceTable, allowedRoles);

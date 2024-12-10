@@ -109,9 +109,10 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
   };
 
   const handleCreateInvoice = async () => {
-    if (!task?.payable || task.amount === 0 || role !== 'LAWYER') {
+    if (!task?.payable) {
       return;
     }
+
     const invoiceData: IInvoice = {
       createdAt: today,
       billTo: 'organization',
@@ -124,13 +125,15 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
         },
       ] as IService[],
       paymentStatus: 'unpaid',
-      totalAmount: formData.amount || 0,
+      totalAmount: formData.amount || task.amount || 0,
       RE: [{ caseId: task?.caseDetails.caseId }] as IRE[],
       teamMember: task?.lawyerDetails,
       gstNote: '',
       panNo: '',
       paymentDate: '',
+      clientDetails: null,
     };
+    console.log(invoiceData);
     await createInvoice(invoiceData);
   };
 
@@ -205,12 +208,10 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
                     <Input
                       type="number"
                       name="amount"
-                      value={
-                        formData.amount === 0 ? undefined : formData.amount
-                      }
+                      value={formData.amount || task?.amount || 0}
                       placeholder="Enter task Amount"
                       onChange={handleInputChange}
-                      readOnly={role !== 'LAWYER'}
+                      readOnly={role !== 'SUPERADMIN' && task?.amount !== 0}
                     />
                   </FormControl>
                 )}

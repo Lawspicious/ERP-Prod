@@ -15,7 +15,7 @@ const IndividualUserPage = ({ params }: { params: { userId: string } }) => {
   const router = useRouter();
   const { loading, setLoading } = useLoading();
   const { user, getUserById } = useTeam();
-  const { fetchCasesByLawyerId } = useCases();
+  const { fetchCasesByLawyerId, allCasesLawyer } = useCases();
   const [casesByLawyer, setCasesByLawyer] = useState<ICase[]>([]);
 
   useEffect(() => {
@@ -23,8 +23,8 @@ const IndividualUserPage = ({ params }: { params: { userId: string } }) => {
       setLoading(true);
       if (userId) {
         await getUserById(userId as string);
-        const _cases = await fetchCasesByLawyerId(userId);
-        setCasesByLawyer(_cases as ICase[]);
+        await fetchCasesByLawyerId(userId);
+        setCasesByLawyer(allCasesLawyer);
       }
       setLoading(false);
     };

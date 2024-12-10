@@ -17,9 +17,9 @@ const TaskTab = () => {
     allTask,
     deleteTasks,
     loading,
-    allTaskLawyer,
     getTasksByLawyerId,
     getAllTask,
+    setLoading,
   } = useTask();
   const [isChecked, setIsChecked] = useState(false);
   const { authUser, role } = useAuth();
@@ -55,7 +55,6 @@ const TaskTab = () => {
   const transformedTaskData = useMemo(() => {
     const today = new Date();
     const prevDate = today.setDate(today.getDate() - 1);
-
     return allTask.map((taskData, index) => {
       const endDate = taskData.endDate ? parseISO(taskData.endDate) : null;
 
@@ -99,6 +98,19 @@ const TaskTab = () => {
     });
   }, [allTask]);
 
+  // Only stop loading after both data fetching and transformation are complete
+  useEffect(() => {
+    setLoading(true);
+    if (transformedTaskData) {
+      const timeoutId = setTimeout(() => {
+        setLoading(false);
+      }, 300); // 3 seconds timeout
+
+      // Cleanup timeout on component unmount
+      return () => clearTimeout(timeoutId);
+    }
+  }, [transformedTaskData]);
+
   const taskActionButtons = (
     id: string,
     deleteName: string,
@@ -127,7 +139,11 @@ const TaskTab = () => {
         <div className="mb-6 flex flex-col items-start justify-start gap-3">
           <h1 className="heading-primary">Task</h1>
           {role === 'ADMIN' && (
-            <Checkbox isChecked={isChecked} onChange={handleCheckboxChange}>
+            <Checkbox
+              isChecked={isChecked}
+              onChange={handleCheckboxChange}
+              transition={'step-start'}
+            >
               My Tasks
             </Checkbox>
           )}

@@ -158,9 +158,9 @@ const ClientInvoiceTable = ({
                               <Td>{index + 1}</Td>
                               <Td>{invoice.id}</Td>
                               <Td>{invoice.createdAt}</Td>
-                              <Td>{invoice.paymentDate || 'NA'}</Td>
+                              <Td>{invoice?.paymentDate || 'NA'}</Td>
                               <Td>{invoice.clientDetails?.name || 'NA'}</Td>
-                              <Td>{invoice.totalAmount}</Td>
+                              <Td>{invoice?.totalAmount}</Td>
                               <Td>{invoice.paymentStatus}</Td>
                               <Td>
                                 <TableInvoiceMenu invoice={invoice} />

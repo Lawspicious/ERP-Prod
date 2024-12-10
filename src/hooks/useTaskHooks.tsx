@@ -61,7 +61,7 @@ export const useTask = () => {
       });
     }
   };
-  const getAllTask = async () => {
+  const getAllTask = useCallback(async () => {
     try {
       const tasksCollectionRef = query(
         collection(db, collectionName),
@@ -83,10 +83,9 @@ export const useTask = () => {
         status: 'error',
       });
     }
-  };
+  }, []);
 
   useEffect(() => {
-    setLoading(true);
     const unsubscribe = onSnapshot(
       query(collection(db, collectionName), orderBy('startDate', 'desc')), // Order by 'date' in useEffect as well
       (snapshot) => {
@@ -95,7 +94,6 @@ export const useTask = () => {
           id: doc.id,
         }));
         setAllTask(updatedTasks);
-        setLoading(false);
       },
       (error) => {
         console.error('Error fetching tasks:', error);
@@ -103,7 +101,6 @@ export const useTask = () => {
           message: 'Could not fetch Tasks',
           status: 'error',
         });
-        setLoading(false);
       },
     );
 
@@ -198,24 +195,57 @@ export const useTask = () => {
     }
   };
 
-  const getTasksByLawyerId = useCallback(async (id: string) => {
-    try {
-      const allTaskData = await getAllTask();
-      if (allTaskData && allTaskData.length > 0) {
-        const _lawyerTasks = allTaskData.filter((task: ITask) =>
-          task.lawyerDetails.find((lawyer) => lawyer.id === id),
-        );
-        setAllTaskLawyer(_lawyerTasks);
-      }
-    } catch (error) {
-      console.error('Error fetching tasks by lawyerId: ', error);
-      newToast({
-        message: 'Could not find Task',
-        status: 'error',
-      });
-      return [];
-    }
-  }, []);
+  // const getTasksByLawyerId = useCallback(async (id: string) => {
+  //   try {
+  //     const allTaskData = await getAllTask();
+  //     if (allTaskData && allTaskData.length > 0) {
+  //       const _lawyerTasks = allTaskData.filter((task: ITask) =>
+  //         task.lawyerDetails.find((lawyer) => lawyer.id === id),
+  //       );
+  //       setAllTask(_lawyerTasks);
+  //       setAllTaskLawyer(_lawyerTasks)
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching tasks by lawyerId: ', error);
+  //     newToast({
+  //       message: 'Could not find Task',
+  //       status: 'error',
+  //     });
+  //     return [];
+  //   }
+  // }, [allTaskLawyer]);
+
+  const getTasksByLawyerId = useCallback(
+    (id: string) => {
+      const unsubscribe = onSnapshot(
+        query(collection(db, collectionName), orderBy('startDate', 'desc')),
+        (snapshot) => {
+          const allTaskData: ITask[] = snapshot.docs.map((doc) => ({
+            ...(doc.data() as ITask),
+            id: doc.id,
+          }));
+          const lawyerTasks = allTaskData.filter((task: ITask) =>
+            task.lawyerDetails.find((lawyer) => lawyer.id === id),
+          );
+          setAllTask(lawyerTasks);
+          setAllTaskLawyer(lawyerTasks);
+        },
+        (error) => {
+          console.error(
+            'Error fetching tasks by lawyerId in real-time:',
+            error,
+          );
+          newToast({
+            message: 'Could not fetch tasks in real-time.',
+            status: 'error',
+          });
+        },
+      );
+
+      return () => unsubscribe(); // Return cleanup function to stop listening
+    },
+    [allTaskLawyer],
+  );
 
   const getTasksByCaseId = useCallback(async (id: string) => {
     try {
@@ -327,5 +357,6 @@ export const useTask = () => {
     getTasksByCaseId,
     getPayableTask,
     getTasksByClientId,
+    setLoading,
   };
 };
