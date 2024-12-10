@@ -46,12 +46,10 @@ const EditCaseFormLawyer = ({ caseData }: { caseData: ICase }) => {
   };
 
   const handleSubmit = async (e: any) => {
-    setLoading(true);
     e.preventDefault();
     if (caseData.caseId) {
       await updateCase(caseData?.caseId, formInputs, caseData.caseNo);
     }
-    setLoading(false);
   };
 
   return loading ? (
