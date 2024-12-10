@@ -55,7 +55,7 @@ const Sidebar = () => {
           py={1}
           borderRadius="full"
         >
-          {role}
+          ADMIN
         </Badge>
       </section>
       <ul>

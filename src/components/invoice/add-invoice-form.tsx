@@ -29,8 +29,21 @@ import { IUser } from '@/types/user';
 //Add Invoices as needed
 export const serviceList = ['Service A', 'Service B', 'Service C'];
 export const serviceList2 = [
-  { label: 'Apple', value: 'apple' },
-  { label: 'Banana', value: 'banana' },
+  { label: 'Affidavit Preparation', value: 'affidavit_preparation' },
+  { label: 'Appearance Dated', value: 'appearance_dated' },
+  { label: 'Arbitration Representation', value: 'arbitration_representation' },
+  { label: 'Consolidated Charges', value: 'consolidated_charges' },
+  {
+    label: 'Drafting & Preparation of Legal Notices',
+    value: 'drafting_preparation_legal_notices',
+  },
+  { label: 'Power of Attorney', value: 'power_of_attorney' },
+  { label: 'Professional Charges', value: 'professional_charges' },
+  {
+    label: 'Reimbursements (exclusive of GST)',
+    value: 'reimbursements_exclusive_gst',
+  },
+  { label: 'Retainership Charges', value: 'retainership_charges' },
 ];
 
 const AddInvoiceForm = ({

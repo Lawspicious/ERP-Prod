@@ -32,6 +32,7 @@ import EditInvoiceModal from './action-button/edit-invoice-modal';
 import PrintLawyerInvoiceButton from './action-button/print-lawyer-invoice-button';
 import { useInvoice } from '@/hooks/useInvoiceHook';
 import withAuth from '@/components/shared/hoc-middlware';
+import PrintLawspiciousInvoiceButton from './action-button/print-lawspicious-invoice-button';
 
 const ClientInvoiceTable = ({
   clientInvoices,
@@ -247,9 +248,9 @@ const TableInvoiceMenu = ({ invoice }: { invoice: IInvoice }) => {
           )}
         </MenuItem>
         <MenuItem as={'div'}>
-          {/* <PrintLawspiciousselectedItemButton
-          invoiceData={selectedItem}
-        /> */}
+          <PrintLawspiciousInvoiceButton
+            invoiceData={selectedItem as IInvoice}
+          />
         </MenuItem>
       </MenuList>
     </Menu>
