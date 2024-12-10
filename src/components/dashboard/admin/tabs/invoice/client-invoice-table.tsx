@@ -1,45 +1,43 @@
 import { DialogButton } from '@/components/ui/alert-dialog';
-import { useInvoice } from '@/hooks/useInvoiceHook';
+import LoaderComponent from '@/components/ui/loader';
+import { useLoading } from '@/context/loading/loadingContext';
 import { IInvoice } from '@/types/invoice';
 import {
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  IconButton,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuList,
   Box,
+  Table,
+  Menu,
+  Input,
   Tabs,
   TabList,
-  TabPanels,
   Tab,
+  TabPanels,
   TabPanel,
-  Button,
-  TableCaption,
-  Input,
   Flex,
+  TableCaption,
+  Thead,
+  Tr,
+  Th,
+  Tbody,
+  Td,
+  MenuButton,
+  IconButton,
+  MenuList,
+  MenuItem,
+  Button,
+  useDisclosure,
 } from '@chakra-ui/react';
 import { MoreVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useLoading } from '@/context/loading/loadingContext';
-import LoaderComponent from '@/components/ui/loader';
-import PrintLawyerInvoiceButton from './action-button/print-lawyer-invoice-button';
-import PrintLawspiciousInvoiceButton from './action-button/print-lawspicious-invoice-button';
-import { useRouter } from 'next/navigation';
-import withAuth from '@/components/shared/hoc-middlware';
 import EditInvoiceModal from './action-button/edit-invoice-modal';
+import PrintLawyerInvoiceButton from './action-button/print-lawyer-invoice-button';
+import { useInvoice } from '@/hooks/useInvoiceHook';
+import withAuth from '@/components/shared/hoc-middlware';
 
 const ClientInvoiceTable = ({
   clientInvoices,
 }: {
   clientInvoices: IInvoice[];
 }) => {
-  const { deleteInvoice } = useInvoice();
   const { loading, setLoading } = useLoading();
   const [filteredInvoices, setFilteredInvoices] = useState<IInvoice[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
@@ -165,73 +163,7 @@ const ClientInvoiceTable = ({
                               <Td>{invoice.totalAmount}</Td>
                               <Td>{invoice.paymentStatus}</Td>
                               <Td>
-                                <Menu>
-                                  <MenuButton
-                                    as={IconButton}
-                                    aria-label="Options"
-                                    icon={<MoreVertical />}
-                                    variant="outline"
-                                  />
-                                  <MenuList
-                                    zIndex={50}
-                                    maxWidth={100}
-                                    overflowY={'auto'}
-                                    maxHeight={300}
-                                  >
-                                    <MenuItem as={'div'}>
-                                      <Button
-                                        colorScheme="purple"
-                                        className="w-full"
-                                        onClick={() =>
-                                          (window.location.href = `/invoice/${invoice.id}`)
-                                        }
-                                      >
-                                        Go to Invoice
-                                      </Button>
-                                    </MenuItem>
-                                    <MenuItem as={'div'}>
-                                      <EditInvoiceModal invoiceData={invoice} />
-                                    </MenuItem>
-                                    <MenuItem as={'div'}>
-                                      <Button
-                                        colorScheme="purple"
-                                        className="w-full"
-                                        onClick={() =>
-                                          window.open(
-                                            `/dashboard/admin/duplicate-invoice/${invoice.id}`,
-                                            '_blank',
-                                          )
-                                        }
-                                      >
-                                        Duplicate
-                                      </Button>
-                                    </MenuItem>
-                                    <MenuItem as={'div'}>
-                                      <DialogButton
-                                        title={'Delete'}
-                                        message={
-                                          'Do you want to delete the invoice?'
-                                        }
-                                        onConfirm={async () =>
-                                          deleteInvoice(invoice.id as string)
-                                        }
-                                        children={'Delete'}
-                                        confirmButtonColorScheme="red"
-                                        confirmButtonText="Delete"
-                                      />
-                                    </MenuItem>
-                                    <MenuItem as={'div'}>
-                                      <PrintLawyerInvoiceButton
-                                        invoiceData={invoice}
-                                      />
-                                    </MenuItem>
-                                    <MenuItem as={'div'}>
-                                      <PrintLawspiciousInvoiceButton
-                                        invoiceData={invoice}
-                                      />
-                                    </MenuItem>
-                                  </MenuList>
-                                </Menu>
+                                <TableInvoiceMenu invoice={invoice} />
                               </Td>
                             </Tr>
                           ))}
@@ -249,7 +181,80 @@ const ClientInvoiceTable = ({
   );
 };
 
-// Specify allowed roles for this page
+const TableInvoiceMenu = ({ invoice }: { invoice: IInvoice }) => {
+  const [selectedItem, setSelectedItem] = useState<null | IInvoice>(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { deleteInvoice } = useInvoice();
+
+  const handleOpen = () => {
+    setSelectedItem(invoice); // Set the selected invoice when the menu opens
+    onOpen(); // Open the menu
+  };
+  const handleClose = () => {
+    setSelectedItem(null);
+    onClose();
+  };
+
+  return (
+    <Menu isOpen={isOpen} onClose={handleClose}>
+      <MenuButton
+        as={IconButton}
+        aria-label="Options"
+        icon={<MoreVertical />}
+        variant="outline"
+        onClick={handleOpen}
+      />
+      <MenuList zIndex={50} maxWidth={100} overflowY={'auto'} maxHeight={300}>
+        <MenuItem as={'div'}>
+          <Button
+            colorScheme="purple"
+            className="w-full"
+            onClick={() => (window.location.href = `/invoice/${invoice.id}`)}
+          >
+            Go to Invoice
+          </Button>
+        </MenuItem>
+        <MenuItem as={'div'}>
+          <EditInvoiceModal invoiceData={invoice} />
+        </MenuItem>
+        <MenuItem as={'div'}>
+          <Button
+            colorScheme="purple"
+            className="w-full"
+            onClick={() =>
+              window.open(
+                `/dashboard/admin/duplicate-invoice/${invoice.id}`,
+                '_blank',
+              )
+            }
+          >
+            Duplicate
+          </Button>
+        </MenuItem>
+        <MenuItem as={'div'}>
+          <DialogButton
+            title={'Delete'}
+            message={'Do you want to delete the invoice?'}
+            onConfirm={async () => deleteInvoice(invoice.id as string)}
+            children={'Delete'}
+            confirmButtonColorScheme="red"
+            confirmButtonText="Delete"
+          />
+        </MenuItem>
+        <MenuItem as={'div'}>
+          {selectedItem && isOpen && (
+            <PrintLawyerInvoiceButton invoiceData={selectedItem as IInvoice} />
+          )}
+        </MenuItem>
+        <MenuItem as={'div'}>
+          {/* <PrintLawspiciousselectedItemButton
+          invoiceData={selectedItem}
+        /> */}
+        </MenuItem>
+      </MenuList>
+    </Menu>
+  );
+};
 const allowedRoles = ['SUPERADMIN'];
 
 export default withAuth(ClientInvoiceTable, allowedRoles);
