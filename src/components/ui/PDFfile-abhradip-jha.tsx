@@ -47,12 +47,8 @@ const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
               <Text>Advocate</Text>
               <Text>High Court, Calcutta</Text>
               <Text>1/1A, Vansittart Row, Kolkata 700001</Text>
-              <Text>
-                8017173320
-                {invoiceData.billTo === 'organization'
-                  ? 'info@lawspicious.com'
-                  : 'jhaabhradip7@gmail.com'}
-              </Text>
+              <Text>8017173320</Text>
+              <Text> jhaabhradip7@gmail.com</Text>
             </View>
           </View>
 
@@ -84,32 +80,10 @@ const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
             {invoiceData.billTo === 'client' && (
               <Text>Pay To: Abhradip Jha</Text>
             )}
-            <Text>
-              {' '}
-              {invoiceData.billTo === 'organization'
-                ? 'Bank: HDFC Bank, Kolkata High Court Branch'
-                : 'State Bank of India (Siriti- Muchipara Branch)'}
-            </Text>
-            <Text>
-              Acc no.{' '}
-              {invoiceData.billTo === 'organization'
-                ? '5020008284412'
-                : '33140676926'}
-            </Text>
-            <Text>
-              IFSC-{' '}
-              {invoiceData.billTo === 'organization'
-                ? 'HDFC0006504'
-                : 'SBIN0011533'}
-            </Text>
-            <Text>
-              PAN-
-              {invoiceData.billTo === 'organization'
-                ? 'AALFL0025D'
-                : 'AYBPJ1201F'}
-            </Text>
-            {invoiceData.billTo === 'organization' && 'GSTIN: 19AALFL0025D1ZO'}
-            <Text></Text>
+            <Text>State Bank of India (Siriti- Muchipara Branch)</Text>
+            <Text>Acc no. 33140676929</Text>
+            <Text>IFSC: SBIN0011533</Text>
+            <Text>PAN-AYBPJ1201F</Text>
           </View>
           {/* Signature */}
           <View style={styles.signature}>
