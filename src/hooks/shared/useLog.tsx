@@ -32,9 +32,11 @@ export const useLog = () => {
   const logCollectionRef = collection(db, collectionName);
   const { loading, setLoading } = useLoading();
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize] = useState(20); // Number of logs per page
+  const [pageSize] = useState(10); // Number of logs per page
   const [lastVisible, setLastVisible] = useState<any>(null); // Last document of current page
   const [firstVisible, setFirstVisible] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
 
   const createLogEvent = async ({
     userId,
@@ -63,15 +65,15 @@ export const useLog = () => {
   };
 
   const getLogsByUserandDate = useCallback(
-    async (userId?: string, date?: string) => {
+    async (userId: string, date: string) => {
       try {
         setLoading(true);
         const conditions = [];
 
-        if (userId && userId !== '') {
+        if (userId !== '') {
           conditions.push(where('userId', '==', userId));
         }
-        if (date && date !== '') {
+        if (date !== '') {
           conditions.push(where('date', '==', date));
         }
 
@@ -82,7 +84,6 @@ export const useLog = () => {
           logQuery = query(
             logCollectionRef,
             orderBy('date', 'desc'),
-
             ...conditions,
             limit(pageSize),
           );
@@ -90,7 +91,6 @@ export const useLog = () => {
           logQuery = query(
             logCollectionRef,
             orderBy('date', 'desc'),
-
             ...conditions,
             startAfter(lastVisible), // Start after the last visible document
             limit(pageSize),
@@ -103,11 +103,9 @@ export const useLog = () => {
           ...doc.data(),
         })) as unknown as ILogEventInterface[];
 
-        if (logList.length > 0) {
-          setAllLogs(logList);
-          setLastVisible(logSnap.docs[logSnap.docs.length - 1]);
-          setFirstVisible(logSnap.docs[0]);
-        }
+        setAllLogs(logList);
+        setLastVisible(logSnap.docs[logSnap.docs.length - 1]);
+        setFirstVisible(logSnap.docs[0]);
       } catch (error) {
         console.error('Error fetching logs:', error);
       } finally {
@@ -121,7 +119,7 @@ export const useLog = () => {
     if (allLogs.length === pageSize) {
       // Only go to next page if there are enough logs
       setCurrentPage(currentPage + 1);
-      getLogsByUserandDate(); // Fetch next logs
+      getLogsByUserandDate(selectedUser, selectedDate); // Fetch next logs
     }
   };
 
@@ -180,5 +178,9 @@ export const useLog = () => {
     createLogEvent,
     setCurrentPage,
     getLogsByUserandDate,
+    selectedUser,
+    selectedDate,
+    setSelectedDate,
+    setSelectedUser,
   };
 };

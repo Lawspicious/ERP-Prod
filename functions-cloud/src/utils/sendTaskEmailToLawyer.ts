@@ -5,8 +5,6 @@ import * as nodemailer from 'nodemailer';
 export const sendTaskEmailToLawyerNodeMailer = async (emailParams: any) => {
   const gmail = process.env.NEXT_PUBLIC_NODEMAILER_GMAIL;
   const pass = process.env.NEXT_PUBLIC_NODEMAILER_PASS;
-  // console.log('Gmail:', process.env.NODEMAILER_GMAIL);
-  // console.log('Password:', process.env.NODEMAILER_PASS);
 
   if (!gmail || !pass) {
     throw new Error('Gmail or password not set in environment variables.');

@@ -27,8 +27,6 @@ import { useLoading } from '@/context/loading/loadingContext';
 import LoaderComponent from '@/components/ui/loader';
 
 const LogsPage = () => {
-  const [selectedUser, setSelectedUser] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
   const router = useRouter();
   const {
     getLogsByUserandDate,
@@ -37,6 +35,10 @@ const LogsPage = () => {
     pageSize,
     prevPage,
     nextPage,
+    selectedDate,
+    selectedUser,
+    setSelectedDate,
+    setSelectedUser,
   } = useLog();
   const { allUser } = useTeam();
   const { loading } = useLoading();
@@ -145,21 +147,27 @@ const LogsPage = () => {
                 </Tr>
               </Thead>
               <Tbody>
-                {allLogs.map((log, index) => (
-                  <Tr key={index}>
-                    <Td>
-                      <Badge colorScheme={getBadgeColor(log.action)}>
-                        {log.action}
-                      </Badge>
-                    </Td>
-                    <Td>{log.eventDetails}</Td>
-                    <Td>{log.date}</Td>
-                    <Td>{log.time}</Td>
-                    <Td>
-                      <Text fontWeight="bold">{log.user.name}</Text>
-                    </Td>
-                  </Tr>
-                ))}
+                {allLogs.length === 0 ? (
+                  <h1 className="heading-primary my-4 w-full text-center">
+                    No Logs Found!
+                  </h1>
+                ) : (
+                  allLogs.map((log, index) => (
+                    <Tr key={index}>
+                      <Td>
+                        <Badge colorScheme={getBadgeColor(log.action)}>
+                          {log.action}
+                        </Badge>
+                      </Td>
+                      <Td>{log.eventDetails}</Td>
+                      <Td>{log.date}</Td>
+                      <Td>{log.time}</Td>
+                      <Td>
+                        <Text fontWeight="bold">{log.user.name}</Text>
+                      </Td>
+                    </Tr>
+                  ))
+                )}
               </Tbody>
             </Table>
           </Box>
