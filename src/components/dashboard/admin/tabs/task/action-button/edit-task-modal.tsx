@@ -42,7 +42,7 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
     taskStatus: string;
     priority: string;
     lawyerDetails: ILawyer[];
-    amount: number;
+    amount: number | null;
     payable: boolean;
   }>({
     endDate: '',
@@ -205,9 +205,20 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
                     <Input
                       type="number"
                       name="amount"
-                      value={formData.amount || task?.amount || 0}
+                      value={
+                        formData.amount !== null &&
+                        formData.amount !== undefined
+                          ? formData.amount
+                          : ''
+                      }
                       placeholder="Enter task Amount"
-                      onChange={handleInputChange}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        const value = e.target.value;
+                        setFormData({
+                          ...formData,
+                          amount: value === '' ? null : parseFloat(value), // Handle empty state
+                        });
+                      }}
                       readOnly={role !== 'SUPERADMIN' && task?.amount !== 0}
                     />
                   </FormControl>

@@ -5,7 +5,7 @@ import { Printer } from 'lucide-react';
 import React from 'react';
 import converter from 'number-to-words';
 import { PDFViewer } from '@react-pdf/renderer';
-import PDFfile from '@/components/ui/PDFfile';
+import PDFfile from '@/components/ui/PDFfile-lawspicious';
 
 const PrintLawspiciousInvoiceButton = ({
   invoiceData,

@@ -1,5 +1,5 @@
 'use client';
-import PDFfile from '@/components/ui/PDFfile';
+import PDFfile from '@/components/ui/PDFfile-abhradip-jha';
 import React from 'react';
 
 import dynamic from 'next/dynamic';

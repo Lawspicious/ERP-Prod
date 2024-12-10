@@ -3,7 +3,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import { IInvoice } from '@/types/invoice';
-import PDFfile from '@/components/ui/PDFfile';
+import PDFfile from '@/components/ui/PDFfile-abhradip-jha';
 import { Button } from '@chakra-ui/react';
 
 // Importing PDFViewer dynamically to disable SSR (Server-Side Rendering)

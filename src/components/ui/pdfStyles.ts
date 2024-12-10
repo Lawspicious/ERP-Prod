@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
     gap: 4,
+    paddingTop: 8,
   },
   thead: {
     display: 'flex',
