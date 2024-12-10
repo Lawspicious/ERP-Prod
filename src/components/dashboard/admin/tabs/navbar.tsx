@@ -170,7 +170,7 @@ const Navbar = () => {
                 py={1}
                 borderRadius="full"
               >
-                Admin
+                {role}
               </Badge>
             </section>
           </DrawerHeader>
