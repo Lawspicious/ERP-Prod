@@ -108,34 +108,34 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
     setSelectedLawyerIds(selectedLawyerIds.filter((id) => id !== lawyerId));
   };
 
-  const handleCreateInvoice = async () => {
-    if (!task?.payable) {
-      return;
-    }
+  // const handleCreateInvoice = async () => {
+  //   if (!task?.payable) {
+  //     return;
+  //   }
 
-    const invoiceData: IInvoice = {
-      createdAt: today,
-      billTo: 'organization',
-      dueDate: '',
-      services: [
-        {
-          name: task?.taskName,
-          description: task?.taskDescription,
-          amount: formData.amount || 0,
-        },
-      ] as IService[],
-      paymentStatus: 'unpaid',
-      totalAmount: formData.amount || task.amount || 0,
-      RE: [{ caseId: task?.caseDetails.caseId }] as IRE[],
-      teamMember: task?.lawyerDetails,
-      gstNote: '',
-      panNo: '',
-      paymentDate: '',
-      clientDetails: null,
-    };
-    console.log(invoiceData);
-    await createInvoice(invoiceData);
-  };
+  //   const invoiceData: IInvoice = {
+  //     createdAt: today,
+  //     billTo: 'organization',
+  //     dueDate: '',
+  //     services: [
+  //       {
+  //         name: task?.taskName,
+  //         description: task?.taskDescription,
+  //         amount: formData.amount || 0,
+  //       },
+  //     ] as IService[],
+  //     paymentStatus: 'unpaid',
+  //     totalAmount: formData.amount || task.amount || 0,
+  //     RE: [{ caseId: task?.caseDetails.caseId }] as IRE[],
+  //     teamMember: task?.lawyerDetails,
+  //     gstNote: '',
+  //     panNo: '',
+  //     paymentDate: '',
+  //     clientDetails: null,
+  //   };
+  //   console.log(invoiceData);
+  //   await createInvoice(invoiceData);
+  // };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -157,9 +157,6 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
         updatedFormData as ITask,
         task?.taskName as string,
       );
-      if (formData.payable) {
-        await handleCreateInvoice();
-      }
       onClose();
     } catch (error) {
       console.log(error);

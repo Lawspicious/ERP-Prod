@@ -17,6 +17,7 @@ import { useToastHook } from './shared/useToastHook';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '@/context/user/userContext';
 import { useLog, ILogEventInterface } from './shared/useLog';
+import { useToast } from '@chakra-ui/react';
 
 const collectionName = 'tasks';
 
@@ -32,6 +33,7 @@ export const useTask = () => {
   const [clientTasks, setClientTasks] = useState<ITask[]>([]);
   const { authUser, role } = useAuth();
   const { createLogEvent } = useLog();
+  const toast = useToast();
 
   const createTask = async (data: Partial<ITask>) => {
     try {
@@ -141,9 +143,12 @@ export const useTask = () => {
     try {
       const taskDocRef = doc(db, collectionName, id);
       await updateDoc(taskDocRef, { ...data });
-      newToast({
-        message: 'Task Updated Successfullly!',
+      toast({
+        title: 'Task Updated Successfully',
         status: 'success',
+        duration: 3000,
+        position: 'top',
+        isClosable: true,
       });
       if (authUser) {
         await createLogEvent({
