@@ -121,7 +121,7 @@ const AddCaseForm = ({
         ...formInputs,
         hearings: [
           {
-            date: formInputs.nextHearing,
+            date: formInputs.nextHearing || 'No Date Added',
             remarks: 'First Hearing',
           },
         ],

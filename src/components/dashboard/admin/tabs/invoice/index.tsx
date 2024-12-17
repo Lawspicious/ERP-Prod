@@ -29,14 +29,14 @@ const InvoiceTab = ({ type }: { type: string }) => {
     };
 
     fetchInvoices();
-  }, [selectedDate, allInvoices, getInvoiceByPaymentDate]);
+  }, [router, selectedDate, allInvoices, getInvoiceByPaymentDate]);
 
   // Filter invoices by type
   const clientInvoices = filteredInvoices?.filter(
-    (invoice) => invoice.billTo === 'client',
+    (invoice: IInvoice) => invoice.billTo === 'client',
   );
   const organizationInvoices = filteredInvoices?.filter(
-    (invoice) => invoice.billTo === 'organization',
+    (invoice: IInvoice) => invoice.billTo === 'organization',
   );
 
   return (
