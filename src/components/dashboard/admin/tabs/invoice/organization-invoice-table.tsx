@@ -173,7 +173,9 @@ const OrganizationInvoiceTable = ({
                             {/* <Td>{invoice.teamMember[3].name || 'NA'}</Td> */}
                             <Td>
                               {invoice?.teamMember?.map((member) => (
-                                <text className="p-1">{member.name}</text>
+                                <text className="p-1" key={member.id}>
+                                  {member.name}
+                                </text>
                               )) || 'NA'}
                             </Td>
                             <Td>

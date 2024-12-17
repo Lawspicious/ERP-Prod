@@ -33,6 +33,7 @@ import PrintLawyerInvoiceButton from './action-button/print-lawyer-invoice-butto
 import { useInvoice } from '@/hooks/useInvoiceHook';
 import withAuth from '@/components/shared/hoc-middlware';
 import PrintLawspiciousInvoiceButton from './action-button/print-lawspicious-invoice-button';
+import { useRouter } from 'next/navigation';
 
 const ClientInvoiceTable = ({
   clientInvoices,
@@ -43,28 +44,37 @@ const ClientInvoiceTable = ({
   const [filteredInvoices, setFilteredInvoices] = useState<IInvoice[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [searchClientName, setSearchClientName] = useState<string>('');
+  const router = useRouter();
 
   const filterInvoices = (status: string, searchName: string) => {
-    let invoices = clientInvoices;
+    try {
+      setLoading(true);
+      let invoices = clientInvoices;
 
-    if (status !== 'ALL') {
-      invoices = invoices.filter((invoice) => invoice.paymentStatus === status);
+      if (status !== 'ALL') {
+        invoices = invoices.filter(
+          (invoice) => invoice.paymentStatus === status,
+        );
+      }
+
+      if (searchName) {
+        invoices = invoices.filter((invoice) =>
+          invoice.clientDetails?.name
+            ?.toLowerCase()
+            .includes(searchName.toLowerCase()),
+        );
+      }
+      setFilteredInvoices(invoices);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
-
-    if (searchName) {
-      invoices = invoices.filter((invoice) =>
-        invoice.clientDetails?.name
-          ?.toLowerCase()
-          .includes(searchName.toLowerCase()),
-      );
-    }
-
-    setFilteredInvoices(invoices);
   };
 
   useEffect(() => {
     filterInvoices(selectedStatus, searchClientName);
-  }, [clientInvoices, selectedStatus, searchClientName]);
+  }, [router, clientInvoices, selectedStatus, searchClientName]);
 
   return (
     <div>
