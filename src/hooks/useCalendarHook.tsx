@@ -91,7 +91,7 @@ const useCalendarEvents = () => {
       // Fetch cases
       const casesSnapshot = await getDocs(casesQuery);
       const caseEvents = casesSnapshot.docs.map((doc) => ({
-        title: `Next Hearing For Case : ${doc.data().caseNo}`,
+        title: `${doc.data().caseNo}: ${doc.data().petition.petitioner} VS ${doc.data().respondent.respondentee}`,
         start: doc.data().nextHearing, // Assuming nextHearing is a Firestore Timestamp
         resourceId: doc.id,
         color: 'green',
@@ -101,7 +101,7 @@ const useCalendarEvents = () => {
       //Fetch appointments
       const appointmentSnapshot = await getDocs(appointmentsQuery);
       const appointmentEvents = appointmentSnapshot.docs.map((doc) => ({
-        title: 'Appointment',
+        title: `${doc.data().clientDetails.name || doc.data().otherRelatedTo} : ${doc.data().lawyerDetails.name} : ${doc.data().location || 'NA'} : ${doc.data().time || 'NA'}`,
         start: doc.data().date, // Assuming date is a Firestore Timestamp
         resourceId: doc.id,
         color: 'purple',
@@ -171,7 +171,7 @@ const useCalendarEvents = () => {
       // Fetch cases
       const casesSnapshot = await getDocs(casesQuery);
       const caseEvents = casesSnapshot.docs.map((doc) => ({
-        title: `Next Hearing For Case : ${doc.data().caseNo}`,
+        title: `${doc.data().caseNo}: ${doc.data().petition.petitioner} VS ${doc.data().respondent.respondentee}`,
         start: doc.data().nextHearing, // Assuming nextHearing is a Firestore Timestamp
         resourceId: doc.id,
         color: 'green',
@@ -181,7 +181,7 @@ const useCalendarEvents = () => {
       //Fetch appointments
       const appointmentSnapshot = await getDocs(appointmentsQuery);
       const appointmentEvents = appointmentSnapshot.docs.map((doc) => ({
-        title: `Appointment with Client : ${doc.data().clientDetails?.name}`,
+        title: `${doc.data().clientDetails.name || doc.data().otherRelatedTo} : ${doc.data().lawyerDetails.name} : ${doc.data().location || 'NA'} : ${doc.data().time || 'NA'}`,
         start: doc.data().date, // Assuming date is a Firestore Timestamp
         resourceId: doc.id,
         color: 'purple',
