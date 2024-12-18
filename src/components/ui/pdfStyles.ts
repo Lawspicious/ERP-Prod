@@ -1,10 +1,12 @@
 import { Font, StyleSheet } from '@react-pdf/renderer';
+import { relative } from 'path';
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
     //   fontFamily: 'cabin',
     fontSize: 12,
+    position: 'relative',
   },
   bold: {
     fontWeight: 800,
@@ -35,6 +37,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 20,
+    width: '100%',
   },
   billTo: {
     flex: 1,
