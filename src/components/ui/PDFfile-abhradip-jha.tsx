@@ -13,6 +13,21 @@ const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
   let year = date.getFullYear();
   let currentDate = `${day}/${month}/${year}`;
 
+  const chunkServices = (services: IInvoice['services'], chunkSize: number) => {
+    const chunks: (typeof services)[] = [];
+    for (let i = 0; i < services.length; i += chunkSize) {
+      chunks.push(services.slice(i, i + chunkSize));
+    }
+    return chunks;
+  };
+
+  // Adjust this based on the number of rows that fit on a single page
+  const SERVICES_PER_PAGE = 5;
+  const serviceChunks = chunkServices(
+    invoiceData?.services || [],
+    SERVICES_PER_PAGE,
+  );
+
   try {
     // Validate all required fields
     if (!invoiceData || !invoiceData.id) {
@@ -22,78 +37,85 @@ const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
 
     return (
       <Document>
-        <Page size="A4" style={styles.page}>
-          {/* Logo */}
-          <Image src="/graphic.png" style={styles.graphicTop} />
-          <Image src="/graphic-bottom.png" style={styles.graphicBottom} />
-          <View style={styles.container}>
-            <Image src="/long_logo_final.png" style={styles.logo} />
-          </View>
+        {serviceChunks.map((services, pageIndex) => (
+          <Page size="A4" style={styles.page} key={pageIndex}>
+            {/* Logo */}
+            <Image src="/graphic.png" style={styles.graphicTop} />
+            <Image src="/graphic-bottom.png" style={styles.graphicBottom} />
+            <View style={styles.container}>
+              <Image src="/long_logo_final.png" style={styles.logo} />
+            </View>
 
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.billTo}>
-              <Text>
-                Bill To:{' '}
-                <Text style={styles.bold}>
-                  {invoiceData?.clientDetails?.name || invoiceData.billTo}
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.billTo}>
+                <Text>
+                  Bill To:{' '}
+                  <Text style={styles.bold}>
+                    {invoiceData?.clientDetails?.name || invoiceData.billTo}
+                  </Text>
                 </Text>
-              </Text>
-              <Text>Date: {invoiceData.createdAt}</Text>
-              <Text>Invoice No: {invoiceData.id}</Text>
-            </View>
-            <View style={styles.billFrom}>
-              <Text>Abhradip Jha</Text>
-              <Text>Advocate</Text>
-              <Text>High Court, Calcutta</Text>
-              <Text>1/1A, Vansittart Row, Kolkata 700001</Text>
-              <Text>8017173320</Text>
-              <Text> jhaabhradip7@gmail.com</Text>
-            </View>
-          </View>
-
-          <View style={styles.table}>
-            <View style={styles.thead}>
-              <Text style={styles.smallCell}>Service Name</Text>
-              <Text style={styles.largeCell}>Description</Text>
-              <Text style={styles.smallCellLast}>Amount</Text>
-            </View>
-            {invoiceData.services.map((service, i) => (
-              <View style={styles.tbody} key={i}>
-                <Text style={styles.smallCell_tbody}>{service.name}</Text>
-                <Text style={styles.largeCell_tbody}>
-                  {service.description}
-                </Text>
-                <Text style={styles.smallCellLast_tbody}>{service.amount}</Text>
+                <Text>Date: {invoiceData.createdAt}</Text>
+                <Text>Invoice No: {invoiceData.id}</Text>
               </View>
-            ))}
-            <View style={styles.tbody}>
-              <Text style={styles.largeCellTotal}>Total</Text>
-              <Text style={styles.smallCellLast_tbody}>
-                {invoiceData.totalAmount}
-              </Text>
+              <View style={styles.billFrom}>
+                <Text>Abhradip Jha</Text>
+                <Text>Advocate</Text>
+                <Text>High Court, Calcutta</Text>
+                <Text>1/1A, Vansittart Row, Kolkata 700001</Text>
+                <Text>8017173320</Text>
+                <Text> jhaabhradip7@gmail.com</Text>
+              </View>
             </View>
-          </View>
 
-          {/* Payment Details */}
-          <View style={styles.billTo}>
-            {invoiceData.billTo === 'client' && (
-              <Text>Pay To: Abhradip Jha</Text>
-            )}
-            <Text>State Bank of India (Siriti- Muchipara Branch)</Text>
-            <Text>Acc no. 33140676929</Text>
-            <Text>IFSC: SBIN0011533</Text>
-            <Text>PAN-AYBPJ1201F</Text>
-          </View>
-          {/* Signature */}
-          <View style={styles.signature}>
-            <Image src="/sign.jpg" style={styles.signatureImage} />
-            <Text>Abhradip Jha</Text>
-          </View>
+            <View style={styles.table}>
+              <View style={styles.thead}>
+                <Text style={styles.smallCell}>Service Name</Text>
+                <Text style={styles.largeCell}>Description</Text>
+                <Text style={styles.smallCellLast}>Amount</Text>
+              </View>
+              {services.map((service, i) => (
+                <View style={styles.tbody} key={i}>
+                  <Text style={styles.smallCell_tbody}>{service.name}</Text>
+                  <Text style={styles.largeCell_tbody}>
+                    {service.description}
+                  </Text>
+                  <Text style={styles.smallCellLast_tbody}>
+                    {service.amount}
+                  </Text>
+                </View>
+              ))}
+              {serviceChunks.length - 1 === pageIndex && (
+                <View style={styles.tbody}>
+                  <Text style={styles.largeCellTotal}>Total</Text>
+                  <Text style={styles.smallCellLast_tbody}>
+                    {invoiceData.totalAmount}
+                  </Text>
+                </View>
+              )}
+            </View>
 
-          {/* Footer */}
-          <Text style={styles.footer}>Thank you for your business!</Text>
-        </Page>
+            {/* Payment Details */}
+            <View style={styles.billTo}>
+              {invoiceData.billTo === 'client' && (
+                <Text>Pay To: Abhradip Jha</Text>
+              )}
+              <Text> State Bank of India(Siriti - Muchipara Branch)</Text>
+              <Text>Acc no. 33140676929</Text>
+              <Text>IFSC: SBIN0011533</Text>
+              <Text>PAN-AYBPJ1201F</Text>
+            </View>
+
+            {/* Signature */}
+            <View style={styles.signature}>
+              <Image src="/sign.jpg" style={styles.signatureImage} />
+              <Text>Abhradip Jha</Text>
+            </View>
+
+            {/* Footer */}
+            <Text style={styles.footer}>Thank you for your business!</Text>
+          </Page>
+        ))}
       </Document>
     );
   } catch (error) {
