@@ -14,6 +14,9 @@ const TaskTab = dynamic(() => import('./tabs/task/index'), { ssr: false });
 const AppointmentTab = dynamic(() => import('./tabs/appointment/index'), {
   ssr: false,
 });
+const AnnouncementTab = dynamic(() => import('./tabs/announcement/index'), {
+  ssr: false,
+});
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<string>('home');
@@ -60,6 +63,8 @@ const Dashboard = () => {
         return <TaskTab />;
       case 'appointment':
         return <AppointmentTab />;
+      case 'announcement':
+        return <AnnouncementTab />;
       default:
         return <HomeTab />;
     }

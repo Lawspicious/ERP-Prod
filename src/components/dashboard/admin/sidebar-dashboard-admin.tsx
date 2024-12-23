@@ -7,6 +7,7 @@ import {
   House,
   ListChecks,
   Newspaper,
+  Megaphone,
   Scale,
   Users,
 } from 'lucide-react';
@@ -39,6 +40,9 @@ const Sidebar = () => {
 
   const handleNavigation = (tab: string) => {
     window.location.hash = tab;
+    const url = new URL(window.location.href);
+    url.search = '';
+    window.history.pushState({}, '', url.toString());
   };
 
   return (
@@ -95,6 +99,17 @@ const Sidebar = () => {
           <CalendarPlus size={20} />
           <span>Appointment</span>
         </li>
+        {role === 'SUPERADMIN' && (
+          <li
+            className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${
+              activeTab === 'announcement' ? 'bg-bgSecondary' : ''
+            }`}
+            onClick={() => handleNavigation('announcement')}
+          >
+            <Megaphone size={20} />
+            <span>Announcement</span>
+          </li>
+        )}
         <li
           className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${
             activeTab === 'team' ? 'bg-bgSecondary' : ''
