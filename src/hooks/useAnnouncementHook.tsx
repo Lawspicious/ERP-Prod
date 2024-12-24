@@ -25,6 +25,48 @@ export const useAnnouncementHook = () => {
   const [state, newToast] = useToastHook();
   const toast = useToast();
 
+  const createDefaultAnnouncementForUserOnFirstLogin = async (id: string) => {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', id));
+      const findUser = userDoc.data();
+      if (!findUser) {
+        throw new Error('User not found');
+      }
+      if (findUser.firstLogin) {
+        const announcementRef = await addDoc(collection(db, collectionName), {
+          title: 'Welcome to the platform!',
+          message: `We are happy to have you, ${findUser.name}! Hope you have a great time here.`,
+          seenBy: [],
+          clearedBy: [],
+          priority: 'low',
+          meantFor: id,
+          publishedAt: new Date().toISOString(),
+        });
+        console.log('Default Announcement Created', announcementRef.id);
+        toast({
+          title: `Welcome, ${findUser.name}!`,
+          description: `Great to have you here!`,
+          status: 'success',
+          duration: 3000,
+          position: 'bottom',
+          isClosable: true,
+        });
+        await updateDoc(doc(db, 'users', id), {
+          firstLogin: false,
+        });
+      } else {
+        console.log('User already logged in once');
+      }
+    } catch (error) {
+      console.error('Error creating default announcement:', error);
+      newToast({
+        message: 'Could not create default announcement',
+        status: 'error',
+      });
+      throw error;
+    }
+  };
+
   const createAnnouncement = async (data: Announcement) => {
     try {
       const announcementRef = await addDoc(collection(db, collectionName), {
@@ -70,10 +112,14 @@ export const useAnnouncementHook = () => {
             publishedAt: docData.publishedAt,
             clearedBy: docData.clearedBy || [],
             seenBy: docData.seenBy || [],
+            meantFor: docData.meantFor || '',
           };
         })
-        .filter(
-          (announcement) => !announcement.clearedBy.includes(authUser?.uid),
+        .filter((announcement) =>
+          !announcement.clearedBy.includes(authUser?.uid) &&
+          announcement.meantFor === ''
+            ? true
+            : announcement.meantFor === authUser?.uid,
         );
     } catch (error) {
       console.error('Error fetching announcements:', error);
@@ -265,6 +311,7 @@ export const useAnnouncementHook = () => {
   };
 
   return {
+    createDefaultAnnouncementForUserOnFirstLogin,
     createAnnouncement,
     getAllAnnouncementsForUser,
     getAllAnnouncementsFunction,

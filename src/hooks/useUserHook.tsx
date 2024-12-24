@@ -6,6 +6,8 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useLoading } from '@/context/loading/loadingContext';
 import { ILogEventInterface, useLog } from './shared/useLog';
 import { useAuth } from '@/context/user/userContext';
+import { db } from '@/lib/config/firebase.config';
+import { doc, updateDoc } from 'firebase/firestore';
 
 const collectionName = 'users';
 
@@ -42,6 +44,11 @@ export const useUser = () => {
         status: 'success',
         message: 'User Created Successfully',
       });
+
+      await updateDoc(doc(db, 'users', (result.data as { id: string }).id), {
+        firstLogin: true,
+      });
+
       if (authUser) {
         await createLogEvent({
           userId: authUser?.uid,
@@ -56,7 +63,7 @@ export const useUser = () => {
       }
       return result;
     } catch (error) {
-      console.error('Error creating  user:', error);
+      console.error('Error creating user:', error);
       newToast({
         status: 'error',
         message: 'Error Creating User',

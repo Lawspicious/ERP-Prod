@@ -5,6 +5,7 @@ export interface Announcement {
   publishedAt: string;
   clearedBy?: string[];
   seenBy?: string[];
+  meantFor?: string;
   id: string;
 }
 

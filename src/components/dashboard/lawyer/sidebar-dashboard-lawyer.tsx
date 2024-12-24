@@ -35,6 +35,9 @@ const LawyerSidebar = () => {
 
   const handleNavigation = (tab: string) => {
     window.location.hash = tab;
+    const url = new URL(window.location.href);
+    url.search = '';
+    window.history.pushState({}, '', url.toString());
   };
 
   return (

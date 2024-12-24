@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@chakra-ui/react';
 import { Loader } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
+import { useAnnouncementHook } from '@/hooks/useAnnouncementHook';
 
 interface UserContextValue {
   authUser: FirebaseAuth.User | null;
@@ -56,6 +57,8 @@ const UserContext = createContext<UserContextValue>(defaultValues);
 
 export const UserProvider = ({ children }: any) => {
   const [authUser, setAuthUser] = useState<FirebaseAuth.User | null>(null);
+  const { createDefaultAnnouncementForUserOnFirstLogin } =
+    useAnnouncementHook();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [verificationIdState, setVerificationIdState] = useState<string>();
   const [resolverState, setResolverState] = useState<MultiFactorResolver>();
@@ -93,6 +96,7 @@ export const UserProvider = ({ children }: any) => {
         async (value: FirebaseAuth.UserCredential) => {
           const userID = value.user.uid;
           await fetchUser(userID);
+          await createDefaultAnnouncementForUserOnFirstLogin(userID);
         },
       );
 

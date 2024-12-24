@@ -36,7 +36,7 @@ import React, { useEffect, useState } from 'react';
 import { useNotif } from '../../../../hooks/useNotif';
 import { Logs } from 'lucide-react';
 import { NotepadTextIcon as Notepad } from 'lucide-react';
-import EnhancedNotepadModal from './NotepadModal';
+import EnhancedNotepadModal from '../../shared/NotepadModal';
 import { useRealTimeAnnouncements } from '@/hooks/useRTAHook';
 import { useAnnouncementHook } from '@/hooks/useAnnouncementHook';
 import { Announcement } from '@/types/announcement';
@@ -47,6 +47,12 @@ const Navbar = () => {
   const toast = useToast();
   const { listenToAnnouncements } = useRealTimeAnnouncements(
     (newAnnouncement) => {
+      if (
+        newAnnouncement.meantFor &&
+        newAnnouncement.meantFor !== authUser?.uid
+      ) {
+        return;
+      }
       newRealTimeAnnouncement(newAnnouncement);
       toast({
         title: newAnnouncement.title,
