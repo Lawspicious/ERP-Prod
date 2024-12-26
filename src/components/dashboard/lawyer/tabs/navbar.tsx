@@ -280,7 +280,7 @@ const LawyerNavbar = () => {
   }, []);
 
   const handleNavigation = (tab: string) => {
-    window.location.href = `/dashboard/admin/workspace-admin#${tab}`;
+    window.location.href = `/dashboard/lawyer/workspace-lawyer#${tab}`;
     const url = new URL(window.location.href);
     url.search = '';
     window.history.pushState({}, '', url.toString());
