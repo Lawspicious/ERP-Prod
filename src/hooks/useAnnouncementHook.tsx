@@ -46,7 +46,7 @@ export const useAnnouncementHook = () => {
         toast({
           title: `Welcome, ${findUser.name}!`,
           description: `Great to have you here!`,
-          status: 'success',
+          status: 'info',
           duration: 3000,
           position: 'bottom',
           isClosable: true,

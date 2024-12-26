@@ -128,6 +128,17 @@ const Sidebar = () => {
           <ListChecks size={20} />
           <span>Task</span>
         </li>
+        {(role === 'SUPERADMIN' || role === 'ADMIN') && (
+          <li
+            className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${
+              activeTab === 'performance-report' ? 'bg-bgSecondary' : ''
+            }`}
+            onClick={() => handleNavigation('performance-report')}
+          >
+            <Megaphone size={20} />
+            <span>Performance Report</span>
+          </li>
+        )}
         {/* Client Invoices */}
         <li
           className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${activeTab.includes('invoice') ? 'bg-bgSecondary' : ''}`}

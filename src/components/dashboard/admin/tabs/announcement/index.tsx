@@ -17,7 +17,7 @@ import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import TabLayout from '../tab-layout';
 import AnnouncementList from './AnnouncementList';
 import AnnouncementModal from './AnnouncementModal';
-import Pagination from './Pagination';
+import Pagination from '../../../shared/Pagination';
 import { useAuth } from '@/context/user/userContext';
 import { Announcement } from '@/types/announcement';
 import { useAnnouncementHook } from '@/hooks/useAnnouncementHook';
