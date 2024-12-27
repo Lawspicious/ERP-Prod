@@ -242,107 +242,111 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
 
   const RenderTasksTable = () => {
     return (
-      <Table variant="simple">
-        <Thead bg={TasksBg}>
-          <Tr>
-            <Th>Task Name</Th>
-            <Th>Status</Th>
-            <Th>Priority</Th>
-            <Th>Start Date</Th>
-            <Th>End Date</Th>
-            <Th>Completion Time (Days)</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {filteredItems.map((item) => {
-            if ('taskName' in item) {
-              const task = item as Task;
-              return (
-                <Tr
-                  key={task.id}
-                  className={
-                    task.taskStatus === 'COMPLETED'
-                      ? 'bg-green-50'
-                      : 'bg-yellow-50'
-                  }
-                >
-                  <Td>{task.taskName}</Td>
-                  <Td>
-                    <Badge
-                      colorScheme={
-                        task.taskStatus === 'COMPLETED' ? 'green' : 'yellow'
-                      }
-                    >
-                      {task.taskStatus}
-                    </Badge>
-                  </Td>
-                  <Td>{task.priority}</Td>
-                  <Td>{task.startDate}</Td>
-                  <Td>{task.endDate}</Td>
-                  <Td>
-                    {task.taskStatus === 'COMPLETED'
-                      ? calculateCompletionTime(task.startDate, task.endDate)
-                      : 'N/A'}
-                  </Td>
-                </Tr>
-              );
-            }
-            return null;
-          })}
-        </Tbody>
-      </Table>
+      <Box overflowX="auto" width="100%">
+        <Table variant="simple" minWidth="650px">
+          <Thead bg={TasksBg}>
+            <Tr>
+              <Th>Task Name</Th>
+              <Th>Status</Th>
+              <Th>Priority</Th>
+              <Th>Start Date</Th>
+              <Th>End Date</Th>
+              <Th>Completion Time (Days)</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {filteredItems.map((item) => {
+              if ('taskName' in item) {
+                const task = item as Task;
+                return (
+                  <Tr
+                    key={task.id}
+                    className={
+                      task.taskStatus === 'COMPLETED'
+                        ? 'bg-green-50'
+                        : 'bg-yellow-50'
+                    }
+                  >
+                    <Td>{task.taskName}</Td>
+                    <Td>
+                      <Badge
+                        colorScheme={
+                          task.taskStatus === 'COMPLETED' ? 'green' : 'yellow'
+                        }
+                      >
+                        {task.taskStatus}
+                      </Badge>
+                    </Td>
+                    <Td>{task.priority}</Td>
+                    <Td>{task.startDate}</Td>
+                    <Td>{task.endDate}</Td>
+                    <Td>
+                      {task.taskStatus === 'COMPLETED'
+                        ? calculateCompletionTime(task.startDate, task.endDate)
+                        : 'N/A'}
+                    </Td>
+                  </Tr>
+                );
+              }
+              return null;
+            })}
+          </Tbody>
+        </Table>
+      </Box>
     );
   };
 
   const RenderCasesTable = () => {
     return (
-      <Table variant="simple">
-        <Thead bg={CasesBg}>
-          <Tr>
-            <Th>Case Number</Th>
-            <Th>Regd Date</Th>
-            <Th>Status</Th>
-            <Th>Type</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {filteredItems.map((item) => {
-            if ('caseNo' in item) {
-              const caseItem = item as Case;
-              return (
-                <Tr
-                  key={caseItem.caseNo}
-                  className={
-                    caseItem.caseStatus === 'DECIDED'
-                      ? 'bg-purple-50'
-                      : 'bg-blue-50'
-                  }
-                >
-                  <Td>{caseItem.caseNo || 'NA'}</Td>
-                  <Td>{caseItem.regDate || 'NA'}</Td>
-                  <Td>
-                    <Badge
-                      colorScheme={
-                        caseItem.caseStatus === 'DECIDED' ? 'purple' : 'blue'
-                      }
-                    >
-                      {caseItem.caseStatus || 'NA'}
-                    </Badge>
-                  </Td>
-                  <Td>{caseItem.caseType || 'NA'}</Td>
-                </Tr>
-              );
-            }
-            return null;
-          })}
-        </Tbody>
-      </Table>
+      <Box overflowX="auto" width="100%">
+        <Table variant="simple" minWidth="650px">
+          <Thead bg={CasesBg}>
+            <Tr>
+              <Th>Case Number</Th>
+              <Th>Regd Date</Th>
+              <Th>Status</Th>
+              <Th>Type</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {filteredItems.map((item) => {
+              if ('caseNo' in item) {
+                const caseItem = item as Case;
+                return (
+                  <Tr
+                    key={caseItem.caseNo}
+                    className={
+                      caseItem.caseStatus === 'DECIDED'
+                        ? 'bg-purple-50'
+                        : 'bg-blue-50'
+                    }
+                  >
+                    <Td>{caseItem.caseNo || 'NA'}</Td>
+                    <Td>{caseItem.regDate || 'NA'}</Td>
+                    <Td>
+                      <Badge
+                        colorScheme={
+                          caseItem.caseStatus === 'DECIDED' ? 'purple' : 'blue'
+                        }
+                      >
+                        {caseItem.caseStatus || 'NA'}
+                      </Badge>
+                    </Td>
+                    <Td>{caseItem.caseType || 'NA'}</Td>
+                  </Tr>
+                );
+              }
+              return null;
+            })}
+          </Tbody>
+        </Table>
+      </Box>
     );
   };
 
   return (
     <PageLayout screen="margined">
-      <Container maxW="container.xl" py={8}>
+      <Container maxW="container.xl" py={8} px={4}>
         <VStack spacing={8} align="stretch">
           <Box>
             <Heading as="h1" size="xl" mb={2}>
@@ -354,19 +358,26 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
               tasks by date range, and view completion rates and times.
             </Text>
           </Box>
-          <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
+          <Flex
+            justify="space-between"
+            align="center"
+            wrap="wrap"
+            gap={4}
+            mb={4}
+          >
             <Select
               value={displayType}
               onChange={(e) => {
                 setDisplayType(e.target.value as 'tasks' | 'cases');
                 setLoading(true);
               }}
-              w="200px"
+              w={['full', '200px']}
+              mb={[4, 0]}
             >
               <option value="tasks">Tasks</option>
               <option value="cases">Cases</option>
             </Select>
-            <HStack>
+            <HStack spacing={2} w={['full', 'auto']}>
               <Input
                 type="date"
                 value={startDate}
@@ -384,7 +395,8 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
                 onChange={(e) => {
                   setTaskStatus(e.target.value as 'COMPLETED' | 'PENDING');
                 }}
-                w="200px"
+                w={['full', '200px']}
+                mb={[4, 0]}
               >
                 <option value="COMPLETED">Completed</option>
                 <option value="PENDING">Pending</option>
@@ -397,17 +409,20 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
                     e.target.value as 'DECIDED' | 'RUNNING' | 'PENDING',
                   );
                 }}
-                w="200px"
+                w={['full', '200px']}
+                mb={[4, 0]}
               >
                 <option value="DECIDED">Decided</option>
                 <option value="RUNNING">Running</option>
                 <option value="PENDING">Pending</option>
               </Select>
             )}
-            <Button onClick={searchCriteria}>Search</Button>
+            <Button onClick={searchCriteria} w={['full', 'auto']}>
+              Search
+            </Button>
           </Flex>
           {displayType === 'tasks' ? (
-            <StatGroup>
+            <StatGroup flexWrap="wrap" justifyContent="space-around">
               <Stat>
                 <StatLabel>Completed Tasks</StatLabel>
                 <StatNumber>{totalTasks}</StatNumber>
@@ -418,7 +433,7 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
               </Stat>
             </StatGroup>
           ) : (
-            <StatGroup>
+            <StatGroup flexWrap="wrap" justifyContent="space-around">
               <Stat>
                 <StatLabel>Decided Tasks</StatLabel>
                 <StatNumber>{totalDecidedCases}</StatNumber>
@@ -434,7 +449,7 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
             </Text>
           )}
           {displayType === 'tasks' ? (
-            <HStack justify="center">
+            <HStack justify="center" flexWrap="wrap">
               <Pagination
                 currentPage={tasksPage}
                 totalPages={tasksTotalPages}
@@ -446,7 +461,7 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
               />
             </HStack>
           ) : (
-            <HStack justify="center">
+            <HStack justify="center" flexWrap="wrap">
               <Pagination
                 currentPage={casesPage}
                 totalPages={casesTotalPages}
@@ -459,17 +474,18 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
             </HStack>
           )}
         </VStack>
-        <div className="mt-6 flex w-full items-center justify-center">
+        <Box mt={6} width="full" display="flex" justifyContent="center">
           <Button
             colorScheme="blue"
             leftIcon={<ArrowLeft />}
             onClick={() =>
               (window.location.href = `/dashboard/admin/workspace-admin#performance-report`)
             }
+            width={['full', 'auto']}
           >
             Back
           </Button>
-        </div>
+        </Box>
       </Container>
     </PageLayout>
   );

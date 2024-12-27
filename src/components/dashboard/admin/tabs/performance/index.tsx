@@ -109,8 +109,8 @@ export default function PerformanceOverview() {
 
   return (
     <TabLayout>
-      <Container maxW="container.xl" py={8}>
-        <VStack spacing={8} align="stretch">
+      <Container maxW="container.xl" py={8} px={4}>
+        <VStack spacing={4} align="stretch">
           <Box>
             <Heading as="h1" size="xl" mb={2}>
               Performance Overview
@@ -121,25 +121,27 @@ export default function PerformanceOverview() {
           </Box>
           {hasContent ? (
             <Box bg={bgColor} shadow="md" borderRadius="lg" overflow="hidden">
-              <Table variant="simple">
-                <Thead bg={useColorModeValue('gray.50', 'gray.700')}>
-                  <Tr>
-                    <Th>User</Th>
-                    <Th>Total Tasks</Th>
-                    <Th>Total Cases</Th>
-                    <Th>Completed Tasks</Th>
-                    <Th>Decided Cases</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>{renderTableRows()}</Tbody>
-              </Table>
+              <Box overflowX="auto" width="100%">
+                <Table variant="simple" minWidth="650px">
+                  <Thead bg={useColorModeValue('gray.50', 'gray.700')}>
+                    <Tr>
+                      <Th>User</Th>
+                      <Th>Total Tasks</Th>
+                      <Th>Total Cases</Th>
+                      <Th>Completed Tasks</Th>
+                      <Th>Decided Cases</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>{renderTableRows()}</Tbody>
+                </Table>
+              </Box>
             </Box>
           ) : (
             <Box
               bg={bgColor}
               shadow="md"
               borderRadius="lg"
-              p={6}
+              p={4}
               textAlign="center"
             >
               <Text fontSize="lg" fontWeight="medium">
@@ -155,12 +157,14 @@ export default function PerformanceOverview() {
               <Button
                 colorScheme="blue"
                 onClick={() => handlePageChange(Math.max(...pagesWithContent))}
+                mt={4}
+                width="full"
               >
                 Go to Last Page with Content
               </Button>
             </Box>
           )}
-          <HStack justify="center">
+          <HStack justify="center" flexWrap="wrap">
             <Pagination
               currentPage={currentPage}
               totalPages={Math.max(...pagesWithContent)} // Updated totalPages prop
