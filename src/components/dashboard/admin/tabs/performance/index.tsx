@@ -18,6 +18,7 @@ import {
   HStack,
   useColorModeValue,
   Badge,
+  Button,
 } from '@chakra-ui/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Pagination from '@/components/dashboard/shared/Pagination';
@@ -31,6 +32,7 @@ export default function PerformanceOverview() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pagesWithContent, setPagesWithContent] = useState<number[]>([]);
+  const [hasContent, setHasContent] = useState(true); // Added state variable
   const itemsPerPage = 5; // Fixed items per page
   const router = useRouter();
 
@@ -50,8 +52,10 @@ export default function PerformanceOverview() {
       setUsers(data);
       setTotalPages(totalPages);
       setPagesWithContent(pagesWithContent);
+      setHasContent(data.length > 0); // Update to set hasContent
     } catch (error) {
       console.error('Error fetching users:', error);
+      setHasContent(false); // Update to set hasContent to false on error
     }
   };
 
@@ -115,24 +119,51 @@ export default function PerformanceOverview() {
               View user performance metrics, including tasks and cases.
             </Text>
           </Box>
-          <Box bg={bgColor} shadow="md" borderRadius="lg" overflow="hidden">
-            <Table variant="simple">
-              <Thead bg={useColorModeValue('gray.50', 'gray.700')}>
-                <Tr>
-                  <Th>User</Th>
-                  <Th>Total Tasks</Th>
-                  <Th>Total Cases</Th>
-                  <Th>Completed Tasks</Th>
-                  <Th>Decided Cases</Th>
-                </Tr>
-              </Thead>
-              <Tbody>{renderTableRows()}</Tbody>
-            </Table>
-          </Box>
+          {hasContent ? (
+            <Box bg={bgColor} shadow="md" borderRadius="lg" overflow="hidden">
+              <Table variant="simple">
+                <Thead bg={useColorModeValue('gray.50', 'gray.700')}>
+                  <Tr>
+                    <Th>User</Th>
+                    <Th>Total Tasks</Th>
+                    <Th>Total Cases</Th>
+                    <Th>Completed Tasks</Th>
+                    <Th>Decided Cases</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>{renderTableRows()}</Tbody>
+              </Table>
+            </Box>
+          ) : (
+            <Box
+              bg={bgColor}
+              shadow="md"
+              borderRadius="lg"
+              p={6}
+              textAlign="center"
+            >
+              <Text fontSize="lg" fontWeight="medium">
+                No content available on this page.
+              </Text>
+              <Text fontSize="sm" color="gray.500">
+                Pages with Content :{' '}
+                {pagesWithContent && pagesWithContent.length > 0
+                  ? pagesWithContent.join(',')
+                  : 'NA'}
+                .
+              </Text>
+              <Button
+                colorScheme="blue"
+                onClick={() => handlePageChange(Math.max(...pagesWithContent))}
+              >
+                Go to Last Page with Content
+              </Button>
+            </Box>
+          )}
           <HStack justify="center">
             <Pagination
               currentPage={currentPage}
-              totalPages={totalPages}
+              totalPages={Math.max(...pagesWithContent)} // Updated totalPages prop
               onPageChange={handlePageChange}
               pagesWithContent={pagesWithContent}
             />

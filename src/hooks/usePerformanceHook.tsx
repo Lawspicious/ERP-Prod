@@ -188,8 +188,8 @@ export const usePerformanceHook = () => {
     completedTaskStats: {
       totalCompletedTasks: number;
       meanCompletionTime: number | null;
-    }; // New field
-    totalDecidedCases: number; // Existing field
+    }; // Stats for the user
+    totalDecidedCases: number; // Stats for the user
   }> => {
     try {
       // Fetch user data
@@ -234,9 +234,9 @@ export const usePerformanceHook = () => {
         return diffDays;
       };
 
-      // Fetch and filter tasks
+      // Fetch tasks for the user
       const tasksSnapshot = await getDocs(collection(db, 'tasks'));
-      const tasks: Task[] = tasksSnapshot.docs
+      const userTasks: Task[] = tasksSnapshot.docs
         .map((doc) => ({
           id: doc.id,
           taskName: doc.data().taskName,
@@ -248,24 +248,14 @@ export const usePerformanceHook = () => {
           timeLimit: doc.data().timeLimit,
           lawyerDetails: doc.data().lawyerDetails || [],
         }))
-        .filter((task) => {
-          const isRelevantToUser = task.lawyerDetails.some(
+        .filter((task) =>
+          task.lawyerDetails.some(
             (lawyer: { id: string }) => lawyer.id === userId,
-          );
+          ),
+        );
 
-          // Check task-specific filters
-          if (!isRelevantToUser) return false;
-          if (displayType === 'tasks') {
-            if (taskStatus && task.taskStatus !== taskStatus) return false;
-            if (!isWithinDateRange(task.startDate, startDate, endDate))
-              return false;
-          }
-
-          return true;
-        });
-
-      // Calculate completed task stats
-      const completedTasks = tasks.filter(
+      // Calculate user-specific completed task stats
+      const completedTasks = userTasks.filter(
         (task) => task.taskStatus === 'COMPLETED',
       );
       const totalCompletedTasks = completedTasks.length;
@@ -279,20 +269,32 @@ export const usePerformanceHook = () => {
             ) / totalCompletedTasks
           : null;
 
+      // Filter tasks for pagination
+      const filteredTasks = userTasks.filter((task) => {
+        // Check task-specific filters
+        if (displayType === 'tasks') {
+          if (taskStatus && task.taskStatus !== taskStatus) return false;
+          if (!isWithinDateRange(task.startDate, startDate, endDate))
+            return false;
+        }
+
+        return true;
+      });
+
       // Paginate tasks
-      const tasksTotalPages = Math.ceil(tasks.length / itemsPerPage);
+      const tasksTotalPages = Math.ceil(filteredTasks.length / itemsPerPage);
       const tasksPagesWithContent = Array.from(
         { length: tasksTotalPages },
         (_, i) => i + 1,
       );
-      const paginatedTasks = tasks.slice(
+      const paginatedTasks = filteredTasks.slice(
         (tasksPage - 1) * itemsPerPage,
         tasksPage * itemsPerPage,
       );
 
-      // Fetch and filter cases
+      // Fetch cases for the user
       const casesSnapshot = await getDocs(collection(db, 'cases'));
-      const cases: Case[] = casesSnapshot.docs
+      const userCases: Case[] = casesSnapshot.docs
         .map((doc) => ({
           caseNo: doc.data().caseNo,
           caseStatus: doc.data().caseStatus,
@@ -300,32 +302,32 @@ export const usePerformanceHook = () => {
           lawyer: doc.data().lawyer || {},
           regDate: doc.data().regDate,
         }))
-        .filter((caseItem) => {
-          const isRelevantToUser = caseItem.lawyer?.id === userId;
+        .filter((caseItem) => caseItem.lawyer?.id === userId);
 
-          // Check case-specific filters
-          if (!isRelevantToUser) return false;
-          if (displayType === 'cases') {
-            if (caseStatus && caseItem.caseStatus !== caseStatus) return false;
-            if (!isWithinDateRange(caseItem.regDate, startDate, endDate))
-              return false;
-          }
-
-          return true;
-        });
-
-      // Calculate total decided cases
-      const totalDecidedCases = cases.filter(
+      // Calculate user-specific total decided cases
+      const totalDecidedCases = userCases.filter(
         (caseItem) => caseItem.caseStatus === 'DECIDED',
       ).length;
 
+      // Filter cases for pagination
+      const filteredCases = userCases.filter((caseItem) => {
+        // Check case-specific filters
+        if (displayType === 'cases') {
+          if (caseStatus && caseItem.caseStatus !== caseStatus) return false;
+          if (!isWithinDateRange(caseItem.regDate, startDate, endDate))
+            return false;
+        }
+
+        return true;
+      });
+
       // Paginate cases
-      const casesTotalPages = Math.ceil(cases.length / itemsPerPage);
+      const casesTotalPages = Math.ceil(filteredCases.length / itemsPerPage);
       const casesPagesWithContent = Array.from(
         { length: casesTotalPages },
         (_, i) => i + 1,
       );
-      const paginatedCases = cases.slice(
+      const paginatedCases = filteredCases.slice(
         (casesPage - 1) * itemsPerPage,
         casesPage * itemsPerPage,
       );
@@ -333,8 +335,8 @@ export const usePerformanceHook = () => {
       // Construct user object
       const user: UserWithDetails = {
         lawyer: { id: userId, name: userData.name },
-        tasks,
-        cases,
+        tasks: filteredTasks,
+        cases: filteredCases,
       };
 
       return {

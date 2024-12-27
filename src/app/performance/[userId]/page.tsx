@@ -37,6 +37,7 @@ import LoaderComponent from '@/components/ui/loader';
 import withAuth from '@/components/shared/hoc-middlware';
 import PageLayout from '@/components/ui/page-layout';
 import { useToastHook } from '@/hooks/shared/useToastHook';
+import { ArrowLeft } from 'lucide-react';
 
 const UserPerformance = ({ params }: { params: { userId: string } }) => {
   const { getUserPerformance } = usePerformanceHook();
@@ -74,7 +75,7 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
   const [totalDecidedCases, setTotalDecidedCases] = useState<number>(0);
   const [meanCompletionTime, setMeanCompletionTime] = useState<number>(0);
 
-  const itemsPerPage = 1;
+  const itemsPerPage = 5;
 
   useEffect(() => {
     fetchUserData();
@@ -132,6 +133,7 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
 
   const fetchUserData = async () => {
     try {
+      setLoading(true);
       const {
         user,
         tasksPagination,
@@ -411,7 +413,7 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
               </Stat>
               <Stat>
                 <StatLabel>Average Completion Time</StatLabel>
-                <StatNumber>{meanCompletionTime} days</StatNumber>
+                <StatNumber>{meanCompletionTime.toFixed(2)} days</StatNumber>
               </Stat>
             </StatGroup>
           ) : (
@@ -456,6 +458,17 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
             </HStack>
           )}
         </VStack>
+        <div className="mt-6 flex w-full items-center justify-center">
+          <Button
+            colorScheme="blue"
+            leftIcon={<ArrowLeft />}
+            onClick={() =>
+              (window.location.href = `/dashboard/admin/workspace-admin#performance-report`)
+            }
+          >
+            Back
+          </Button>
+        </div>
       </Container>
     </PageLayout>
   );

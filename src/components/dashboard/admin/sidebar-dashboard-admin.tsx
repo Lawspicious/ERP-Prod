@@ -10,6 +10,7 @@ import {
   Megaphone,
   Scale,
   Users,
+  BarChart,
 } from 'lucide-react';
 import { useAuth } from '@/context/user/userContext';
 import { Badge, Button } from '@chakra-ui/react';
@@ -135,7 +136,7 @@ const Sidebar = () => {
             }`}
             onClick={() => handleNavigation('performance-report')}
           >
-            <Megaphone size={20} />
+            <BarChart size={20} />
             <span>Performance Report</span>
           </li>
         )}
