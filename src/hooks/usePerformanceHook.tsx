@@ -126,21 +126,24 @@ export const usePerformanceHook = () => {
         })
         .filter((entry) => entry !== null) as UserWithDetails[]; // Remove null entries
 
-      // Step 5: Implement pagination
-      const totalItems = usersWithDetails.length;
+      // Step 5: Sort users alphabetically by name
+      const sortedUsers = usersWithDetails.sort((a, b) =>
+        a.lawyer.name.localeCompare(b.lawyer.name),
+      );
+
+      // Step 6: Implement pagination
+      const totalItems = sortedUsers.length;
       const totalPages = Math.ceil(totalItems / itemsPerPage);
 
       const startIndex = (page - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
 
-      const paginatedData = usersWithDetails.slice(startIndex, endIndex);
+      const paginatedData = sortedUsers.slice(startIndex, endIndex);
 
       // Pages with content (optional: show pages with existing content only)
       const pagesWithContent = Array.from(
         new Set(
-          usersWithDetails.map((_, index) =>
-            Math.ceil((index + 1) / itemsPerPage),
-          ),
+          sortedUsers.map((_, index) => Math.ceil((index + 1) / itemsPerPage)),
         ),
       );
 

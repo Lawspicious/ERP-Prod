@@ -121,7 +121,7 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
   }, [searchParams]);
 
   useEffect(() => {
-    if (user && (tasksData.length > 0 || casesData.length > 0)) {
+    if (user) {
       setFilteredItems(displayType === 'tasks' ? tasksData : casesData);
     }
   }, [displayType, user, tasksData, casesData]);
@@ -133,7 +133,6 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
 
   const fetchUserData = async () => {
     try {
-      setLoading(true);
       const {
         user,
         tasksPagination,
@@ -210,6 +209,7 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
       });
       return;
     }
+    setLoading(true);
     setDateRange({ start: startDate, end: endDate });
     const params = new URLSearchParams(searchParams.toString());
     if (startDate && endDate) {
@@ -359,6 +359,7 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
               value={displayType}
               onChange={(e) => {
                 setDisplayType(e.target.value as 'tasks' | 'cases');
+                setLoading(true);
               }}
               w="200px"
             >
