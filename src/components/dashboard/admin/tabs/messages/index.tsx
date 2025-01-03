@@ -31,12 +31,14 @@ import {
   Check,
   CopyCheck,
   MessageCircle,
+  Paperclip,
 } from 'lucide-react';
 import Navbar from '../navbar';
 import LoaderComponent from '@/components/ui/loader';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { storage } from '@/lib/config/firebase.config';
 import { ref } from 'firebase/storage';
+import { FilePreview } from './FilePreview';
 
 const MessagesTab = () => {
   const router = useRouter();
@@ -46,6 +48,8 @@ const MessagesTab = () => {
   const [selectedUser, setSelectedUser] = useState<DocumentData | null>(null);
   const [messages, setMessages] = useState<DocumentData[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { authUser } = useAuth();
@@ -67,6 +71,14 @@ const MessagesTab = () => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [searchQuery]);
 
   useEffect(() => {
     if (authUser) {
@@ -118,10 +130,39 @@ const MessagesTab = () => {
     scrollToBottom();
   }, [messages]);
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (
+      file &&
+      (file.type.startsWith('image/') || file.type === 'application/pdf')
+    ) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSendMessage = async () => {
-    if (newMessage.trim() && authUser && selectedUser) {
+    if ((newMessage.trim() || selectedFile) && authUser && selectedUser) {
       setNewMessage('');
-      await sendMessage(authUser.uid, selectedUser.id, newMessage);
+      if (selectedFile) {
+        // Here you would typically upload the file and get a URL
+        // For this example, we'll just add the file name to the message
+        const fileMessage = `Sent a file: ${selectedFile.name}`;
+        await sendMessage(authUser.uid, selectedUser.id, fileMessage);
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+      if (newMessage.trim()) {
+        await sendMessage(authUser.uid, selectedUser.id, newMessage);
+      }
     }
   };
 
@@ -176,9 +217,11 @@ const MessagesTab = () => {
     <>
       <Box p={4} borderBottom="1px" borderColor="gray.200">
         <Input
+          ref={inputRef}
           placeholder="Search users..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          autoComplete="off"
         />
       </Box>
       <VStack spacing={2} align="stretch" p={4} flex={1} overflowY="auto">
@@ -376,25 +419,48 @@ const MessagesTab = () => {
                   <div ref={messagesEndRef} />
                 </VStack>
               </Box>
-              <Flex>
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  mr={2}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSendMessage();
-                    }
-                  }}
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  leftIcon={<Send size={16} />}
-                >
-                  Send
-                </Button>
-              </Flex>
+              <Box>
+                <Box position="relative">
+                  {selectedFile && (
+                    <FilePreview
+                      file={selectedFile}
+                      onRemove={handleRemoveFile}
+                    />
+                  )}
+                  <Flex>
+                    <Input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={handleFileChange}
+                      ref={fileInputRef}
+                      display="none"
+                    />
+                    <IconButton
+                      aria-label="Attach file"
+                      icon={<Paperclip size={20} />}
+                      onClick={() => fileInputRef.current?.click()}
+                      mr={2}
+                    />
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Type a message..."
+                      mr={2}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      leftIcon={<Send size={16} />}
+                    >
+                      Send
+                    </Button>
+                  </Flex>
+                </Box>
+              </Box>
             </>
           ) : (
             <Flex direction="column" justify="center" align="center" h="100%">
