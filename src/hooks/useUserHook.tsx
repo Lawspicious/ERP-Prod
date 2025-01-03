@@ -7,7 +7,7 @@ import { useLoading } from '@/context/loading/loadingContext';
 import { ILogEventInterface, useLog } from './shared/useLog';
 import { useAuth } from '@/context/user/userContext';
 import { db } from '@/lib/config/firebase.config';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 const collectionName = 'users';
 
@@ -160,10 +160,32 @@ export const useUser = () => {
     }
   };
 
+  const getUserById = async (id: string): Promise<IUser | undefined> => {
+    try {
+      const userDocRef = doc(db, collectionName, id);
+      const userSnap = await getDoc(userDocRef);
+
+      if (userSnap.exists()) {
+        return userSnap.data() as IUser;
+      } else {
+        console.warn(`No user found with ID: ${id}`);
+        return undefined;
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      newToast({
+        status: 'error',
+        message: 'Error fetching user',
+      });
+      return undefined;
+    }
+  };
+
   return {
     createUser,
     deleteUser,
     updateUser,
     resetUserPassword,
+    getUserById,
   };
 };
