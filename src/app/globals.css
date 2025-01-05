@@ -68,6 +68,10 @@ thead {
 }
 
 @layer base {
+  img {
+    width: auto;
+    height: auto;
+  }
   .btn-primary {
     @apply rounded-md bg-indicoPrimary px-4 py-2.5 text-white transition-all duration-300 hover:bg-indicoSecondary disabled:cursor-not-allowed disabled:bg-gray-500 disabled:text-black;
   }

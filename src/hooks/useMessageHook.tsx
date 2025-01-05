@@ -14,6 +14,8 @@ import {
   limit,
   writeBatch,
   increment,
+  DocumentData,
+  getDoc,
 } from 'firebase/firestore';
 import { useToastHook } from './shared/useToastHook';
 import { db } from '@/lib/config/firebase.config';
@@ -160,13 +162,18 @@ export const useMessageHook = () => {
   const sendMessage = async (
     senderId: string,
     receiverId: string,
-    content: string,
+    messageContent: {
+      content: string;
+      fileURL?: string;
+      fileName?: string;
+      fileType?: string;
+    },
   ): Promise<void> => {
     try {
       await addDoc(collection(db, 'messages'), {
         senderId,
         receiverId,
-        content,
+        ...messageContent,
         timestamp: serverTimestamp(),
         isDeleted: false,
         isEdited: false,
@@ -280,6 +287,79 @@ export const useMessageHook = () => {
     });
   };
 
+  const getUnseenMessages = async (
+    currentUserId: string,
+  ): Promise<DocumentData[]> => {
+    try {
+      const q = query(
+        collection(db, 'messages'),
+        where('receiverId', '==', currentUserId),
+        where('isSeen', '==', false),
+        orderBy('timestamp', 'desc'),
+      );
+
+      const querySnapshot = await getDocs(q);
+      const unseenMessages = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as DocumentData[];
+
+      const messagesWithSenders = await Promise.all(
+        unseenMessages.map(async (message) => {
+          const senderDoc = await getDoc(doc(db, 'users', message.senderId));
+          return {
+            ...message,
+            senderName: senderDoc.exists()
+              ? senderDoc.data().name
+              : 'Unknown User',
+          };
+        }),
+      );
+
+      return messagesWithSenders;
+    } catch (error) {
+      console.error('Failed to fetch unseen messages:', error);
+      newToast({
+        status: 'error',
+        message: 'Failed to fetch unseen messages',
+      });
+      return [];
+    }
+  };
+
+  const subscribeToUnseenMessages = (
+    currentUserId: string,
+    callback: (messages: DocumentData[]) => void,
+  ) => {
+    const q = query(
+      collection(db, 'messages'),
+      where('receiverId', '==', currentUserId),
+      where('isSeen', '==', false),
+      orderBy('timestamp', 'desc'),
+    );
+
+    return onSnapshot(q, async (querySnapshot) => {
+      const unseenMessages = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as DocumentData[];
+
+      const messagesWithSenders = await Promise.all(
+        unseenMessages.map(async (message) => {
+          const senderDoc = await getDoc(doc(db, 'users', message.senderId));
+          return {
+            ...message,
+            senderName: senderDoc.exists()
+              ? senderDoc.data().name
+              : 'Unknown User',
+          };
+        }),
+      );
+
+      callback(messagesWithSenders);
+    });
+  };
+
   return {
     getAllUsersForMessage,
     sendMessage,
@@ -288,5 +368,7 @@ export const useMessageHook = () => {
     markMessagesAsSeen,
     subscribeToMessages,
     subscribeToUserUpdates,
+    getUnseenMessages,
+    subscribeToUnseenMessages,
   };
 };

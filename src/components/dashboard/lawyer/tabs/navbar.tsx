@@ -28,6 +28,7 @@ import {
   ListChecks,
   Megaphone,
   Menu,
+  MessageSquare,
   Newspaper,
   Scale,
   Users,
@@ -41,6 +42,8 @@ import EnhancedNotepadModal from '../../shared/NotepadModal';
 import { useAnnouncementHook } from '@/hooks/useAnnouncementHook';
 import { useRealTimeAnnouncements } from '@/hooks/useRTAHook';
 import { Announcement } from '@/types/announcement';
+import { DocumentData } from 'firebase/firestore';
+import { useMessageHook } from '@/hooks/useMessageHook';
 
 const LawyerNavbar = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -67,6 +70,11 @@ const LawyerNavbar = () => {
     useState<boolean>(false);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [unreadAnnouncements, setUnreadAnnouncements] = useState<number>(0);
+  const [unseenMessages, setUnseenMessages] = useState<DocumentData[]>([]);
+  const [isMessageDrawerOpen, setIsMessageDrawerOpen] =
+    useState<boolean>(false);
+  const { subscribeToUnseenMessages } = useMessageHook();
+
   const { listenToAnnouncements } = useRealTimeAnnouncements(
     (newAnnouncement) => {
       if (
@@ -248,6 +256,19 @@ const LawyerNavbar = () => {
   }, []);
 
   useEffect(() => {
+    if (authUser?.uid) {
+      const unsubscribe = subscribeToUnseenMessages(
+        authUser.uid,
+        (messages) => {
+          setUnseenMessages(messages);
+        },
+      );
+
+      return () => unsubscribe();
+    }
+  }, [authUser]);
+
+  useEffect(() => {
     async function seeAll() {
       await seeAllAnnouncementsForUser(authUser);
       setIsAnnouncementDrawerOpen(true);
@@ -287,7 +308,7 @@ const LawyerNavbar = () => {
   };
 
   return (
-    <div className="flex items-center justify-between gap-6 px-4 py-3 shadow-md lg:justify-end">
+    <div className="flex items-center justify-between gap-6 px-4 py-2 shadow-md lg:justify-end">
       <Menu
         size={30}
         color="#6B46C1"
@@ -308,7 +329,7 @@ const LawyerNavbar = () => {
           {newNotif.length > 0 && (
             <Badge
               position="absolute"
-              top="2"
+              top="1"
               right="40"
               colorScheme="red"
               borderRadius="full"
@@ -325,14 +346,31 @@ const LawyerNavbar = () => {
         {unreadAnnouncements > 0 && (
           <Badge
             position="absolute"
-            top="2"
-            right="12"
+            top="1"
+            right="90"
             colorScheme="red"
             borderRadius="full"
             fontSize="0.8em"
             px={2}
           >
             {unreadAnnouncements}
+          </Badge>
+        )}
+        <MessageSquare
+          cursor="pointer"
+          onClick={() => setIsMessageDrawerOpen(true)}
+        />
+        {unseenMessages.length > 0 && (
+          <Badge
+            position="absolute"
+            top="1"
+            right="12"
+            colorScheme="red"
+            borderRadius="full"
+            fontSize="0.8em"
+            px={2}
+          >
+            {unseenMessages.length}
           </Badge>
         )}
         <Avatar
@@ -626,6 +664,50 @@ const LawyerNavbar = () => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+
+      {/* Message Drawer */}
+      <Drawer
+        isOpen={isMessageDrawerOpen}
+        onClose={() => setIsMessageDrawerOpen(false)}
+      >
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>Unseen Messages</DrawerHeader>
+          <DrawerBody>
+            <VStack spacing={4} align="stretch">
+              {unseenMessages.length > 0 ? (
+                unseenMessages.map((message) => (
+                  <Box
+                    key={message.id}
+                    p={4}
+                    shadow="md"
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    bg="gray.100"
+                    cursor="pointer"
+                    _hover={{ backgroundColor: 'gray.200' }}
+                    onClick={() => {
+                      const userId = message.senderId;
+                      window.location.href = `/dashboard/lawyer/workspace-lawyer?userId=${userId}#messages`;
+                      setIsMessageDrawerOpen(false);
+                    }}
+                  >
+                    <Text fontWeight="bold">{message.senderName}</Text>
+                    <Text noOfLines={1}>{message.content}</Text>
+                    <Text fontSize="sm" color="gray.500">
+                      {new Date(message.timestamp?.toDate()).toLocaleString()}
+                    </Text>
+                  </Box>
+                ))
+              ) : (
+                <Text>No unseen messages</Text>
+              )}
+            </VStack>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+
       <EnhancedNotepadModal
         isOpen={isNotepadOpen}
         onClose={() => setIsNotepadOpen(false)}

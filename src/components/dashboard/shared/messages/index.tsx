@@ -33,25 +33,32 @@ import {
   MessageCircle,
   Paperclip,
 } from 'lucide-react';
-import Navbar from '../navbar';
+import AdminNavbar from '../../admin/tabs/navbar';
+import LawyerNavbar from '../../lawyer/tabs/navbar';
 import LoaderComponent from '@/components/ui/loader';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { storage } from '@/lib/config/firebase.config';
-import { ref } from 'firebase/storage';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { FilePreview } from './FilePreview';
+import Image from 'next/image';
 
-const MessagesTab = () => {
+interface MessagesTabProps {
+  user: 'admin' | 'lawyer';
+}
+
+const MessagesTab = ({ user }: MessagesTabProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [users, setUsers] = useState<DocumentData[] | undefined>([]);
   const [selectedUser, setSelectedUser] = useState<DocumentData | null>(null);
   const [messages, setMessages] = useState<DocumentData[]>([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState<string>('');
+  const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const { authUser } = useAuth();
   const {
     sendMessage,
@@ -149,19 +156,49 @@ const MessagesTab = () => {
 
   const handleSendMessage = async () => {
     if ((newMessage.trim() || selectedFile) && authUser && selectedUser) {
-      setNewMessage('');
-      if (selectedFile) {
-        // Here you would typically upload the file and get a URL
-        // For this example, we'll just add the file name to the message
-        const fileMessage = `Sent a file: ${selectedFile.name}`;
-        await sendMessage(authUser.uid, selectedUser.id, fileMessage);
+      setLoading(true);
+      try {
+        let fileMessage = {};
+        if (selectedFile) {
+          const fileRef = ref(
+            storageRef,
+            `${authUser.uid}/${selectedFile.name}`,
+          );
+          await uploadBytes(fileRef, selectedFile);
+          const downloadURL = await getDownloadURL(fileRef);
+
+          fileMessage = {
+            fileName: selectedFile.name,
+            fileURL: downloadURL,
+            fileType: selectedFile.type,
+          };
+        }
+
+        if (newMessage.trim() || selectedFile) {
+          await sendMessage(authUser.uid, selectedUser.id, {
+            ...fileMessage,
+            content: newMessage.trim()
+              ? newMessage
+              : selectedFile
+                ? selectedFile.name
+                : '',
+          });
+        }
+
+        setNewMessage('');
         setSelectedFile(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
-      }
-      if (newMessage.trim()) {
-        await sendMessage(authUser.uid, selectedUser.id, newMessage);
+      } catch (error) {
+        toast({
+          title: 'Failed to send message',
+          status: 'error',
+          duration: 2000,
+          isClosable: true,
+        });
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -205,7 +242,7 @@ const MessagesTab = () => {
   if (users && users.length === 0) {
     return (
       <div className="h-[80vh]">
-        <Navbar />
+        {user === 'admin' ? <AdminNavbar /> : <LawyerNavbar />}
         <Flex justify="center" align="center" h="100%">
           <LoaderComponent />
         </Flex>
@@ -229,7 +266,7 @@ const MessagesTab = () => {
           <Box
             key={user.id}
             p={2}
-            cursor="pointer"
+            style={{ cursor: 'pointer' }}
             bg={selectedUser?.id === user.id ? 'gray.100' : 'white'}
             onClick={() => {
               handleSelectUser(user);
@@ -271,7 +308,7 @@ const MessagesTab = () => {
 
   return (
     <div>
-      <Navbar />
+      {user === 'admin' ? <AdminNavbar /> : <LawyerNavbar />}
       <Flex h="calc(100vh - 64px)" overflow="hidden">
         {!isMobile ? (
           <Box
@@ -351,32 +388,55 @@ const MessagesTab = () => {
                         </Text>
                       ) : (
                         <>
-                          {editingMessage === message.id ? (
-                            <Input
-                              value={message.content}
-                              onChange={(e) => {
-                                const updatedMessages = messages.map((m) =>
-                                  m.id === message.id
-                                    ? { ...m, content: e.target.value }
-                                    : m,
-                                );
-                                setMessages(updatedMessages);
-                              }}
-                              onBlur={() =>
-                                handleEditMessage(message.id, message.content)
-                              }
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleEditMessage(
-                                    message.id,
-                                    message.content,
-                                  );
-                                }
-                              }}
-                            />
-                          ) : (
-                            <Text>{message.content}</Text>
+                          {message.fileURL && (
+                            <>
+                              {message.fileType.startsWith('image/') ? (
+                                <Image
+                                  src={message.fileURL}
+                                  alt={message.fileName}
+                                  style={{
+                                    cursor: 'pointer',
+                                    width: '200px',
+                                  }}
+                                  height={200}
+                                  width={200}
+                                  onClick={() =>
+                                    window.open(
+                                      message.fileURL,
+                                      '_blank',
+                                      'noopener,noreferrer',
+                                    )
+                                  }
+                                  priority
+                                />
+                              ) : message.fileType === 'application/pdf' ? (
+                                <Button
+                                  variant="link"
+                                  colorScheme="blue"
+                                  onClick={() =>
+                                    window.open(
+                                      message.fileURL,
+                                      '_blank',
+                                      'noopener,noreferrer',
+                                    )
+                                  }
+                                >
+                                  View PDF: {message.fileName}
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="link"
+                                  colorScheme="blue"
+                                  as="a"
+                                  href={message.fileURL}
+                                  download={message.fileName}
+                                >
+                                  Download: {message.fileName}
+                                </Button>
+                              )}
+                            </>
                           )}
+                          <Text>{message.content}</Text>
                           {message.isEdited && (
                             <Text fontSize="xs">Edited</Text>
                           )}
@@ -416,6 +476,7 @@ const MessagesTab = () => {
                       )}
                     </Box>
                   ))}
+
                   <div ref={messagesEndRef} />
                 </VStack>
               </Box>
@@ -440,12 +501,14 @@ const MessagesTab = () => {
                       icon={<Paperclip size={20} />}
                       onClick={() => fileInputRef.current?.click()}
                       mr={2}
+                      isDisabled={loading} // Disable during loading
                     />
                     <Input
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       placeholder="Type a message..."
                       mr={2}
+                      isDisabled={loading} // Disable during loading
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
                           handleSendMessage();
@@ -454,9 +517,12 @@ const MessagesTab = () => {
                     />
                     <Button
                       onClick={handleSendMessage}
-                      leftIcon={<Send size={16} />}
+                      leftIcon={loading ? undefined : <Send size={16} />}
+                      isLoading={loading} // Show loading spinner
+                      loadingText="Sending" // Text during loading
+                      isDisabled={loading} // Disable during loading
                     >
-                      Send
+                      {loading ? 'Sending' : 'Send'}
                     </Button>
                   </Flex>
                 </Box>

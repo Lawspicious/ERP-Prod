@@ -13,6 +13,9 @@ const TaskTab = dynamic(() => import('./tabs/task/index'), { ssr: false });
 const AppointmentTab = dynamic(() => import('./tabs/appointment/index'), {
   ssr: false,
 });
+const MessagesTab = dynamic(() => import('../shared/messages/index'), {
+  ssr: false,
+});
 
 const LawyerDashboard = () => {
   const [activeTab, setActiveTab] = useState<string>('home');
@@ -55,6 +58,8 @@ const LawyerDashboard = () => {
         return <TaskTab />;
       case 'appointment':
         return <AppointmentTab />;
+      case 'messages':
+        return <MessagesTab user="lawyer" />;
       default:
         return <CaseTab />;
     }

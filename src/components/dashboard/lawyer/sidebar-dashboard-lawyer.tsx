@@ -5,6 +5,7 @@ import {
   Handshake,
   House,
   ListChecks,
+  MessagesSquare,
   Scale,
 } from 'lucide-react';
 import { useAuth } from '@/context/user/userContext';
@@ -94,7 +95,15 @@ const LawyerSidebar = () => {
           <CalendarPlus size={20} />
           <span>Appointment</span>
         </li>
-
+        <li
+          className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${
+            activeTab === 'messages' ? 'bg-bgSecondary' : ''
+          }`}
+          onClick={() => handleNavigation('messages')}
+        >
+          <MessagesSquare size={20} />
+          <span>Messages</span>
+        </li>
         <li
           className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${
             activeTab === 'task' ? 'bg-bgSecondary' : ''

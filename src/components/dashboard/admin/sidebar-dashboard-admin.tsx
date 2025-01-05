@@ -11,6 +11,7 @@ import {
   Scale,
   Users,
   BarChart,
+  MessagesSquare,
 } from 'lucide-react';
 import { useAuth } from '@/context/user/userContext';
 import { Badge, Button } from '@chakra-ui/react';
@@ -126,7 +127,7 @@ const Sidebar = () => {
           }`}
           onClick={() => handleNavigation('messages')}
         >
-          <ListChecks size={20} />
+          <MessagesSquare size={20} />
           <span>Messages</span>
         </li>
         <li

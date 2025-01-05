@@ -27,6 +27,7 @@ import {
   ListChecks,
   Megaphone,
   Menu,
+  MessageSquare,
   Newspaper,
   Scale,
   Users,
@@ -41,6 +42,8 @@ import EnhancedNotepadModal from '../../shared/NotepadModal';
 import { useRealTimeAnnouncements } from '@/hooks/useRTAHook';
 import { useAnnouncementHook } from '@/hooks/useAnnouncementHook';
 import { Announcement } from '@/types/announcement';
+import { DocumentData } from 'firebase/firestore';
+import { useMessageHook } from '@/hooks/useMessageHook';
 
 const Navbar = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -83,6 +86,7 @@ const Navbar = () => {
     seenNotif,
     clearAllNotifications,
   } = useNotif();
+  const { subscribeToUnseenMessages } = useMessageHook();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] =
@@ -92,6 +96,9 @@ const Navbar = () => {
     useState<boolean>(false);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [unreadAnnouncements, setUnreadAnnouncements] = useState<number>(0);
+  const [unseenMessages, setUnseenMessages] = useState<DocumentData[]>([]);
+  const [isMessageDrawerOpen, setIsMessageDrawerOpen] =
+    useState<boolean>(false);
 
   const handleOpenNotificationDrawer = () => {
     try {
@@ -240,6 +247,19 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
+    if (authUser?.uid) {
+      const unsubscribe = subscribeToUnseenMessages(
+        authUser.uid,
+        (messages) => {
+          setUnseenMessages(messages);
+        },
+      );
+
+      return () => unsubscribe();
+    }
+  }, [authUser]);
+
+  useEffect(() => {
     async function fetchAnnouncements() {
       const announcements = await getAllAnnouncementsForUser(authUser);
       setAnnouncements(announcements);
@@ -307,7 +327,7 @@ const Navbar = () => {
           <Badge
             position="absolute"
             top="1"
-            right="40"
+            right="200"
             colorScheme="red"
             borderRadius="full"
             fontSize="0.8em"
@@ -319,11 +339,29 @@ const Navbar = () => {
         <Calendar onClick={() => window.open('/calendar')} cursor={'pointer'} />
         <Notepad onClick={() => setIsNotepadOpen(true)} cursor="pointer" />
         <Megaphone onClick={handleOpenAnnouncementDrawer} cursor="pointer" />
-        {unreadAnnouncements > 0 && (
+        <MessageSquare
+          cursor="pointer"
+          onClick={() => setIsMessageDrawerOpen(true)}
+        />
+        {unseenMessages.length > 0 && (
           <Badge
             position="absolute"
             top="1"
             right="12"
+            colorScheme="red"
+            borderRadius="full"
+            fontSize="0.8em"
+            px={2}
+          >
+            {unseenMessages.length}
+          </Badge>
+        )}
+
+        {unreadAnnouncements > 0 && (
+          <Badge
+            position="absolute"
+            top="1"
+            right="85"
             colorScheme="red"
             borderRadius="full"
             fontSize="0.8em"
@@ -685,6 +723,50 @@ const Navbar = () => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+
+      {/* Message Drawer */}
+      <Drawer
+        isOpen={isMessageDrawerOpen}
+        onClose={() => setIsMessageDrawerOpen(false)}
+      >
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>Unseen Messages</DrawerHeader>
+          <DrawerBody>
+            <VStack spacing={4} align="stretch">
+              {unseenMessages.length > 0 ? (
+                unseenMessages.map((message) => (
+                  <Box
+                    key={message.id}
+                    p={4}
+                    shadow="md"
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    bg="gray.100"
+                    cursor="pointer"
+                    _hover={{ backgroundColor: 'gray.200' }}
+                    onClick={() => {
+                      const userId = message.senderId;
+                      window.location.href = `/dashboard/admin/workspace-admin?userId=${userId}#messages`;
+                      setIsMessageDrawerOpen(false);
+                    }}
+                  >
+                    <Text fontWeight="bold">{message.senderName}</Text>
+                    <Text noOfLines={1}>{message.content}</Text>
+                    <Text fontSize="sm" color="gray.500">
+                      {new Date(message.timestamp?.toDate()).toLocaleString()}
+                    </Text>
+                  </Box>
+                ))
+              ) : (
+                <Text>No unseen messages</Text>
+              )}
+            </VStack>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+
       <EnhancedNotepadModal
         isOpen={isNotepadOpen}
         onClose={() => setIsNotepadOpen(false)}
