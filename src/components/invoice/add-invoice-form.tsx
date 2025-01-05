@@ -51,6 +51,9 @@ const AddInvoiceForm = ({
 }: {
   allClients: (IClient | IClientProspect)[];
 }) => {
+  const [invoiceType, setInvoiceType] = useState<
+    'abhradip' | 'lawspicious' | null
+  >(null);
   const [selectedClientId, setSelectedClientId] = useState('');
   const [selectedTeamMemberId, setSelectedTeamMemberId] = useState('');
   const [invoiceDueDate, setInvoiceDueDate] = useState('');
@@ -146,6 +149,7 @@ const AddInvoiceForm = ({
         RE: REData,
         createdAt: today,
         dueDate: invoiceDueDate,
+        invoiceType,
         paymentStatus: paymentStatus,
         billTo: billTo as 'client' | 'organization',
         totalAmount: services.reduce((accumulator, service) => {
@@ -212,6 +216,31 @@ const AddInvoiceForm = ({
       </div>
 
       <form className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="col-span-2 flex justify-between gap-4">
+          <FormControl className="col-span-2">
+            <FormLabel>Invoice Type</FormLabel>
+            <Stack direction="row">
+              <Checkbox
+                isChecked={invoiceType === 'abhradip'}
+                onChange={() =>
+                  setInvoiceType(invoiceType === 'abhradip' ? null : 'abhradip')
+                }
+              >
+                Abhradip Jha
+              </Checkbox>
+              <Checkbox
+                isChecked={invoiceType === 'lawspicious'}
+                onChange={() =>
+                  setInvoiceType(
+                    invoiceType === 'lawspicious' ? null : 'lawspicious',
+                  )
+                }
+              >
+                Lawspicious
+              </Checkbox>
+            </Stack>
+          </FormControl>
+        </div>
         <div className="col-span-2 flex justify-between gap-4">
           <FormControl>
             <FormLabel>Invoice For</FormLabel>

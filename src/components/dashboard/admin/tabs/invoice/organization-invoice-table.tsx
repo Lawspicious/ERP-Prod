@@ -53,18 +53,33 @@ const OrganizationInvoiceTable = ({
     let result = organizationInvoices;
 
     if (status !== 'ALL') {
-      result = result.filter((invoice) => invoice.paymentStatus === status);
+      if (status.toLowerCase() === 'abhradip jha') {
+        result = result.filter(
+          (invoice) => invoice.invoiceType?.toLowerCase() === 'abhradip',
+        );
+      } else if (status.toLowerCase() === 'lawspicious') {
+        result = result.filter(
+          (invoice) => invoice.invoiceType?.toLowerCase() === 'lawspicious',
+        );
+      } else {
+        result = result.filter(
+          (invoice) =>
+            invoice.paymentStatus?.toLowerCase() === status.toLowerCase(),
+        );
+      }
     }
 
     if (searchQuery) {
       result = result.filter(
         (invoice) =>
           invoice.clientDetails?.name
-            .toLowerCase()
+            ?.toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
           invoice.id?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
+
+    console.log('Filtered invoices:', result); // Debug
 
     setFilteredInvoices(result);
   };
@@ -84,17 +99,28 @@ const OrganizationInvoiceTable = ({
       ) : (
         <Tabs
           onChange={(index) =>
-            setSelectedStatus(['ALL', 'paid', 'unpaid'][index])
+            setSelectedStatus(
+              [
+                'ALL',
+                'paid',
+                'unpaid',
+                'Abhradip Jha',
+                'Lawspicious',
+                'Payable Task',
+              ][index],
+            )
           }
         >
           <TabList>
             <Tab>ALL</Tab>
             <Tab>Paid</Tab>
             <Tab>Unpaid</Tab>
+            <Tab>Abhradip Jha</Tab>
+            <Tab>Lawspicious</Tab>
             <Tab>Payable Task</Tab>
           </TabList>
           <TabPanels>
-            {Array.from({ length: 3 }, (_, index) => (
+            {Array.from({ length: 5 }, (_, index) => (
               <TabPanel key={index}>
                 <Input
                   placeholder="Search by Client Name or Invoice No."
@@ -136,6 +162,31 @@ const OrganizationInvoiceTable = ({
                             {filteredInvoices
                               .filter(
                                 (invoice) => invoice.paymentStatus === 'unpaid',
+                              )
+                              .reduce(
+                                (sum, invoice) => sum + invoice.totalAmount,
+                                0,
+                              )}
+                          </>
+                        ) : selectedStatus === 'Abhradip Jha' ? (
+                          <>
+                            Total Unpaid Amount : Rs.
+                            {filteredInvoices
+                              .filter(
+                                (invoice) => invoice.invoiceType === 'abhradip',
+                              )
+                              .reduce(
+                                (sum, invoice) => sum + invoice.totalAmount,
+                                0,
+                              )}
+                          </>
+                        ) : selectedStatus === 'Lawspicious' ? (
+                          <>
+                            Total Unpaid Amount : Rs.
+                            {filteredInvoices
+                              .filter(
+                                (invoice) =>
+                                  invoice.invoiceType === 'lawspicious',
                               )
                               .reduce(
                                 (sum, invoice) => sum + invoice.totalAmount,

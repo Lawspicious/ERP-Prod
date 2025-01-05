@@ -52,9 +52,19 @@ const ClientInvoiceTable = ({
       let invoices = clientInvoices;
 
       if (status !== 'ALL') {
-        invoices = invoices.filter(
-          (invoice) => invoice.paymentStatus === status,
-        );
+        if (status.toLowerCase() === 'abhradip jha') {
+          invoices = invoices.filter(
+            (invoice) => invoice.invoiceType?.toLowerCase() === 'abhradip',
+          );
+        } else if (status.toLowerCase() === 'lawspicious') {
+          invoices = invoices.filter(
+            (invoice) => invoice.invoiceType?.toLowerCase() === 'lawspicious',
+          );
+        } else {
+          invoices = invoices.filter(
+            (invoice) => invoice.paymentStatus === status,
+          );
+        }
       }
 
       if (searchName) {
@@ -88,102 +98,135 @@ const ClientInvoiceTable = ({
         <>
           <Tabs
             onChange={(index) =>
-              setSelectedStatus(['ALL', 'paid', 'unpaid'][index])
+              setSelectedStatus(
+                ['ALL', 'paid', 'unpaid', 'Abhradip Jha', 'Lawspicious'][index],
+              )
             }
           >
             <TabList overflowX={'auto'} overflowY={'hidden'}>
               <Tab>ALL</Tab>
               <Tab>Paid</Tab>
               <Tab>Unpaid</Tab>
+              <Tab>Abhradip Jha</Tab>
+              <Tab>Lawspicious</Tab>
             </TabList>
             <TabPanels>
-              {['ALL', 'paid', 'unpaid'].map((status, index) => (
-                <TabPanel key={index}>
-                  <Flex mb={4} justify="space-between" align="center">
-                    <Input
-                      placeholder="Search by Client Name"
-                      value={searchClientName}
-                      onChange={(e) => setSearchClientName(e.target.value)}
-                    />
-                  </Flex>
-                  {filteredInvoices?.length === 0 ? (
-                    <div className="heading-primary flex h-[40vh] items-center justify-center text-center">
-                      No Invoice Found!!
-                    </div>
-                  ) : (
-                    <Box overflowX="auto">
-                      <Table variant="striped" colorScheme="blackAlpha">
-                        <TableCaption fontSize={'lg'} textAlign={'left'}>
-                          {status === 'ALL' ? (
-                            <>
-                              Total Amount : Rs.
-                              {filteredInvoices.reduce(
-                                (sum, invoice) => sum + invoice.totalAmount,
-                                0,
-                              )}
-                            </>
-                          ) : status === 'paid' ? (
-                            <>
-                              Total Paid Amount : Rs.
-                              {filteredInvoices
-                                .filter(
-                                  (invoice) => invoice.paymentStatus === 'paid',
-                                )
-                                .reduce(
+              {['ALL', 'paid', 'unpaid', 'Abhradip Jha', 'Lawspicious'].map(
+                (status, index) => (
+                  <TabPanel key={index}>
+                    <Flex mb={4} justify="space-between" align="center">
+                      <Input
+                        placeholder="Search by Client Name"
+                        value={searchClientName}
+                        onChange={(e) => setSearchClientName(e.target.value)}
+                      />
+                    </Flex>
+                    {filteredInvoices?.length === 0 ? (
+                      <div className="heading-primary flex h-[40vh] items-center justify-center text-center">
+                        No Invoice Found!!
+                      </div>
+                    ) : (
+                      <Box overflowX="auto">
+                        <Table variant="striped" colorScheme="blackAlpha">
+                          <TableCaption fontSize={'lg'} textAlign={'left'}>
+                            {status === 'ALL' ? (
+                              <>
+                                Total Amount : Rs.
+                                {filteredInvoices.reduce(
                                   (sum, invoice) => sum + invoice.totalAmount,
                                   0,
                                 )}
-                            </>
-                          ) : status === 'unpaid' ? (
-                            <>
-                              Total Unpaid Amount : Rs.
-                              {filteredInvoices
-                                .filter(
-                                  (invoice) =>
-                                    invoice.paymentStatus === 'unpaid',
-                                )
-                                .reduce(
-                                  (sum, invoice) => sum + invoice.totalAmount,
-                                  0,
-                                )}
-                            </>
-                          ) : (
-                            0
-                          )}
-                        </TableCaption>
-                        <Thead>
-                          <Tr>
-                            <Th>No</Th>
-                            <Th>Invoice No</Th>
-                            <Th>Date</Th>
-                            <Th>Payment Date </Th>
-                            <Th>Client Name</Th>
-                            <Th>Total</Th>
-                            <Th>Status</Th>
-                            <Th>Action</Th>
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {filteredInvoices?.map((invoice, index) => (
-                            <Tr key={invoice.id}>
-                              <Td>{index + 1}</Td>
-                              <Td>{invoice.id}</Td>
-                              <Td>{invoice.createdAt}</Td>
-                              <Td>{invoice?.paymentDate || 'NA'}</Td>
-                              <Td>{invoice.clientDetails?.name || 'NA'}</Td>
-                              <Td>{invoice?.totalAmount}</Td>
-                              <Td>{invoice.paymentStatus}</Td>
-                              <Td>
-                                <TableInvoiceMenu invoice={invoice} />
-                              </Td>
+                              </>
+                            ) : status === 'paid' ? (
+                              <>
+                                Total Paid Amount : Rs.
+                                {filteredInvoices
+                                  .filter(
+                                    (invoice) =>
+                                      invoice.paymentStatus === 'paid',
+                                  )
+                                  .reduce(
+                                    (sum, invoice) => sum + invoice.totalAmount,
+                                    0,
+                                  )}
+                              </>
+                            ) : status === 'unpaid' ? (
+                              <>
+                                Total Unpaid Amount : Rs.
+                                {filteredInvoices
+                                  .filter(
+                                    (invoice) =>
+                                      invoice.paymentStatus === 'unpaid',
+                                  )
+                                  .reduce(
+                                    (sum, invoice) => sum + invoice.totalAmount,
+                                    0,
+                                  )}
+                              </>
+                            ) : status === 'Abhradip Jha' ? (
+                              <>
+                                Total Unpaid Amount : Rs.
+                                {filteredInvoices
+                                  .filter(
+                                    (invoice) =>
+                                      invoice.invoiceType === 'abhradip',
+                                  )
+                                  .reduce(
+                                    (sum, invoice) => sum + invoice.totalAmount,
+                                    0,
+                                  )}
+                              </>
+                            ) : status === 'Lawspicious' ? (
+                              <>
+                                Total Unpaid Amount : Rs.
+                                {filteredInvoices
+                                  .filter(
+                                    (invoice) =>
+                                      invoice.invoiceType === 'lawspicious',
+                                  )
+                                  .reduce(
+                                    (sum, invoice) => sum + invoice.totalAmount,
+                                    0,
+                                  )}
+                              </>
+                            ) : (
+                              0
+                            )}
+                          </TableCaption>
+                          <Thead>
+                            <Tr>
+                              <Th>No</Th>
+                              <Th>Invoice No</Th>
+                              <Th>Date</Th>
+                              <Th>Payment Date </Th>
+                              <Th>Client Name</Th>
+                              <Th>Total</Th>
+                              <Th>Status</Th>
+                              <Th>Action</Th>
                             </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
-                    </Box>
-                  )}
-                </TabPanel>
-              ))}
+                          </Thead>
+                          <Tbody>
+                            {filteredInvoices?.map((invoice, index) => (
+                              <Tr key={invoice.id}>
+                                <Td>{index + 1}</Td>
+                                <Td>{invoice.id}</Td>
+                                <Td>{invoice.createdAt}</Td>
+                                <Td>{invoice?.paymentDate || 'NA'}</Td>
+                                <Td>{invoice.clientDetails?.name || 'NA'}</Td>
+                                <Td>{invoice?.totalAmount}</Td>
+                                <Td>{invoice.paymentStatus}</Td>
+                                <Td>
+                                  <TableInvoiceMenu invoice={invoice} />
+                                </Td>
+                              </Tr>
+                            ))}
+                          </Tbody>
+                        </Table>
+                      </Box>
+                    )}
+                  </TabPanel>
+                ),
+              )}
             </TabPanels>
           </Tabs>
         </>
@@ -252,16 +295,36 @@ const TableInvoiceMenu = ({ invoice }: { invoice: IInvoice }) => {
             confirmButtonText="Delete"
           />
         </MenuItem>
-        <MenuItem as={'div'}>
-          {selectedItem && isOpen && (
-            <PrintLawyerInvoiceButton invoiceData={selectedItem as IInvoice} />
-          )}
-        </MenuItem>
-        <MenuItem as={'div'}>
-          <PrintLawspiciousInvoiceButton
-            invoiceData={selectedItem as IInvoice}
-          />
-        </MenuItem>
+        {!invoice.invoiceType ? (
+          <>
+            <MenuItem as={'div'}>
+              {selectedItem && isOpen && (
+                <PrintLawyerInvoiceButton
+                  invoiceData={selectedItem as IInvoice}
+                />
+              )}
+            </MenuItem>
+            <MenuItem as={'div'}>
+              <PrintLawspiciousInvoiceButton
+                invoiceData={selectedItem as IInvoice}
+              />
+            </MenuItem>
+          </>
+        ) : invoice.invoiceType === 'lawspicious' ? (
+          <MenuItem as={'div'}>
+            <PrintLawspiciousInvoiceButton
+              invoiceData={selectedItem as IInvoice}
+            />
+          </MenuItem>
+        ) : (
+          <MenuItem as={'div'}>
+            {selectedItem && isOpen && (
+              <PrintLawyerInvoiceButton
+                invoiceData={selectedItem as IInvoice}
+              />
+            )}
+          </MenuItem>
+        )}
       </MenuList>
     </Menu>
   );

@@ -7,6 +7,7 @@ export interface IInvoice {
   services: IService[];
   paymentStatus: 'paid' | 'unpaid';
   totalAmount: number;
+  invoiceType: 'abhradip' | 'lawspicious' | null;
   RE: IRE[];
   teamMember?: ITeamMembers[] | null;
   gstNote?: string;

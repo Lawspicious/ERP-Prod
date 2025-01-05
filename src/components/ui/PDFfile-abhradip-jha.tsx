@@ -43,7 +43,7 @@ const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
             <Image src="/graphic.png" style={styles.graphicTop} />
             <Image src="/graphic-bottom.png" style={styles.graphicBottom} />
             <View style={styles.container}>
-              <Image src="/long_logo_final.png" style={styles.logo} />
+              {/* <Image src="/long_logo_final.png" style={styles.logo} /> */}
             </View>
 
             {/* Header */}
