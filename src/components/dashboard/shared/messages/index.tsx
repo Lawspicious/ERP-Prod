@@ -214,7 +214,7 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
   };
 
   const handleEditMessage = async (messageId: string, content: string) => {
-    if (editingMessage === messageId) {
+    try {
       await editMessage(messageId, content);
       setEditingMessage(null);
       toast({
@@ -223,8 +223,13 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
         duration: 2000,
         isClosable: true,
       });
-    } else {
-      setEditingMessage(messageId);
+    } catch (error) {
+      toast({
+        title: 'Failed to edit message',
+        status: 'error',
+        duration: 2000,
+        isClosable: true,
+      });
     }
   };
 
@@ -388,73 +393,109 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
                         </Text>
                       ) : (
                         <>
-                          {message.fileURL && (
+                          {editingMessage === message.id ? (
+                            <Input
+                              value={message.content}
+                              onChange={(e) => {
+                                // Update the message content locally
+                                const updatedMessages = messages.map((m) =>
+                                  m.id === message.id
+                                    ? { ...m, content: e.target.value }
+                                    : m,
+                                );
+                                setMessages(updatedMessages);
+                              }}
+                              onBlur={() =>
+                                handleEditMessage(message.id, message.content)
+                              }
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleEditMessage(
+                                    message.id,
+                                    message.content,
+                                  );
+                                }
+                              }}
+                              autoFocus
+                            />
+                          ) : (
                             <>
-                              {message.fileType.startsWith('image/') ? (
-                                <Image
-                                  src={message.fileURL}
-                                  alt={message.fileName}
-                                  style={{
-                                    cursor: 'pointer',
-                                    width: '200px',
-                                  }}
-                                  height={200}
-                                  width={200}
-                                  onClick={() =>
-                                    window.open(
-                                      message.fileURL,
-                                      '_blank',
-                                      'noopener,noreferrer',
-                                    )
-                                  }
-                                  priority
-                                />
-                              ) : message.fileType === 'application/pdf' ? (
-                                <Button
-                                  variant="link"
-                                  colorScheme="blue"
-                                  onClick={() =>
-                                    window.open(
-                                      message.fileURL,
-                                      '_blank',
-                                      'noopener,noreferrer',
-                                    )
-                                  }
-                                >
-                                  View PDF: {message.fileName}
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="link"
-                                  colorScheme="blue"
-                                  as="a"
-                                  href={message.fileURL}
-                                  download={message.fileName}
-                                >
-                                  Download: {message.fileName}
-                                </Button>
+                              {message.fileURL && (
+                                <>
+                                  {message.fileType.startsWith('image/') ? (
+                                    <Image
+                                      src={message.fileURL}
+                                      alt={message.fileName}
+                                      style={{
+                                        cursor: 'pointer',
+                                        width: '200px',
+                                      }}
+                                      height={200}
+                                      width={200}
+                                      onClick={() =>
+                                        window.open(
+                                          message.fileURL,
+                                          '_blank',
+                                          'noopener,noreferrer',
+                                        )
+                                      }
+                                      priority
+                                    />
+                                  ) : message.fileType === 'application/pdf' ? (
+                                    <Button
+                                      variant="link"
+                                      colorScheme="blue"
+                                      onClick={() =>
+                                        window.open(
+                                          message.fileURL,
+                                          '_blank',
+                                          'noopener,noreferrer',
+                                        )
+                                      }
+                                    >
+                                      View PDF: {message.fileName}
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="link"
+                                      colorScheme="blue"
+                                      as="a"
+                                      href={message.fileURL}
+                                      download={message.fileName}
+                                    >
+                                      Download: {message.fileName}
+                                    </Button>
+                                  )}
+                                </>
                               )}
+                              <Text>{message.content}</Text>
                             </>
                           )}
-                          <Text>{message.content}</Text>
                           {message.isEdited && (
                             <Text fontSize="xs">Edited</Text>
                           )}
                           <Flex justify="flex-end" align="center" mt={1}>
                             {message.senderId === authUser?.uid && (
                               <>
-                                <IconButton
-                                  aria-label="Edit message"
-                                  icon={<Edit2 size={16} />}
-                                  size="xs"
-                                  mr={1}
-                                  onClick={() =>
-                                    handleEditMessage(
-                                      message.id,
-                                      message.content,
-                                    )
-                                  }
-                                />
+                                {editingMessage === message.id ? (
+                                  <Button
+                                    size="xs"
+                                    mr={1}
+                                    onClick={() => setEditingMessage(null)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                ) : (
+                                  <IconButton
+                                    aria-label="Edit message"
+                                    icon={<Edit2 size={16} />}
+                                    size="xs"
+                                    mr={1}
+                                    onClick={() =>
+                                      setEditingMessage(message.id)
+                                    }
+                                  />
+                                )}
                                 <IconButton
                                   aria-label="Delete message"
                                   icon={<Trash2 size={16} />}
@@ -476,7 +517,6 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
                       )}
                     </Box>
                   ))}
-
                   <div ref={messagesEndRef} />
                 </VStack>
               </Box>
