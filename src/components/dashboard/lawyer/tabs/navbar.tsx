@@ -29,6 +29,7 @@ import {
   Megaphone,
   Menu,
   MessageSquare,
+  MessagesSquare,
   Newspaper,
   Scale,
   Users,
@@ -452,7 +453,15 @@ const LawyerNavbar = () => {
                   <CalendarPlus size={20} />
                   <span>Appointment</span>
                 </li>
-
+                <li
+                  className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${
+                    activeTab === 'messages' ? 'bg-bgSecondary' : ''
+                  }`}
+                  onClick={() => handleNavigation('messages')}
+                >
+                  <MessagesSquare size={20} />
+                  <span>Messages</span>
+                </li>
                 <li
                   className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${
                     activeTab === 'task' ? 'bg-bgSecondary' : ''
