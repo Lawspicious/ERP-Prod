@@ -81,7 +81,6 @@ export const useMessageHook = () => {
           limit(1),
         );
 
-        // Fetch last message sent by the current user to the other user
         const lastMessageQueryReceiver = query(
           collection(db, 'messages'),
           where('participants', 'array-contains', user.id),

@@ -77,13 +77,14 @@ export const useLog = () => {
           conditions.push(where('date', '==', date));
         }
 
-        // Create query with pagination
+        // Create query with pagination and sorting by date and time
         let logQuery;
 
         if (currentPage === 0) {
           logQuery = query(
             logCollectionRef,
             orderBy('date', 'desc'),
+            orderBy('time', 'desc'), // Add time sorting
             ...conditions,
             limit(pageSize),
           );
@@ -91,6 +92,7 @@ export const useLog = () => {
           logQuery = query(
             logCollectionRef,
             orderBy('date', 'desc'),
+            orderBy('time', 'desc'), // Add time sorting
             ...conditions,
             startAfter(lastVisible), // Start after the last visible document
             limit(pageSize),
@@ -129,21 +131,19 @@ export const useLog = () => {
       try {
         setLoading(true);
 
-        const conditions = []; // Recreate conditions based on your filters
+        const conditions = [];
 
         if (userId && userId !== '') {
-          // Assuming userId is in scope
           conditions.push(where('userId', '==', userId));
         }
         if (date && date !== '') {
-          // Assuming date is in scope
           conditions.push(where('date', '==', date));
         }
 
         const logQuery = query(
           logCollectionRef,
           orderBy('date', 'desc'),
-
+          orderBy('time', 'desc'), // Add time sorting
           ...conditions,
           startAt(firstVisible), // Start at the first visible document of the previous page
           limit(pageSize),
@@ -152,7 +152,6 @@ export const useLog = () => {
         const logSnap = await getDocs(logQuery);
         const logList = logSnap.docs.map((doc) => ({
           id: doc.id,
-
           ...doc.data(),
         }));
 

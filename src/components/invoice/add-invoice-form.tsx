@@ -206,10 +206,7 @@ const AddInvoiceForm = ({
           isLoading={loading}
           colorScheme="blue"
           leftIcon={<ArrowLeft />}
-          onClick={() =>
-            (window.location.href =
-              '/dashboard/admin/workspace-admin#client-invoices')
-          }
+          onClick={() => window.history.back()} // Use the browser's history API
         >
           Back
         </Button>

@@ -289,12 +289,18 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
               <Flex align="center">
                 <Avatar size="sm" name={user.name} src={user.photoURL} mr={2} />
                 <Box>
-                  <Text fontWeight="bold">{user.name}</Text>
+                  <Text fontWeight="bold">
+                    {user.name} - {user.role || 'User'} {/* Display role */}
+                  </Text>
                   {user.lastMessage && (
                     <Text fontSize="sm" color="gray.500" noOfLines={1}>
                       {!user.lastMessage.isDeleted
                         ? user.lastMessage.content
-                        : `Message deleted by ${user.lastMessage.senderId === authUser?.uid ? 'you' : user.name}`}
+                        : `Message deleted by ${
+                            user.lastMessage.senderId === authUser?.uid
+                              ? 'you'
+                              : user.name
+                          }`}
                     </Text>
                   )}
                 </Box>
@@ -367,156 +373,183 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
             <>
               <Box flex="1" overflowY="auto" mb={4}>
                 <VStack spacing={4} align="stretch">
-                  {messages.map((message) => (
-                    <Box
-                      key={message.id}
-                      alignSelf={
-                        message.senderId === authUser?.uid
-                          ? 'flex-end'
-                          : 'flex-start'
-                      }
-                      bg={
-                        message.senderId === authUser?.uid
-                          ? 'blue.100'
-                          : 'gray.100'
-                      }
-                      p={2}
-                      borderRadius="md"
-                      maxW="70%"
-                    >
-                      {message.isDeleted ? (
-                        <Text fontStyle="italic">
-                          {message.senderId === authUser?.uid
-                            ? 'You'
-                            : selectedUser.name}{' '}
-                          deleted this message
-                        </Text>
-                      ) : (
-                        <>
-                          {editingMessage === message.id ? (
-                            <Input
-                              value={message.content}
-                              onChange={(e) => {
-                                // Update the message content locally
-                                const updatedMessages = messages.map((m) =>
-                                  m.id === message.id
-                                    ? { ...m, content: e.target.value }
-                                    : m,
-                                );
-                                setMessages(updatedMessages);
-                              }}
-                              onBlur={() =>
-                                handleEditMessage(message.id, message.content)
-                              }
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleEditMessage(
-                                    message.id,
-                                    message.content,
+                  {messages.map((message) => {
+                    const messageTime = message.timestamp
+                      ? new Date(message.timestamp.toMillis()).toLocaleString()
+                      : ''; // Fallback for messages without a timestamp
+
+                    const currentTime = new Date();
+                    const messageTimestamp = message.timestamp
+                      ? new Date(message.timestamp.toMillis())
+                      : null;
+                    const isEditableOrDeletable =
+                      messageTimestamp &&
+                      currentTime.getTime() - messageTimestamp.getTime() <=
+                        15 * 60 * 1000; // 15 minutes in milliseconds
+
+                    return (
+                      <Box
+                        key={message.id}
+                        alignSelf={
+                          message.senderId === authUser?.uid
+                            ? 'flex-end'
+                            : 'flex-start'
+                        }
+                        bg={
+                          message.senderId === authUser?.uid
+                            ? 'blue.100'
+                            : 'gray.100'
+                        }
+                        p={2}
+                        borderRadius="md"
+                        maxW="70%"
+                      >
+                        {message.isDeleted ? (
+                          <>
+                            <Text fontStyle="italic">
+                              {message.senderId === authUser?.uid
+                                ? 'You'
+                                : selectedUser.name}{' '}
+                              deleted this message
+                            </Text>
+                            <Text fontSize="xs" color="gray.500" mt={1}>
+                              {messageTime}
+                            </Text>
+                          </>
+                        ) : (
+                          <>
+                            {editingMessage === message.id ? (
+                              <Input
+                                value={message.content}
+                                onChange={(e) => {
+                                  // Update the message content locally
+                                  const updatedMessages = messages.map((m) =>
+                                    m.id === message.id
+                                      ? { ...m, content: e.target.value }
+                                      : m,
                                   );
+                                  setMessages(updatedMessages);
+                                }}
+                                onBlur={() =>
+                                  handleEditMessage(message.id, message.content)
                                 }
-                              }}
-                              autoFocus
-                            />
-                          ) : (
-                            <>
-                              {message.fileURL && (
-                                <>
-                                  {message.fileType.startsWith('image/') ? (
-                                    <Image
-                                      src={message.fileURL}
-                                      alt={message.fileName}
-                                      style={{
-                                        cursor: 'pointer',
-                                        width: '200px',
-                                      }}
-                                      height={200}
-                                      width={200}
-                                      onClick={() =>
-                                        window.open(
-                                          message.fileURL,
-                                          '_blank',
-                                          'noopener,noreferrer',
-                                        )
-                                      }
-                                      priority
-                                    />
-                                  ) : message.fileType === 'application/pdf' ? (
-                                    <Button
-                                      variant="link"
-                                      colorScheme="blue"
-                                      onClick={() =>
-                                        window.open(
-                                          message.fileURL,
-                                          '_blank',
-                                          'noopener,noreferrer',
-                                        )
-                                      }
-                                    >
-                                      View PDF: {message.fileName}
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      variant="link"
-                                      colorScheme="blue"
-                                      as="a"
-                                      href={message.fileURL}
-                                      download={message.fileName}
-                                    >
-                                      Download: {message.fileName}
-                                    </Button>
-                                  )}
-                                </>
-                              )}
-                              <Text>{message.content}</Text>
-                            </>
-                          )}
-                          {message.isEdited && (
-                            <Text fontSize="xs">Edited</Text>
-                          )}
-                          <Flex justify="flex-end" align="center" mt={1}>
-                            {message.senderId === authUser?.uid && (
-                              <>
-                                {editingMessage === message.id ? (
-                                  <Button
-                                    size="xs"
-                                    mr={1}
-                                    onClick={() => setEditingMessage(null)}
-                                  >
-                                    Cancel
-                                  </Button>
-                                ) : (
-                                  <IconButton
-                                    aria-label="Edit message"
-                                    icon={<Edit2 size={16} />}
-                                    size="xs"
-                                    mr={1}
-                                    onClick={() =>
-                                      setEditingMessage(message.id)
-                                    }
-                                  />
-                                )}
-                                <IconButton
-                                  aria-label="Delete message"
-                                  icon={<Trash2 size={16} />}
-                                  size="xs"
-                                  mr={1}
-                                  onClick={() =>
-                                    handleDeleteMessage(message.id)
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleEditMessage(
+                                      message.id,
+                                      message.content,
+                                    );
                                   }
-                                />
-                                {message.isSeen ? (
-                                  <CopyCheck size={16} color="blue" />
-                                ) : (
-                                  <Check size={16} color="gray" />
+                                }}
+                                autoFocus
+                              />
+                            ) : (
+                              <>
+                                {message.fileURL && (
+                                  <>
+                                    {message.fileType.startsWith('image/') ? (
+                                      <Image
+                                        src={message.fileURL}
+                                        alt={message.fileName}
+                                        style={{
+                                          cursor: 'pointer',
+                                          width: '200px',
+                                        }}
+                                        height={200}
+                                        width={200}
+                                        onClick={() =>
+                                          window.open(
+                                            message.fileURL,
+                                            '_blank',
+                                            'noopener,noreferrer',
+                                          )
+                                        }
+                                        priority
+                                      />
+                                    ) : message.fileType ===
+                                      'application/pdf' ? (
+                                      <Button
+                                        variant="link"
+                                        colorScheme="blue"
+                                        onClick={() =>
+                                          window.open(
+                                            message.fileURL,
+                                            '_blank',
+                                            'noopener,noreferrer',
+                                          )
+                                        }
+                                      >
+                                        View PDF: {message.fileName}
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        variant="link"
+                                        colorScheme="blue"
+                                        as="a"
+                                        href={message.fileURL}
+                                        download={message.fileName}
+                                      >
+                                        Download: {message.fileName}
+                                      </Button>
+                                    )}
+                                  </>
                                 )}
+                                <Text>{message.content}</Text>
+                                <Text fontSize="xs" color="gray.500" mt={1}>
+                                  {messageTime}
+                                </Text>
                               </>
                             )}
-                          </Flex>
-                        </>
-                      )}
-                    </Box>
-                  ))}
+                            {message.isEdited && (
+                              <Text fontSize="xs" color="gray.400" mt={1}>
+                                Edited
+                              </Text>
+                            )}
+                            <Flex justify="flex-end" align="center" mt={1}>
+                              {message.senderId === authUser?.uid &&
+                                isEditableOrDeletable && (
+                                  <>
+                                    {editingMessage === message.id ? (
+                                      <Button
+                                        size="xs"
+                                        mr={1}
+                                        onClick={() => setEditingMessage(null)}
+                                      >
+                                        Done
+                                      </Button>
+                                    ) : (
+                                      <IconButton
+                                        aria-label="Edit message"
+                                        icon={<Edit2 size={16} />}
+                                        size="xs"
+                                        mr={1}
+                                        onClick={() =>
+                                          setEditingMessage(message.id)
+                                        }
+                                      />
+                                    )}
+                                    <IconButton
+                                      aria-label="Delete message"
+                                      icon={<Trash2 size={16} />}
+                                      size="xs"
+                                      mr={1}
+                                      onClick={() =>
+                                        handleDeleteMessage(message.id)
+                                      }
+                                    />
+                                  </>
+                                )}
+                              {message.senderId === authUser?.uid &&
+                                !isEditableOrDeletable && (
+                                  <Text fontSize="xs" color="gray.400"></Text>
+                                )}
+                            </Flex>
+                          </>
+                        )}
+                      </Box>
+                    );
+                  })}
+
                   <div ref={messagesEndRef} />
                 </VStack>
               </Box>
