@@ -127,7 +127,7 @@ export const useUser = () => {
         } as ILogEventInterface);
       }
     } catch (error) {
-      console.error('Error deleted user:', error);
+      console.log('Error deleted user:', error);
       newToast({
         status: 'error',
         message: 'Error Deleting User',
