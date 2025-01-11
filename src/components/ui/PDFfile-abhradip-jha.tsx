@@ -101,9 +101,12 @@ const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
                 <Text>Pay To: Abhradip Jha</Text>
               )}
               <Text> State Bank of India(Siriti - Muchipara Branch)</Text>
-              <Text>Acc no. 33140676929</Text>
+              <Text>Acc no. 33140676926</Text>
               <Text>IFSC: SBIN0011533</Text>
               <Text>PAN-AYBPJ1201F</Text>
+              <Text style={{ marginTop: '30px' }}>
+                Reverse charge mechanism applicable on this Invoice
+              </Text>
             </View>
 
             {/* Signature */}

@@ -103,6 +103,9 @@ const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
               <Text>IFSC-HDFC0006504</Text>
               <Text>PAN-AALFL0025D</Text>
               <Text>GSTIN: 19AALFL0025D1ZO</Text>
+              <Text style={{ marginTop: '30px' }}>
+                Reverse charge mechanism applicable on this Invoice
+              </Text>
             </View>
             {/* Signature */}
             <View style={styles.signature}>
