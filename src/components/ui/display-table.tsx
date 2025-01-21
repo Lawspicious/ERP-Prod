@@ -1,4 +1,4 @@
-import React, { ReactElement, useMemo, useState } from 'react';
+import React, { ReactElement, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Table,
@@ -22,12 +22,13 @@ import {
   MenuItem,
 } from '@chakra-ui/react';
 import { ArrowUp, ArrowDown, MoreVertical } from 'lucide-react';
+import Pagination from '../dashboard/shared/Pagination';
 
 // Types
 interface Column {
   key: string;
   label: string;
-  sortable?: boolean; // Optional property to enable/disable sorting
+  sortable?: boolean;
 }
 
 interface TableData {
@@ -37,16 +38,15 @@ interface TableData {
 interface DisplayTableProps {
   data: TableData[];
   columns: Column[];
-  tabField: string; // Field used for tab generation
+  tabField: string;
   otherField?: string;
-  actionButton: (id: string, deletename: string) => ReactElement[]; // Action buttons callback
+  actionButton: (id: string, deletename: string) => ReactElement[];
   tableStyle?: {
     colKey: string;
     style: string;
   };
 }
 
-// Sort direction constants
 enum SortOrder {
   ASC = 'asc',
   DESC = 'desc',
@@ -62,9 +62,12 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [sortConfig, setSortConfig] = useState<{
-    key: string | null;
+    key: string;
     direction: SortOrder | null;
-  }>({ key: null, direction: null });
+  }>({ key: '', direction: null });
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [currentTab, setCurrentTab] = useState<string>('All'); // Track the active tab
+  const rowsPerPage = 10;
 
   // Handle sorting
   const handleSort = (key: string) => {
@@ -78,14 +81,14 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
   // Sorting logic
   const sortedData = useMemo(() => {
     let sortableData = [...data];
-    if (sortConfig.key !== null) {
+    if (sortConfig.key) {
       sortableData.sort((a, b) => {
-        // @ts-ignore
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+        if (aValue < bValue) {
           return sortConfig.direction === SortOrder.ASC ? -1 : 1;
         }
-        // @ts-ignore
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (aValue > bValue) {
           return sortConfig.direction === SortOrder.ASC ? 1 : -1;
         }
         return 0;
@@ -96,17 +99,41 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
 
   // Filtering logic
   const filteredData = useMemo(() => {
-    return sortedData.filter((item) =>
-      Object.values(item).some((value) =>
+    return sortedData.filter((item) => {
+      const matchesSearch = Object.values(item).some((value) =>
         value.toString().toLowerCase().includes(searchTerm.toLowerCase()),
-      ),
-    );
-  }, [searchTerm, sortedData]);
+      );
+      const matchesTab = currentTab === 'All' || item[tabField] === currentTab;
+      return matchesSearch && matchesTab;
+    });
+  }, [searchTerm, currentTab, sortedData, tabField]);
+
+  // Reset currentPage when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, currentTab]);
+
+  // Ensure currentPage is valid
+  useEffect(() => {
+    const totalFilteredPages = Math.ceil(filteredData.length / rowsPerPage);
+    if (currentPage > totalFilteredPages) {
+      setCurrentPage(totalFilteredPages > 0 ? totalFilteredPages : 1);
+    }
+  }, [filteredData, rowsPerPage]);
+
+  // Paginate data
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return filteredData.slice(startIndex, endIndex);
+  }, [currentPage, filteredData]);
+
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
   // Get unique values for the tab field
   const tabValues = Array.from(new Set(data.map((item) => item[tabField])));
 
-  // Render the table based on filtered data
+  // Render the table based on filtered and paginated data
   const renderTable = (tableData: TableData[]) => (
     <TableContainer>
       <Table
@@ -118,7 +145,7 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
             {columns.map((col) => (
               <Th key={col.key}>
                 {col.label}
-                {col.sortable && ( // Only show sorting icon if column is sortable
+                {col.sortable && (
                   <IconButton
                     ml={2}
                     size="sm"
@@ -136,7 +163,6 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
                 )}
               </Th>
             ))}
-            {/* Add Action Column */}
             <Th>Action</Th>
           </Tr>
         </Thead>
@@ -144,11 +170,10 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
           {tableData.map((row, index) => (
             <Tr key={index} className={row.rowColor}>
               {columns.map((col) => (
-                <Td key={col.key} className={`text-wrapper`}>
+                <Td key={col.key} className="text-wrapper">
                   {row[col.key]}
                 </Td>
               ))}
-              {/* Action Buttons as a Three-Dot Menu */}
               <Td>
                 <Menu>
                   <MenuButton
@@ -159,7 +184,7 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
                   />
                   <MenuList zIndex={50} maxWidth={100}>
                     {actionButton(row.id, row.deleteName).map((action, i) => (
-                      <MenuItem as={'div'} key={i}>
+                      <MenuItem as="div" key={i}>
                         {action}
                       </MenuItem>
                     ))}
@@ -175,13 +200,22 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
 
   return (
     <div>
-      {/* Tabs for filtering based on the tabField */}
-      <Tabs variant={'enclosed'} isLazy>
-        <Flex justify={'space-between'} gap={6}>
-          <TabList overflowX="auto" overflowY={'hidden'} whiteSpace="nowrap">
-            <Tab key="all">All</Tab>
+      <Tabs
+        variant="enclosed"
+        isLazy
+        onChange={(index) => {
+          setCurrentTab(index === 0 ? 'All' : tabValues[index - 1]);
+        }}
+      >
+        <Flex justify="space-between" gap={6}>
+          <TabList overflowX="auto" overflowY="hidden" whiteSpace="nowrap">
+            <Tab key="all" onClick={() => setCurrentPage(1)}>
+              All
+            </Tab>
             {tabValues.map((value) => (
-              <Tab key={value}>{value}</Tab>
+              <Tab key={value} onClick={() => setCurrentPage(1)}>
+                {value}
+              </Tab>
             ))}
           </TabList>
           <Input
@@ -193,24 +227,43 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
         </Flex>
 
         <TabPanels>
-          {/* Tab for "All" data */}
           <TabPanel>
-            {filteredData.length > 0 ? (
-              renderTable(filteredData)
+            {paginatedData.length > 0 ? (
+              <>
+                {renderTable(paginatedData)}
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  pagesWithContent={Array.from(
+                    { length: totalPages },
+                    (_, i) => i + 1,
+                  )}
+                />
+              </>
             ) : (
               <h1 className="heading-secondary text-center">
                 No Data to View!
               </h1>
             )}
           </TabPanel>
-
-          {/* Individual Tabs */}
           {tabValues.map((value) => (
             <TabPanel key={value}>
-              {filteredData.length > 0 ? (
-                renderTable(
-                  filteredData.filter((row) => row[tabField] === value),
-                )
+              {paginatedData.length > 0 ? (
+                <>
+                  {renderTable(
+                    paginatedData.filter((row) => row[tabField] === value),
+                  )}
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    pagesWithContent={Array.from(
+                      { length: totalPages },
+                      (_, i) => i + 1,
+                    )}
+                  />
+                </>
               ) : (
                 <h1 className="heading-primary">No Data to View</h1>
               )}

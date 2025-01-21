@@ -1,17 +1,5 @@
 'use client';
-import {
-  Button,
-  Flex,
-  Grid,
-  Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  useDisclosure,
-} from '@chakra-ui/react';
+import { Button } from '@chakra-ui/react';
 import ShowClientTable from './show-client-table';
 import TabLayout from '../tab-layout';
 import { useRouter } from 'next/navigation';

@@ -24,6 +24,7 @@ const CaseTab = () => {
   // const { loading, setLoading } = useLoading();
   const [loading, setLoading] = useState<boolean>(true);
   const [isChecked, setIsChecked] = useState(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const { authUser, role } = useAuth();
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {

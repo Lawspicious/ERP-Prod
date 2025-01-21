@@ -1,10 +1,8 @@
-// components/tabs/TaskTab.tsx
 import { Button, useDisclosure } from '@chakra-ui/react';
 import { ReactElement, useEffect, useMemo } from 'react';
 import TabLayout from '../tab-layout';
 import LoaderComponent from '@/components/ui/loader';
 import { useTask } from '@/hooks/useTaskHooks';
-import { DialogButton } from '@/components/ui/alert-dialog';
 import DisplayTable from '@/components/ui/display-table';
 import TaskEditModal from '@/components/dashboard/admin/tabs/task/action-button/edit-task-modal';
 import TaskModal from '@/components/dashboard/admin/tabs/task/task-modal';
