@@ -72,6 +72,7 @@ export const useUser = () => {
   };
 
   const updateUser = async (data: IUser) => {
+    console.log('uid', data.id);
     try {
       const result = await updateUserCred({
         uid: data.id,
@@ -106,6 +107,7 @@ export const useUser = () => {
   };
 
   const deleteUser = async (id: string, name: string) => {
+    console.log('uid', id);
     try {
       const result = await deleteUserCloud({
         userId: id,
