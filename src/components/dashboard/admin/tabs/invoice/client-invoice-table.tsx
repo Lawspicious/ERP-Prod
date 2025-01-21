@@ -40,7 +40,7 @@ const ClientInvoiceTable = ({
 }: {
   clientInvoices: IInvoice[];
 }) => {
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [searchClientName, setSearchClientName] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -89,9 +89,7 @@ const ClientInvoiceTable = ({
   }, [selectedStatus, searchClientName]);
 
   useEffect(() => {
-    if (clientInvoices.length === 0) {
-      setLoading(true);
-    } else {
+    if (clientInvoices.length > 0) {
       setLoading(false);
     }
   }, [clientInvoices]);
