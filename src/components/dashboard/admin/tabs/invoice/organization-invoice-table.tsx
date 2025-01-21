@@ -1,6 +1,4 @@
-import { DialogButton } from '@/components/ui/alert-dialog';
-import { useInvoice } from '@/hooks/useInvoiceHook';
-import { IInvoice } from '@/types/invoice';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Table,
   Thead,
@@ -21,19 +19,20 @@ import {
   TabPanel,
   Button,
   TableCaption,
-  Input, // Chakra UI Input for search
+  Input,
 } from '@chakra-ui/react';
 import { MoreVertical } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { DialogButton } from '@/components/ui/alert-dialog';
+import { useInvoice } from '@/hooks/useInvoiceHook';
+import { useTask } from '@/hooks/useTaskHooks';
 import { useLoading } from '@/context/loading/loadingContext';
 import LoaderComponent from '@/components/ui/loader';
+import Pagination from '@/components/dashboard/shared/Pagination';
 import PrintLawyerInvoiceButton from './action-button/print-lawyer-invoice-button';
 import PrintLawspiciousInvoiceButton from './action-button/print-lawspicious-invoice-button';
-import { useRouter } from 'next/navigation';
-import withAuth from '@/components/shared/hoc-middlware';
 import EditInvoiceModal from './action-button/edit-invoice-modal';
-import { useTask } from '@/hooks/useTaskHooks';
-import { ITask } from '@/types/task';
+import withAuth from '@/components/shared/hoc-middlware';
+import { IInvoice } from '@/types/invoice';
 
 const OrganizationInvoiceTable = ({
   organizationInvoices,
@@ -41,30 +40,31 @@ const OrganizationInvoiceTable = ({
   organizationInvoices: IInvoice[];
 }) => {
   const { deleteInvoice } = useInvoice();
-  const { loading, setLoading } = useLoading();
-  const [filteredInvoices, setFilteredInvoices] = useState<IInvoice[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>(''); // State for search query
-  const router = useRouter();
-  const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const { payableTasks, deleteTasks } = useTask();
+  const { loading } = useLoading();
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const rowsPerPage = 10;
 
-  // Function to filter invoices based on status and search query
-  const filterInvoices = (status: string) => {
+  // Filter invoices based on selected status and search query
+  const filteredData = useMemo(() => {
     let result = organizationInvoices;
 
-    if (status !== 'ALL') {
-      if (status.toLowerCase() === 'abhradip jha') {
+    if (selectedStatus !== 'ALL') {
+      if (selectedStatus.toLowerCase() === 'abhradip jha') {
         result = result.filter(
           (invoice) => invoice.invoiceType?.toLowerCase() === 'abhradip',
         );
-      } else if (status.toLowerCase() === 'lawspicious') {
+      } else if (selectedStatus.toLowerCase() === 'lawspicious') {
         result = result.filter(
           (invoice) => invoice.invoiceType?.toLowerCase() === 'lawspicious',
         );
       } else {
         result = result.filter(
           (invoice) =>
-            invoice.paymentStatus?.toLowerCase() === status.toLowerCase(),
+            invoice.paymentStatus?.toLowerCase() ===
+            selectedStatus.toLowerCase(),
         );
       }
     }
@@ -79,14 +79,22 @@ const OrganizationInvoiceTable = ({
       );
     }
 
-    console.log('Filtered invoices:', result); // Debug
-
-    setFilteredInvoices(result);
-  };
-
-  useEffect(() => {
-    filterInvoices(selectedStatus);
+    return result;
   }, [organizationInvoices, selectedStatus, searchQuery]);
+
+  // Paginate filtered data
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return filteredData.slice(startIndex, endIndex);
+  }, [filteredData, currentPage]);
+
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+
+  // Reset current page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredData]);
 
   return (
     <div>
@@ -120,194 +128,138 @@ const OrganizationInvoiceTable = ({
             <Tab>Payable Task</Tab>
           </TabList>
           <TabPanels>
-            {Array.from({ length: 5 }, (_, index) => (
-              <TabPanel key={index}>
-                <Input
-                  placeholder="Search by Client Name or Invoice No."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  mb={4}
-                />
-                {filteredInvoices?.length === 0 ? (
-                  <div className="heading-primary flex h-[40vh] items-center justify-center text-center">
-                    No Invoice Found!!
-                  </div>
-                ) : (
-                  <Box overflowX={'auto'}>
-                    <Table variant="striped" colorScheme="blackAlpha">
-                      <TableCaption fontSize={'lg'} textAlign={'left'}>
-                        {selectedStatus === 'ALL' ? (
-                          <>
-                            Total Amount : Rs.
-                            {filteredInvoices.reduce(
-                              (sum, invoice) => sum + invoice.totalAmount,
-                              0,
-                            )}
-                          </>
-                        ) : selectedStatus === 'paid' ? (
-                          <>
-                            Total Paid Amount : Rs.
-                            {filteredInvoices
-                              .filter(
-                                (invoice) => invoice.paymentStatus === 'paid',
-                              )
-                              .reduce(
-                                (sum, invoice) => sum + invoice.totalAmount,
-                                0,
-                              )}
-                          </>
-                        ) : selectedStatus === 'unpaid' ? (
-                          <>
-                            Total Unpaid Amount : Rs.
-                            {filteredInvoices
-                              .filter(
-                                (invoice) => invoice.paymentStatus === 'unpaid',
-                              )
-                              .reduce(
-                                (sum, invoice) => sum + invoice.totalAmount,
-                                0,
-                              )}
-                          </>
-                        ) : selectedStatus === 'Abhradip Jha' ? (
-                          <>
-                            Total Unpaid Amount : Rs.
-                            {filteredInvoices
-                              .filter(
-                                (invoice) => invoice.invoiceType === 'abhradip',
-                              )
-                              .reduce(
-                                (sum, invoice) => sum + invoice.totalAmount,
-                                0,
-                              )}
-                          </>
-                        ) : selectedStatus === 'Lawspicious' ? (
-                          <>
-                            Total Unpaid Amount : Rs.
-                            {filteredInvoices
-                              .filter(
-                                (invoice) =>
-                                  invoice.invoiceType === 'lawspicious',
-                              )
-                              .reduce(
-                                (sum, invoice) => sum + invoice.totalAmount,
-                                0,
-                              )}
-                          </>
-                        ) : (
-                          0
-                        )}
-                      </TableCaption>
-                      <Thead>
-                        <Tr>
-                          <Th>No</Th>
-                          <Th>Invoice No</Th>
-                          <Th>Date</Th>
-                          <Th>Payment Date </Th>
-                          <Th>Client Name</Th>
-                          <Th>Total</Th>
-                          <Th>Status</Th>
-                          <Th>Team Member</Th>
-                          <Th>Action</Th>
-                        </Tr>
-                      </Thead>
-                      <Tbody>
-                        {filteredInvoices?.map((invoice, index) => (
-                          <Tr key={invoice.id}>
-                            <Td>{index + 1}</Td>
-                            <Td>{invoice.id}</Td>
-                            <Td>{invoice.createdAt}</Td>
-                            <Td>{invoice.paymentDate || 'NA'}</Td>
-                            <Td>{invoice.clientDetails?.name || 'NA'}</Td>
-                            <Td>{invoice.totalAmount || 'NA'}</Td>
-                            <Td>{invoice.paymentStatus}</Td>
-                            {/* @ts-ignore */}
-                            {/* <Td>{invoice.teamMember[3].name || 'NA'}</Td> */}
-                            <Td>
-                              {invoice?.teamMember?.map((member) => (
-                                <text className="p-1" key={member.id}>
-                                  {member.name}
-                                </text>
-                              )) || 'NA'}
-                            </Td>
-                            <Td>
-                              <Menu>
-                                <MenuButton
-                                  as={IconButton}
-                                  aria-label="Options"
-                                  icon={<MoreVertical />}
-                                  variant="outline"
-                                />
-                                <MenuList
-                                  zIndex={50}
-                                  maxWidth={100}
-                                  overflowY={'auto'}
-                                  maxHeight={300}
-                                >
-                                  <MenuItem as={'div'}>
-                                    <Button
-                                      colorScheme="purple"
-                                      className="w-full"
-                                      onClick={() =>
-                                        (window.location.href = `/invoice/${invoice.id}`)
-                                      }
-                                    >
-                                      Go to Invoice
-                                    </Button>
-                                  </MenuItem>
-                                  <MenuItem as={'div'}>
-                                    <EditInvoiceModal invoiceData={invoice} />
-                                  </MenuItem>
-                                  <MenuItem as={'div'}>
-                                    <DialogButton
-                                      title={'Delete'}
-                                      message={
-                                        'Do you want to delete the invoice?'
-                                      }
-                                      onConfirm={async () =>
-                                        deleteInvoice(invoice.id as string)
-                                      }
-                                      children={'Delete'}
-                                      confirmButtonColorScheme="red"
-                                      confirmButtonText="Delete"
-                                    />
-                                  </MenuItem>
-                                  <MenuItem as={'div'}>
-                                    <PrintLawyerInvoiceButton
-                                      invoiceData={invoice}
-                                    />
-                                  </MenuItem>
-                                  <MenuItem as={'div'}>
-                                    <PrintLawspiciousInvoiceButton
-                                      invoiceData={invoice}
-                                    />
-                                  </MenuItem>
-                                </MenuList>
-                              </Menu>
-                            </Td>
+            {['ALL', 'paid', 'unpaid', 'Abhradip Jha', 'Lawspicious'].map(
+              (status, index) => (
+                <TabPanel key={index}>
+                  <Input
+                    placeholder="Search by Client Name or Invoice No."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    mb={4}
+                  />
+                  {paginatedData.length === 0 ? (
+                    <div className="heading-primary flex h-[40vh] items-center justify-center text-center">
+                      No Invoice Found!!
+                    </div>
+                  ) : (
+                    <Box overflowX="auto">
+                      <Table variant="striped" colorScheme="blackAlpha">
+                        <TableCaption fontSize="lg" textAlign="left">
+                          Total Amount : Rs.
+                          {filteredData.reduce(
+                            (sum, invoice) => sum + invoice.totalAmount,
+                            0,
+                          )}
+                        </TableCaption>
+                        <Thead>
+                          <Tr>
+                            <Th>No</Th>
+                            <Th>Invoice No</Th>
+                            <Th>Date</Th>
+                            <Th>Payment Date</Th>
+                            <Th>Client Name</Th>
+                            <Th>Total</Th>
+                            <Th>Status</Th>
+                            <Th>Team Member</Th>
+                            <Th>Action</Th>
                           </Tr>
-                        ))}
-                      </Tbody>
-                    </Table>
-                  </Box>
-                )}
-              </TabPanel>
-            ))}
+                        </Thead>
+                        <Tbody>
+                          {paginatedData.map((invoice, index) => (
+                            <Tr key={invoice.id}>
+                              <Td>
+                                {(currentPage - 1) * rowsPerPage + index + 1}
+                              </Td>
+                              <Td>{invoice.id}</Td>
+                              <Td>{invoice.createdAt}</Td>
+                              <Td>{invoice.paymentDate || 'NA'}</Td>
+                              <Td>{invoice.clientDetails?.name || 'NA'}</Td>
+                              <Td>{invoice.totalAmount || 'NA'}</Td>
+                              <Td>{invoice.paymentStatus}</Td>
+                              <Td>
+                                {invoice?.teamMember?.map((member) => (
+                                  <div key={member.id}>{member.name}</div>
+                                )) || 'NA'}
+                              </Td>
+                              <Td>
+                                <Menu>
+                                  <MenuButton
+                                    as={IconButton}
+                                    aria-label="Options"
+                                    icon={<MoreVertical />}
+                                    variant="outline"
+                                  />
+                                  <MenuList zIndex={50} maxWidth={100}>
+                                    <MenuItem>
+                                      <Button
+                                        colorScheme="purple"
+                                        onClick={() =>
+                                          (window.location.href = `/invoice/${invoice.id}`)
+                                        }
+                                      >
+                                        Go to Invoice
+                                      </Button>
+                                    </MenuItem>
+                                    <MenuItem>
+                                      <EditInvoiceModal invoiceData={invoice} />
+                                    </MenuItem>
+                                    <MenuItem>
+                                      <DialogButton
+                                        title="Delete"
+                                        message="Do you want to delete the invoice?"
+                                        onConfirm={async () =>
+                                          deleteInvoice(invoice.id as string)
+                                        }
+                                        confirmButtonColorScheme="red"
+                                        children="Delete"
+                                      />
+                                    </MenuItem>
+                                    <MenuItem>
+                                      <PrintLawyerInvoiceButton
+                                        invoiceData={invoice}
+                                      />
+                                    </MenuItem>
+                                    <MenuItem>
+                                      <PrintLawspiciousInvoiceButton
+                                        invoiceData={invoice}
+                                      />
+                                    </MenuItem>
+                                  </MenuList>
+                                </Menu>
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                        pagesWithContent={Array.from(
+                          { length: totalPages },
+                          (_, i) => i + 1,
+                        )}
+                      />
+                    </Box>
+                  )}
+                </TabPanel>
+              ),
+            )}
             <TabPanel>
-              {payableTasks.length == 0 ? (
+              {payableTasks.length === 0 ? (
                 <div className="heading-primary flex items-center justify-center">
                   No Payable Task Present
                 </div>
               ) : (
-                <Box overflowX={'auto'}>
+                <Box overflowX="auto">
                   <Table variant="striped" colorScheme="blackAlpha">
-                    <TableCaption fontSize={'lg'} textAlign={'left'}>
+                    <TableCaption fontSize="lg" textAlign="left">
                       Total Payable Amount: Rs.
                       {payableTasks.reduce(
-                        (sum, invoice) => sum + Number(invoice.amount ?? 0),
+                        (sum, task) => sum + Number(task.amount ?? 0),
                         0,
-                      )}{' '}
+                      )}
                     </TableCaption>
-
                     <Thead>
                       <Tr>
                         <Th>No</Th>
@@ -316,6 +268,7 @@ const OrganizationInvoiceTable = ({
                         <Th>Amount</Th>
                         <Th>Assigned To</Th>
                         <Th>End Date</Th>
+                        <Th>Action</Th>
                       </Tr>
                     </Thead>
                     <Tbody>
@@ -324,15 +277,12 @@ const OrganizationInvoiceTable = ({
                           <Td>{index + 1}</Td>
                           <Td>{task.taskName || 'NA'}</Td>
                           <Td>
-                            {task.caseDetails.caseNo || task.taskType || 'NA'}
+                            {task.caseDetails?.caseNo || task.taskType || 'NA'}
                           </Td>
                           <Td>{task.amount || 'NA'}</Td>
                           <Td>
                             {task.lawyerDetails.map((lawyer) => (
-                              <>
-                                {lawyer.name}
-                                <br />
-                              </>
+                              <div key={lawyer.id}>{lawyer.name}</div>
                             ))}
                           </Td>
                           <Td>{task.endDate || 'NA'}</Td>
@@ -344,27 +294,19 @@ const OrganizationInvoiceTable = ({
                                 icon={<MoreVertical />}
                                 variant="outline"
                               />
-                              <MenuList
-                                zIndex={50}
-                                maxWidth={100}
-                                maxHeight={300}
-                                overflowY={'auto'}
-                              >
-                                <MenuItem as={'div'}>
+                              <MenuList zIndex={50} maxWidth={100}>
+                                <MenuItem>
                                   <DialogButton
-                                    title={'Delete'}
-                                    message={
-                                      'Do you want to delete the invoice?'
-                                    }
+                                    title="Delete"
+                                    message="Do you want to delete the task?"
                                     onConfirm={async () =>
                                       deleteTasks(
                                         task.id as string,
                                         task.taskName,
                                       )
                                     }
-                                    children={'Delete'}
                                     confirmButtonColorScheme="red"
-                                    confirmButtonText="Delete"
+                                    children="Delete"
                                   />
                                 </MenuItem>
                               </MenuList>

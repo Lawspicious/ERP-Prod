@@ -1,7 +1,4 @@
-import { DialogButton } from '@/components/ui/alert-dialog';
-import LoaderComponent from '@/components/ui/loader';
-import { useLoading } from '@/context/loading/loadingContext';
-import { IInvoice } from '@/types/invoice';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Table,
@@ -27,64 +24,77 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 import { MoreVertical } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { DialogButton } from '@/components/ui/alert-dialog';
+import LoaderComponent from '@/components/ui/loader';
+import { useLoading } from '@/context/loading/loadingContext';
+import { IInvoice } from '@/types/invoice';
+import Pagination from '@/components/dashboard/shared/Pagination';
 import EditInvoiceModal from './action-button/edit-invoice-modal';
 import PrintLawyerInvoiceButton from './action-button/print-lawyer-invoice-button';
+import PrintLawspiciousInvoiceButton from './action-button/print-lawspicious-invoice-button';
 import { useInvoice } from '@/hooks/useInvoiceHook';
 import withAuth from '@/components/shared/hoc-middlware';
-import PrintLawspiciousInvoiceButton from './action-button/print-lawspicious-invoice-button';
-import { useRouter } from 'next/navigation';
 
 const ClientInvoiceTable = ({
   clientInvoices,
 }: {
   clientInvoices: IInvoice[];
 }) => {
-  const { loading, setLoading } = useLoading();
-  const [filteredInvoices, setFilteredInvoices] = useState<IInvoice[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+  const [loading, setLoading] = useState<boolean>(false);
   const [searchClientName, setSearchClientName] = useState<string>('');
-  const router = useRouter();
+  const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const rowsPerPage = 10;
 
-  const filterInvoices = (status: string, searchName: string) => {
-    try {
-      setLoading(true);
-      let invoices = clientInvoices;
+  const filteredData = useMemo(() => {
+    let invoices = clientInvoices;
 
-      if (status !== 'ALL') {
-        if (status.toLowerCase() === 'abhradip jha') {
-          invoices = invoices.filter(
-            (invoice) => invoice.invoiceType?.toLowerCase() === 'abhradip',
-          );
-        } else if (status.toLowerCase() === 'lawspicious') {
-          invoices = invoices.filter(
-            (invoice) => invoice.invoiceType?.toLowerCase() === 'lawspicious',
-          );
-        } else {
-          invoices = invoices.filter(
-            (invoice) => invoice.paymentStatus === status,
-          );
-        }
-      }
-
-      if (searchName) {
-        invoices = invoices.filter((invoice) =>
-          invoice.clientDetails?.name
-            ?.toLowerCase()
-            .includes(searchName.toLowerCase()),
+    if (selectedStatus !== 'ALL') {
+      if (selectedStatus.toLowerCase() === 'abhradip jha') {
+        invoices = invoices.filter(
+          (invoice) => invoice.invoiceType?.toLowerCase() === 'abhradip',
+        );
+      } else if (selectedStatus.toLowerCase() === 'lawspicious') {
+        invoices = invoices.filter(
+          (invoice) => invoice.invoiceType?.toLowerCase() === 'lawspicious',
+        );
+      } else {
+        invoices = invoices.filter(
+          (invoice) => invoice.paymentStatus === selectedStatus,
         );
       }
-      setFilteredInvoices(invoices);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
     }
-  };
+
+    if (searchClientName) {
+      invoices = invoices.filter((invoice) =>
+        invoice.clientDetails?.name
+          ?.toLowerCase()
+          .includes(searchClientName.toLowerCase()),
+      );
+    }
+
+    return invoices;
+  }, [clientInvoices, selectedStatus, searchClientName]);
+
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return filteredData.slice(startIndex, endIndex);
+  }, [filteredData, currentPage]);
+
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
   useEffect(() => {
-    filterInvoices(selectedStatus, searchClientName);
-  }, [router, clientInvoices, selectedStatus, searchClientName]);
+    setCurrentPage(1); // Reset to page 1 when filters change
+  }, [selectedStatus, searchClientName]);
+
+  useEffect(() => {
+    if (clientInvoices.length === 0) {
+      setLoading(true);
+    } else {
+      setLoading(false);
+    }
+  }, [clientInvoices]);
 
   return (
     <div>
@@ -121,7 +131,7 @@ const ClientInvoiceTable = ({
                         onChange={(e) => setSearchClientName(e.target.value)}
                       />
                     </Flex>
-                    {filteredInvoices?.length === 0 ? (
+                    {paginatedData.length === 0 ? (
                       <div className="heading-primary flex h-[40vh] items-center justify-center text-center">
                         No Invoice Found!!
                       </div>
@@ -132,7 +142,7 @@ const ClientInvoiceTable = ({
                             {status === 'ALL' ? (
                               <>
                                 Total Amount : Rs.
-                                {filteredInvoices.reduce(
+                                {filteredData.reduce(
                                   (sum, invoice) => sum + invoice.totalAmount,
                                   0,
                                 )}
@@ -140,7 +150,7 @@ const ClientInvoiceTable = ({
                             ) : status === 'paid' ? (
                               <>
                                 Total Paid Amount : Rs.
-                                {filteredInvoices
+                                {filteredData
                                   .filter(
                                     (invoice) =>
                                       invoice.paymentStatus === 'paid',
@@ -153,7 +163,7 @@ const ClientInvoiceTable = ({
                             ) : status === 'unpaid' ? (
                               <>
                                 Total Unpaid Amount : Rs.
-                                {filteredInvoices
+                                {filteredData
                                   .filter(
                                     (invoice) =>
                                       invoice.paymentStatus === 'unpaid',
@@ -165,8 +175,8 @@ const ClientInvoiceTable = ({
                               </>
                             ) : status === 'Abhradip Jha' ? (
                               <>
-                                Total Unpaid Amount : Rs.
-                                {filteredInvoices
+                                Total Amount : Rs.
+                                {filteredData
                                   .filter(
                                     (invoice) =>
                                       invoice.invoiceType === 'abhradip',
@@ -176,10 +186,10 @@ const ClientInvoiceTable = ({
                                     0,
                                   )}
                               </>
-                            ) : status === 'Lawspicious' ? (
+                            ) : (
                               <>
-                                Total Unpaid Amount : Rs.
-                                {filteredInvoices
+                                Total Amount : Rs.
+                                {filteredData
                                   .filter(
                                     (invoice) =>
                                       invoice.invoiceType === 'lawspicious',
@@ -189,8 +199,6 @@ const ClientInvoiceTable = ({
                                     0,
                                   )}
                               </>
-                            ) : (
-                              0
                             )}
                           </TableCaption>
                           <Thead>
@@ -206,14 +214,16 @@ const ClientInvoiceTable = ({
                             </Tr>
                           </Thead>
                           <Tbody>
-                            {filteredInvoices?.map((invoice, index) => (
+                            {paginatedData.map((invoice, index) => (
                               <Tr key={invoice.id}>
-                                <Td>{index + 1}</Td>
+                                <Td>
+                                  {(currentPage - 1) * rowsPerPage + index + 1}
+                                </Td>
                                 <Td>{invoice.id}</Td>
                                 <Td>{invoice.createdAt}</Td>
-                                <Td>{invoice?.paymentDate || 'NA'}</Td>
+                                <Td>{invoice.paymentDate || 'NA'}</Td>
                                 <Td>{invoice.clientDetails?.name || 'NA'}</Td>
-                                <Td>{invoice?.totalAmount}</Td>
+                                <Td>{invoice.totalAmount}</Td>
                                 <Td>{invoice.paymentStatus}</Td>
                                 <Td>
                                   <TableInvoiceMenu invoice={invoice} />
@@ -223,6 +233,17 @@ const ClientInvoiceTable = ({
                           </Tbody>
                         </Table>
                       </Box>
+                    )}
+                    {filteredData.length > 0 && (
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                        pagesWithContent={Array.from(
+                          { length: totalPages },
+                          (_, i) => i + 1,
+                        )}
+                      />
                     )}
                   </TabPanel>
                 ),
@@ -236,30 +257,20 @@ const ClientInvoiceTable = ({
 };
 
 const TableInvoiceMenu = ({ invoice }: { invoice: IInvoice }) => {
-  const [selectedItem, setSelectedItem] = useState<null | IInvoice>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { deleteInvoice } = useInvoice();
 
-  const handleOpen = () => {
-    setSelectedItem(invoice); // Set the selected invoice when the menu opens
-    onOpen(); // Open the menu
-  };
-  const handleClose = () => {
-    setSelectedItem(null);
-    onClose();
-  };
-
   return (
-    <Menu isOpen={isOpen} onClose={handleClose}>
+    <Menu isOpen={isOpen} onClose={onClose}>
       <MenuButton
         as={IconButton}
         aria-label="Options"
         icon={<MoreVertical />}
         variant="outline"
-        onClick={handleOpen}
+        onClick={onOpen}
       />
       <MenuList zIndex={50} maxWidth={100} overflowY={'auto'} maxHeight={300}>
-        <MenuItem as={'div'}>
+        <MenuItem as="div">
           <Button
             colorScheme="purple"
             className="w-full"
@@ -268,10 +279,10 @@ const TableInvoiceMenu = ({ invoice }: { invoice: IInvoice }) => {
             Go to Invoice
           </Button>
         </MenuItem>
-        <MenuItem as={'div'}>
+        <MenuItem as="div">
           <EditInvoiceModal invoiceData={invoice} />
         </MenuItem>
-        <MenuItem as={'div'}>
+        <MenuItem as="div">
           <Button
             colorScheme="purple"
             className="w-full"
@@ -285,50 +296,33 @@ const TableInvoiceMenu = ({ invoice }: { invoice: IInvoice }) => {
             Duplicate
           </Button>
         </MenuItem>
-        <MenuItem as={'div'}>
+        <MenuItem as="div">
           <DialogButton
             title={'Delete'}
             message={'Do you want to delete the invoice?'}
-            onConfirm={async () => deleteInvoice(invoice.id as string)}
+            onConfirm={async () => {
+              if (invoice.id) {
+                await deleteInvoice(invoice.id);
+              }
+            }}
             children={'Delete'}
             confirmButtonColorScheme="red"
-            confirmButtonText="Delete"
           />
         </MenuItem>
-        {!invoice.invoiceType ? (
-          <>
-            <MenuItem as={'div'}>
-              {selectedItem && isOpen && (
-                <PrintLawyerInvoiceButton
-                  invoiceData={selectedItem as IInvoice}
-                />
-              )}
-            </MenuItem>
-            <MenuItem as={'div'}>
-              <PrintLawspiciousInvoiceButton
-                invoiceData={selectedItem as IInvoice}
-              />
-            </MenuItem>
-          </>
-        ) : invoice.invoiceType === 'lawspicious' ? (
-          <MenuItem as={'div'}>
-            <PrintLawspiciousInvoiceButton
-              invoiceData={selectedItem as IInvoice}
-            />
+        {invoice.invoiceType === 'lawspicious' ? (
+          <MenuItem as="div">
+            <PrintLawspiciousInvoiceButton invoiceData={invoice} />
           </MenuItem>
         ) : (
-          <MenuItem as={'div'}>
-            {selectedItem && isOpen && (
-              <PrintLawyerInvoiceButton
-                invoiceData={selectedItem as IInvoice}
-              />
-            )}
+          <MenuItem as="div">
+            <PrintLawyerInvoiceButton invoiceData={invoice} />
           </MenuItem>
         )}
       </MenuList>
     </Menu>
   );
 };
+
 const allowedRoles = ['SUPERADMIN'];
 
 export default withAuth(ClientInvoiceTable, allowedRoles);
