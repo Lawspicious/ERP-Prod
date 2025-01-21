@@ -187,7 +187,10 @@ export const useInvoice = () => {
       }
       try {
         const docRef = doc(db, collectionName, id);
-        await updateDoc(docRef, { ...data });
+        await updateDoc(docRef, {
+          ...data,
+          paymentDate: data.paymentStatus === 'paid' ? data.paymentDate : 'NA',
+        });
         newToast({
           message: 'Invoice Updated Successfully',
           status: 'success',

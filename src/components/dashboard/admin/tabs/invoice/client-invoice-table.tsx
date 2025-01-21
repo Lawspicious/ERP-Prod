@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Table,
+  Checkbox,
   Menu,
   Input,
   Tabs,
@@ -26,7 +27,6 @@ import {
 import { MoreVertical } from 'lucide-react';
 import { DialogButton } from '@/components/ui/alert-dialog';
 import LoaderComponent from '@/components/ui/loader';
-import { useLoading } from '@/context/loading/loadingContext';
 import { IInvoice } from '@/types/invoice';
 import Pagination from '@/components/dashboard/shared/Pagination';
 import EditInvoiceModal from './action-button/edit-invoice-modal';
@@ -45,6 +45,10 @@ const ClientInvoiceTable = ({
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const rowsPerPage = 10;
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(
+    new Set(),
+  );
+  const { deleteInvoice, updateInvoice } = useInvoice();
 
   const filteredData = useMemo(() => {
     let invoices = clientInvoices;
@@ -94,6 +98,51 @@ const ClientInvoiceTable = ({
     }
   }, [clientInvoices]);
 
+  const toggleInvoiceSelection = (id: string) => {
+    setSelectedInvoices((prev) => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(id)) {
+        newSelection.delete(id);
+      } else {
+        newSelection.add(id);
+      }
+      return newSelection;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedInvoices.size === paginatedData.length) {
+      setSelectedInvoices(new Set());
+    } else {
+      setSelectedInvoices(new Set(paginatedData.map((invoice) => invoice.id!)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedInvoices.size > 0) {
+      for (const id of Array.from(selectedInvoices)) {
+        await deleteInvoice(id);
+      }
+      setSelectedInvoices(new Set());
+    }
+  };
+
+  const handleBulkStatusUpdate = async (
+    status: 'paid' | 'unpaid' | undefined,
+  ) => {
+    for (const id of Array.from(selectedInvoices)) {
+      for (const invoice of clientInvoices) {
+        if (invoice.id === id) {
+          await updateInvoice(invoice.id as string, {
+            paymentDate: new Date().toISOString().split('T')[0],
+            paymentStatus: status,
+          });
+        }
+      }
+    }
+    setSelectedInvoices(new Set());
+  };
+
   return (
     <div>
       {loading ? (
@@ -129,6 +178,25 @@ const ClientInvoiceTable = ({
                         onChange={(e) => setSearchClientName(e.target.value)}
                       />
                     </Flex>
+                    {selectedInvoices.size > 0 && (
+                      <Flex mb={4} gap={2}>
+                        <Button colorScheme="red" onClick={handleBulkDelete}>
+                          Delete Selected
+                        </Button>
+                        <Button
+                          colorScheme="blue"
+                          onClick={() => handleBulkStatusUpdate('paid')}
+                        >
+                          Mark as Paid
+                        </Button>
+                        <Button
+                          colorScheme="yellow"
+                          onClick={() => handleBulkStatusUpdate('unpaid')}
+                        >
+                          Mark as Unpaid
+                        </Button>
+                      </Flex>
+                    )}
                     {paginatedData.length === 0 ? (
                       <div className="heading-primary flex h-[40vh] items-center justify-center text-center">
                         No Invoice Found!!
@@ -137,74 +205,28 @@ const ClientInvoiceTable = ({
                       <Box overflowX="auto">
                         <Table variant="striped" colorScheme="blackAlpha">
                           <TableCaption fontSize={'lg'} textAlign={'left'}>
-                            {status === 'ALL' ? (
-                              <>
-                                Total Amount : Rs.
-                                {filteredData.reduce(
-                                  (sum, invoice) => sum + invoice.totalAmount,
-                                  0,
-                                )}
-                              </>
-                            ) : status === 'paid' ? (
-                              <>
-                                Total Paid Amount : Rs.
-                                {filteredData
-                                  .filter(
-                                    (invoice) =>
-                                      invoice.paymentStatus === 'paid',
-                                  )
-                                  .reduce(
-                                    (sum, invoice) => sum + invoice.totalAmount,
-                                    0,
-                                  )}
-                              </>
-                            ) : status === 'unpaid' ? (
-                              <>
-                                Total Unpaid Amount : Rs.
-                                {filteredData
-                                  .filter(
-                                    (invoice) =>
-                                      invoice.paymentStatus === 'unpaid',
-                                  )
-                                  .reduce(
-                                    (sum, invoice) => sum + invoice.totalAmount,
-                                    0,
-                                  )}
-                              </>
-                            ) : status === 'Abhradip Jha' ? (
-                              <>
-                                Total Amount : Rs.
-                                {filteredData
-                                  .filter(
-                                    (invoice) =>
-                                      invoice.invoiceType === 'abhradip',
-                                  )
-                                  .reduce(
-                                    (sum, invoice) => sum + invoice.totalAmount,
-                                    0,
-                                  )}
-                              </>
-                            ) : (
-                              <>
-                                Total Amount : Rs.
-                                {filteredData
-                                  .filter(
-                                    (invoice) =>
-                                      invoice.invoiceType === 'lawspicious',
-                                  )
-                                  .reduce(
-                                    (sum, invoice) => sum + invoice.totalAmount,
-                                    0,
-                                  )}
-                              </>
+                            Total Amount: Rs.
+                            {filteredData.reduce(
+                              (sum, invoice) => sum + invoice.totalAmount,
+                              0,
                             )}
                           </TableCaption>
                           <Thead>
                             <Tr>
+                              <Th>
+                                <Checkbox
+                                  className="cursor-pointer border-gray-600"
+                                  isChecked={
+                                    selectedInvoices.size ===
+                                    paginatedData.length
+                                  }
+                                  onChange={toggleSelectAll}
+                                />
+                              </Th>
                               <Th>No</Th>
                               <Th>Invoice No</Th>
                               <Th>Date</Th>
-                              <Th>Payment Date </Th>
+                              <Th>Payment Date</Th>
                               <Th>Client Name</Th>
                               <Th>Total</Th>
                               <Th>Status</Th>
@@ -214,6 +236,17 @@ const ClientInvoiceTable = ({
                           <Tbody>
                             {paginatedData.map((invoice, index) => (
                               <Tr key={invoice.id}>
+                                <Td>
+                                  <Checkbox
+                                    className="cursor-pointer border-gray-600"
+                                    isChecked={selectedInvoices.has(
+                                      invoice.id!,
+                                    )}
+                                    onChange={() =>
+                                      toggleInvoiceSelection(invoice.id!)
+                                    }
+                                  />
+                                </Td>
                                 <Td>
                                   {(currentPage - 1) * rowsPerPage + index + 1}
                                 </Td>
@@ -279,20 +312,6 @@ const TableInvoiceMenu = ({ invoice }: { invoice: IInvoice }) => {
         </MenuItem>
         <MenuItem as="div">
           <EditInvoiceModal invoiceData={invoice} />
-        </MenuItem>
-        <MenuItem as="div">
-          <Button
-            colorScheme="purple"
-            className="w-full"
-            onClick={() =>
-              window.open(
-                `/dashboard/admin/duplicate-invoice/${invoice.id}`,
-                '_blank',
-              )
-            }
-          >
-            Duplicate
-          </Button>
         </MenuItem>
         <MenuItem as="div">
           <DialogButton

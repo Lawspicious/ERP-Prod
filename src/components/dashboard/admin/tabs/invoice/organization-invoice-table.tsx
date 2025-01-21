@@ -6,6 +6,7 @@ import {
   Tr,
   Th,
   Td,
+  Checkbox,
   IconButton,
   Menu,
   MenuButton,
@@ -20,6 +21,7 @@ import {
   Button,
   TableCaption,
   Input,
+  Flex,
 } from '@chakra-ui/react';
 import { MoreVertical } from 'lucide-react';
 import { DialogButton } from '@/components/ui/alert-dialog';
@@ -39,12 +41,15 @@ const OrganizationInvoiceTable = ({
 }: {
   organizationInvoices: IInvoice[];
 }) => {
-  const { deleteInvoice } = useInvoice();
+  const { deleteInvoice, updateInvoice } = useInvoice();
   const { payableTasks, deleteTasks } = useTask();
   const { loading } = useLoading();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(
+    new Set(),
+  );
   const rowsPerPage = 10;
 
   // Filter invoices based on selected status and search query
@@ -96,6 +101,49 @@ const OrganizationInvoiceTable = ({
     setCurrentPage(1);
   }, [filteredData]);
 
+  const toggleInvoiceSelection = (id: string) => {
+    setSelectedInvoices((prev) => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(id)) {
+        newSelection.delete(id);
+      } else {
+        newSelection.add(id);
+      }
+      return newSelection;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedInvoices.size === paginatedData.length) {
+      setSelectedInvoices(new Set());
+    } else {
+      setSelectedInvoices(new Set(paginatedData.map((invoice) => invoice.id!)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    for (const id of Array.from(selectedInvoices)) {
+      await deleteInvoice(id);
+    }
+    setSelectedInvoices(new Set());
+  };
+
+  const handleBulkStatusUpdate = async (
+    status: 'paid' | 'unpaid' | undefined,
+  ) => {
+    for (const id of Array.from(selectedInvoices)) {
+      for (const invoice of organizationInvoices) {
+        if (invoice.id === id) {
+          await updateInvoice(invoice.id as string, {
+            paymentDate: new Date().toISOString().split('T')[0],
+            paymentStatus: status,
+          });
+        }
+      }
+    }
+    setSelectedInvoices(new Set());
+  };
+
   return (
     <div>
       {loading ? (
@@ -131,12 +179,32 @@ const OrganizationInvoiceTable = ({
             {['ALL', 'paid', 'unpaid', 'Abhradip Jha', 'Lawspicious'].map(
               (status, index) => (
                 <TabPanel key={index}>
-                  <Input
-                    placeholder="Search by Client Name or Invoice No."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    mb={4}
-                  />
+                  <Flex mb={4} justify="space-between" align="center">
+                    <Input
+                      placeholder="Search by Client Name or Invoice No."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </Flex>
+                  {selectedInvoices.size > 0 && (
+                    <Flex mb={4} gap={2}>
+                      <Button colorScheme="red" onClick={handleBulkDelete}>
+                        Delete Selected
+                      </Button>
+                      <Button
+                        colorScheme="blue"
+                        onClick={() => handleBulkStatusUpdate('paid')}
+                      >
+                        Mark as Paid
+                      </Button>
+                      <Button
+                        colorScheme="yellow"
+                        onClick={() => handleBulkStatusUpdate('unpaid')}
+                      >
+                        Mark as Unpaid
+                      </Button>
+                    </Flex>
+                  )}
                   {paginatedData.length === 0 ? (
                     <div className="heading-primary flex h-[40vh] items-center justify-center text-center">
                       No Invoice Found!!
@@ -153,6 +221,15 @@ const OrganizationInvoiceTable = ({
                         </TableCaption>
                         <Thead>
                           <Tr>
+                            <Th>
+                              <Checkbox
+                                className="cursor-pointer border-gray-600"
+                                isChecked={
+                                  selectedInvoices.size === paginatedData.length
+                                }
+                                onChange={toggleSelectAll}
+                              />
+                            </Th>
                             <Th>No</Th>
                             <Th>Invoice No</Th>
                             <Th>Date</Th>
@@ -167,6 +244,15 @@ const OrganizationInvoiceTable = ({
                         <Tbody>
                           {paginatedData.map((invoice, index) => (
                             <Tr key={invoice.id}>
+                              <Td>
+                                <Checkbox
+                                  className="cursor-pointer border-gray-600"
+                                  isChecked={selectedInvoices.has(invoice.id!)}
+                                  onChange={() =>
+                                    toggleInvoiceSelection(invoice.id!)
+                                  }
+                                />
+                              </Td>
                               <Td>
                                 {(currentPage - 1) * rowsPerPage + index + 1}
                               </Td>

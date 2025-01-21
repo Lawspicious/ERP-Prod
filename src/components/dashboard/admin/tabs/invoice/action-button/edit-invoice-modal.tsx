@@ -16,7 +16,6 @@ import {
   Input,
   Select,
 } from '@chakra-ui/react';
-import { title } from 'process';
 import React, { useState } from 'react';
 
 const EditInvoiceModal = ({ invoiceData }: { invoiceData: IInvoice }) => {
