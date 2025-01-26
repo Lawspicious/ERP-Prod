@@ -5,9 +5,9 @@ import TabLayout from '../tab-layout';
 import LoaderComponent from '@/components/ui/loader';
 import { useTask } from '@/hooks/useTaskHooks';
 import { DialogButton } from '@/components/ui/alert-dialog';
-import DisplayTable from '@/components/ui/display-table';
 import TaskEditModal from './action-button/edit-task-modal';
 import TaskModal from './task-modal';
+import TasksTable from './TasksTable'; // Import the new TasksTable
 import { differenceInCalendarDays, isBefore, parseISO } from 'date-fns';
 import { useAuth } from '@/context/user/userContext';
 
@@ -19,6 +19,7 @@ const TaskTab = () => {
     loading,
     getTasksByLawyerId,
     getAllTask,
+    updateTask,
     setLoading,
   } = useTask();
   const [isChecked, setIsChecked] = useState(false);
@@ -40,15 +41,10 @@ const TaskTab = () => {
     { key: 'No', label: 'No', sortable: false },
     { key: 'taskName', label: 'Task Name', sortable: true },
     { key: 'relatedTo', label: 'Related To', sortable: true },
-    {
-      key: 'petitionVsRespondent',
-      label: 'Pet vs Resp',
-      sortable: false,
-    },
+    { key: 'petitionVsRespondent', label: 'Pet vs Resp', sortable: false },
     { key: 'startDate', label: 'Start Date', sortable: true },
     { key: 'endDate', label: 'End Date', sortable: true },
     { key: 'member', label: 'Member', sortable: true },
-    // { key: 'status', label: 'Status', sortable: true },
     { key: 'priority', label: 'Priority', sortable: true },
   ];
 
@@ -58,7 +54,6 @@ const TaskTab = () => {
     return allTask.map((taskData, index) => {
       const endDate = taskData.endDate ? parseISO(taskData.endDate) : null;
 
-      // Calculate the difference between the current date and the end date
       const daysUntilEnd = endDate
         ? differenceInCalendarDays(endDate, today)
         : null;
@@ -76,24 +71,25 @@ const TaskTab = () => {
       }
 
       return {
-        No: `${index + 1}`, // No as index
+        No: `${index + 1}`,
         id: taskData.id,
-        taskName: taskData.taskName, // Task Name
+        taskName: taskData.taskName,
         relatedTo: taskData.caseDetails.caseId
           ? `CaseNo:${taskData.caseDetails.caseNo}`
           : 'Other',
         petitionVsRespondent: taskData.caseDetails?.caseId
           ? `${taskData.caseDetails.petition.petitioner || 'NA'}\nvs\n${taskData.caseDetails.respondent.respondentee || 'NA'}`
           : 'N/A',
-        startDate: taskData.startDate || 'TBD', // Start Date
-        endDate: taskData.endDate || 'TBD', // End Date
+        startDate: taskData.startDate || 'TBD',
+        endDate: taskData.endDate || 'TBD',
         member:
           taskData.lawyerDetails?.map((lawyer) => lawyer.name).join(', ') ||
           'No Lawyers Assigned',
-        status: taskData.taskStatus, // Status
-        priority: taskData.priority, // Priority
-        rowColor, // Row color based on end date proximity
+        status: taskData.taskStatus,
+        priority: taskData.priority,
+        rowColor,
         deleteName: taskData.taskName,
+        selected: false, // Add this line
       };
     });
   }, [allTask]);
@@ -104,9 +100,8 @@ const TaskTab = () => {
     if (transformedTaskData) {
       const timeoutId = setTimeout(() => {
         setLoading(false);
-      }, 300); // 3 seconds timeout
+      }, 300);
 
-      // Cleanup timeout on component unmount
       return () => clearTimeout(timeoutId);
     }
   }, [transformedTaskData]);
@@ -133,12 +128,43 @@ const TaskTab = () => {
     </Button>,
   ];
 
+  // Bulk Update Handlers
+  const handleBulkUpdate = async (
+    selectedTasks: Set<string>,
+    field: string,
+    value: string,
+  ) => {
+    const selectedTaskIds = Array.from(
+      transformedTaskData
+        .filter((task) => task.selected)
+        .map((task) => task.id),
+    );
+    console.log('selectedTasks', selectedTasks);
+    for (const taskId of selectedTasks) {
+      const task = allTask.find((t) => t.id === taskId);
+      if (task && taskId) {
+        const updatedTask = { ...task, [field]: value };
+        console.log('updatedTask', updatedTask);
+        await updateTask(taskId, updatedTask, task.taskName);
+      }
+    }
+  };
+
+  const handleDeleteTasks = async (ids: string[]) => {
+    for (const id of ids) {
+      const task = allTask.find((t) => t.id === id);
+      if (task) {
+        await deleteTasks(id, task.taskName);
+      }
+    }
+  };
+
   return (
     <TabLayout>
       <section className="flex items-center justify-between">
         <div className="mb-6 flex flex-col items-start justify-start gap-3">
           <h1 className="heading-primary">Task</h1>
-          {role === 'ADMIN' && (
+          {(role === 'ADMIN' || role === 'SUPERADMIN') && (
             <Checkbox
               isChecked={isChecked}
               onChange={handleCheckboxChange}
@@ -156,18 +182,19 @@ const TaskTab = () => {
       {loading ? (
         <LoaderComponent />
       ) : allTask.length > 0 ? (
-        <DisplayTable
+        <TasksTable
           data={transformedTaskData}
           columns={taskColumns}
           tabField={'status'}
           actionButton={taskActionButtons}
+          onBulkUpdate={handleBulkUpdate}
+          onDeleteTasks={handleDeleteTasks}
         />
       ) : (
         <div className="heading-secondary flex items-center justify-center">
           No Task found!
         </div>
       )}
-
       <TaskModal isOpen={isOpen} onOpen={onOpen} onClose={onClose} />
     </TabLayout>
   );
