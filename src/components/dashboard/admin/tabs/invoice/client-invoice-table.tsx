@@ -34,6 +34,7 @@ import PrintLawyerInvoiceButton from './action-button/print-lawyer-invoice-butto
 import PrintLawspiciousInvoiceButton from './action-button/print-lawspicious-invoice-button';
 import { useInvoice } from '@/hooks/useInvoiceHook';
 import withAuth from '@/components/shared/hoc-middlware';
+import * as XLSX from 'xlsx';
 
 const ClientInvoiceTable = ({
   clientInvoices,
@@ -49,6 +50,23 @@ const ClientInvoiceTable = ({
     new Set(),
   );
   const { deleteInvoice, updateInvoice } = useInvoice();
+
+  const handleExportToExcel = () => {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(
+      filteredData.map((invoice) => ({
+        'Invoice No': invoice.id,
+        Date: invoice.createdAt,
+        'Payment Date': invoice.paymentDate || 'NA',
+        'Client Name': invoice.clientDetails?.name || 'NA',
+        Total: invoice.totalAmount,
+        Status: invoice.paymentStatus,
+      })),
+    );
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Invoices');
+    XLSX.writeFile(wb, 'client_invoices.xlsx');
+  };
 
   const filteredData = useMemo(() => {
     let invoices = clientInvoices;
@@ -177,6 +195,9 @@ const ClientInvoiceTable = ({
                         value={searchClientName}
                         onChange={(e) => setSearchClientName(e.target.value)}
                       />
+                      <Button onClick={handleExportToExcel} colorScheme="green">
+                        Export to Excel
+                      </Button>
                     </Flex>
                     {selectedInvoices.size > 0 && (
                       <Flex mb={4} gap={2}>

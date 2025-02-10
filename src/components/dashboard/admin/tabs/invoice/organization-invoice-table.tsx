@@ -35,6 +35,7 @@ import PrintLawspiciousInvoiceButton from './action-button/print-lawspicious-inv
 import EditInvoiceModal from './action-button/edit-invoice-modal';
 import withAuth from '@/components/shared/hoc-middlware';
 import { IInvoice } from '@/types/invoice';
+import * as XLSX from 'xlsx';
 
 const OrganizationInvoiceTable = ({
   organizationInvoices,
@@ -51,6 +52,23 @@ const OrganizationInvoiceTable = ({
     new Set(),
   );
   const rowsPerPage = 10;
+
+  const handleExportToExcel = () => {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(
+      filteredData.map((invoice) => ({
+        'Invoice No': invoice.id,
+        Date: invoice.createdAt,
+        'Payment Date': invoice.paymentDate || 'NA',
+        'Client Name': invoice.clientDetails?.name || 'NA',
+        Total: invoice.totalAmount,
+        Status: invoice.paymentStatus,
+      })),
+    );
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Invoices');
+    XLSX.writeFile(wb, 'org_invoices.xlsx');
+  };
 
   // Filter invoices based on selected status and search query
   const filteredData = useMemo(() => {
@@ -185,6 +203,9 @@ const OrganizationInvoiceTable = ({
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
+                    <Button onClick={handleExportToExcel} colorScheme="green">
+                      Export to Excel
+                    </Button>
                   </Flex>
                   {selectedInvoices.size > 0 && (
                     <Flex mb={4} gap={2}>
