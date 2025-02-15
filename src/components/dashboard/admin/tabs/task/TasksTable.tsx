@@ -412,7 +412,11 @@ const TasksTable: React.FC<TasksTableProps> = ({
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={setCurrentPage}
+            onPageChange={(page) => {
+              if (page >= 1 && page <= totalPages) {
+                setCurrentPage(page);
+              }
+            }}
             pagesWithContent={Array.from(
               { length: totalPages },
               (_, i) => i + 1,

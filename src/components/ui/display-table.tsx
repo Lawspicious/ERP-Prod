@@ -234,7 +234,12 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
-                  onPageChange={setCurrentPage}
+                  onPageChange={(page) => {
+                    // Only change page if it's within valid range
+                    if (page >= 1 && page <= totalPages) {
+                      setCurrentPage(page);
+                    }
+                  }}
                   pagesWithContent={Array.from(
                     { length: totalPages },
                     (_, i) => i + 1,
@@ -257,7 +262,12 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
                   <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    onPageChange={setCurrentPage}
+                    onPageChange={(page) => {
+                      // Only change page if it's within valid range
+                      if (page >= 1 && page <= totalPages) {
+                        setCurrentPage(page);
+                      }
+                    }}
                     pagesWithContent={Array.from(
                       { length: totalPages },
                       (_, i) => i + 1,

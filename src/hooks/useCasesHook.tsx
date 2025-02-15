@@ -332,7 +332,6 @@ export const useCases = () => {
       const casesQuery = query(
         casesCollectionRef,
         where('nextHearing', '==', date),
-        limit(limitNumber),
       );
       const querySnapshot = await getDocs(casesQuery);
 
