@@ -40,6 +40,40 @@ const Sidebar = () => {
     setActiveTab(_initialTab);
   }, []);
 
+  // Add auto logout functionality
+  useEffect(() => {
+    const AUTO_LOGOUT_TIME = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+    let logoutTimer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+      logoutTimer = setTimeout(logout, AUTO_LOGOUT_TIME);
+    };
+
+    // Set up event listeners for user activity
+    const events = [
+      'mousedown',
+      'mousemove',
+      'keypress',
+      'scroll',
+      'touchstart',
+    ];
+    events.forEach((event) => {
+      document.addEventListener(event, resetTimer);
+    });
+
+    // Initial timer setup
+    resetTimer();
+
+    // Cleanup
+    return () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+      events.forEach((event) => {
+        document.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [logout]);
+
   const handleNavigation = (tab: string) => {
     window.location.hash = tab;
     const url = new URL(window.location.href);

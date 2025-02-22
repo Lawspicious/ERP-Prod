@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useLoading } from '@/context/loading/loadingContext';
+import { useAuth } from '@/context/user/userContext';
 import React from 'react';
 
 // Dynamically import the tabs
@@ -27,6 +28,41 @@ const MessagesTab = dynamic(() => import('../shared/messages/index'), {
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<string>('home');
   const { setLoading } = useLoading();
+  const { logout } = useAuth();
+
+  // Add auto logout functionality
+  useEffect(() => {
+    const AUTO_LOGOUT_TIME = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+    let logoutTimer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+      logoutTimer = setTimeout(logout, AUTO_LOGOUT_TIME);
+    };
+
+    // Set up event listeners for user activity
+    const events = [
+      'mousedown',
+      'mousemove',
+      'keypress',
+      'scroll',
+      'touchstart',
+    ];
+    events.forEach((event) => {
+      document.addEventListener(event, resetTimer);
+    });
+
+    // Initial timer setup
+    resetTimer();
+
+    // Cleanup
+    return () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+      events.forEach((event) => {
+        document.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [logout]);
 
   // Handle hash route changes
   useEffect(() => {
