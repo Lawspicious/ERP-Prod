@@ -10,6 +10,8 @@ import TaskModal from './task-modal';
 import TasksTable from './TasksTable'; // Import the new TasksTable
 import { differenceInCalendarDays, isBefore, parseISO } from 'date-fns';
 import { useAuth } from '@/context/user/userContext';
+import { DownloadIcon } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const TaskTab = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -159,6 +161,29 @@ const TaskTab = () => {
     }
   };
 
+  const handleExport = () => {
+    try {
+      // Transform the data for export, removing internal fields
+      const exportData = transformedTaskData.map((task) => ({
+        'Task Name': task.taskName,
+        'Related To': task.relatedTo,
+        'Petitioner vs Respondent': task.petitionVsRespondent,
+        'Start Date': task.startDate,
+        'End Date': task.endDate,
+        Member: task.member,
+        Status: task.status,
+        Priority: task.priority,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Tasks');
+      XLSX.writeFile(wb, 'tasks_list.xlsx');
+    } catch (error) {
+      console.error('Error exporting data:', error);
+    }
+  };
+
   return (
     <TabLayout>
       <section className="flex items-center justify-between">
@@ -175,9 +200,18 @@ const TaskTab = () => {
           )}
         </div>
 
-        <Button colorScheme="purple" onClick={onOpen}>
-          Add Task
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            leftIcon={<DownloadIcon />}
+            colorScheme="green"
+            onClick={handleExport}
+          >
+            Export
+          </Button>
+          <Button colorScheme="purple" onClick={onOpen}>
+            Add Task
+          </Button>
+        </div>
       </section>
       {loading ? (
         <LoaderComponent />

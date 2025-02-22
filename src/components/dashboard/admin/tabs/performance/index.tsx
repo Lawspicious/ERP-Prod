@@ -23,9 +23,12 @@ import {
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Pagination from '@/components/dashboard/shared/Pagination';
 import TabLayout from '../tab-layout';
+import * as XLSX from 'xlsx';
+import { DownloadIcon } from 'lucide-react';
 
 export default function PerformanceOverview() {
-  const { getUsersWithTasksAndCases } = usePerformanceHook();
+  const { getUsersWithTasksAndCases, getAllUsersWithTasksAndCases } =
+    usePerformanceHook();
   const [users, setUsers] = useState<UserWithDetails[]>([]);
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -107,17 +110,53 @@ export default function PerformanceOverview() {
     ));
   };
 
+  const handleExport = async () => {
+    try {
+      const allData = await getAllUsersWithTasksAndCases();
+
+      const exportData = allData.map((user) => ({
+        'User Name': user.lawyer.name,
+        'Total Tasks': user.tasks.length,
+        'Total Cases': user.cases.length,
+        'Completed Tasks': user.tasks.filter(
+          (task) => task.taskStatus === 'COMPLETED',
+        ).length,
+        'Decided Cases': user.cases.filter(
+          (caseItem) => caseItem.caseStatus === 'DECIDED',
+        ).length,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Performance Data');
+      XLSX.writeFile(wb, 'performance_overview.xlsx');
+    } catch (error) {
+      console.error('Error exporting data:', error);
+    }
+  };
+
   return (
     <TabLayout>
       <Container maxW="container.xl" py={8} px={4}>
         <VStack spacing={4} align="stretch">
           <Box>
-            <Heading as="h1" size="xl" mb={2}>
-              Performance Overview
-            </Heading>
-            <Text color={textColor}>
-              View user performance metrics, including tasks and cases.
-            </Text>
+            <HStack justify="space-between" align="center">
+              <Box>
+                <Heading as="h1" size="xl" mb={2}>
+                  Performance Overview
+                </Heading>
+                <Text color={textColor}>
+                  View user performance metrics, including tasks and cases.
+                </Text>
+              </Box>
+              <Button
+                leftIcon={<DownloadIcon />}
+                colorScheme="green"
+                onClick={handleExport}
+              >
+                Export to Excel
+              </Button>
+            </HStack>
           </Box>
           {hasContent ? (
             <Box bg={bgColor} shadow="md" borderRadius="lg" overflow="hidden">

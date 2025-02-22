@@ -20,9 +20,13 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
+  Button,
+  HStack,
 } from '@chakra-ui/react';
 import { ArrowUp, ArrowDown, MoreVertical } from 'lucide-react';
 import Pagination from '../dashboard/shared/Pagination';
+import { DownloadIcon } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 // Types
 interface Column {
@@ -198,6 +202,26 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
     </TableContainer>
   );
 
+  const handleExport = (dataToExport: TableData[], tabName: string) => {
+    try {
+      // Transform the data for export, using column definitions
+      const exportData = dataToExport.map((item) => {
+        const rowData: { [key: string]: any } = {};
+        columns.forEach((col) => {
+          rowData[col.label] = item[col.key];
+        });
+        return rowData;
+      });
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, tabName);
+      XLSX.writeFile(wb, `${tabName.toLowerCase()}_data.xlsx`);
+    } catch (error) {
+      console.error('Error exporting data:', error);
+    }
+  };
+
   return (
     <div>
       <Tabs
@@ -207,7 +231,7 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
           setCurrentTab(index === 0 ? 'All' : tabValues[index - 1]);
         }}
       >
-        <Flex justify="space-between" gap={6}>
+        <Flex direction="column" gap={4} mb={4}>
           <TabList overflowX="auto" overflowY="hidden" whiteSpace="nowrap">
             <Tab key="all" onClick={() => setCurrentPage(1)}>
               All
@@ -218,12 +242,28 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
               </Tab>
             ))}
           </TabList>
-          <Input
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            maxW="300px"
-          />
+
+          <Flex justify="space-between" align="center">
+            <Button
+              leftIcon={<DownloadIcon />}
+              colorScheme="green"
+              size="sm"
+              onClick={() =>
+                handleExport(
+                  filteredData,
+                  currentTab === 'All' ? 'All_Data' : currentTab,
+                )
+              }
+            >
+              Export {currentTab}
+            </Button>
+            <Input
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              maxW="300px"
+            />
+          </Flex>
         </Flex>
 
         <TabPanels>
@@ -235,7 +275,6 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
                   currentPage={currentPage}
                   totalPages={totalPages}
                   onPageChange={(page) => {
-                    // Only change page if it's within valid range
                     if (page >= 1 && page <= totalPages) {
                       setCurrentPage(page);
                     }
@@ -263,7 +302,6 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
                     currentPage={currentPage}
                     totalPages={totalPages}
                     onPageChange={(page) => {
-                      // Only change page if it's within valid range
                       if (page >= 1 && page <= totalPages) {
                         setCurrentPage(page);
                       }

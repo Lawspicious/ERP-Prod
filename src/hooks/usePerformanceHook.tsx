@@ -375,5 +375,26 @@ export const usePerformanceHook = () => {
     }
   };
 
-  return { getUsersWithTasksAndCases, getUserPerformance };
+  const getAllUsersWithTasksAndCases = async () => {
+    try {
+      const { data } = await getUsersWithTasksAndCases(
+        1,
+        Number.MAX_SAFE_INTEGER,
+      );
+      return data;
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      newToast({
+        message: 'Could not fetch all users data',
+        status: 'error',
+      });
+      return [];
+    }
+  };
+
+  return {
+    getUsersWithTasksAndCases,
+    getUserPerformance,
+    getAllUsersWithTasksAndCases,
+  };
 };
