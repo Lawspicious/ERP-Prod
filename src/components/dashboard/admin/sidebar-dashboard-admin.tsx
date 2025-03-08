@@ -12,6 +12,7 @@ import {
   Users,
   BarChart,
   MessagesSquare,
+  Clock,
 } from 'lucide-react';
 import { useAuth } from '@/context/user/userContext';
 import { Badge, Button } from '@chakra-ui/react';
@@ -39,40 +40,6 @@ const Sidebar = () => {
     const _initialTab = window.location.hash.replace('#', '');
     setActiveTab(_initialTab);
   }, []);
-
-  // Add auto logout functionality
-  useEffect(() => {
-    const AUTO_LOGOUT_TIME = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
-    let logoutTimer: NodeJS.Timeout;
-
-    const resetTimer = () => {
-      if (logoutTimer) clearTimeout(logoutTimer);
-      logoutTimer = setTimeout(logout, AUTO_LOGOUT_TIME);
-    };
-
-    // Set up event listeners for user activity
-    const events = [
-      'mousedown',
-      'mousemove',
-      'keypress',
-      'scroll',
-      'touchstart',
-    ];
-    events.forEach((event) => {
-      document.addEventListener(event, resetTimer);
-    });
-
-    // Initial timer setup
-    resetTimer();
-
-    // Cleanup
-    return () => {
-      if (logoutTimer) clearTimeout(logoutTimer);
-      events.forEach((event) => {
-        document.removeEventListener(event, resetTimer);
-      });
-    };
-  }, [logout]);
 
   const handleNavigation = (tab: string) => {
     window.location.hash = tab;
@@ -172,6 +139,15 @@ const Sidebar = () => {
         >
           <ListChecks size={20} />
           <span>Task</span>
+        </li>
+        <li
+          className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${
+            activeTab === 'attendance' ? 'bg-bgSecondary' : ''
+          }`}
+          onClick={() => handleNavigation('attendance')}
+        >
+          <Clock size={20} />
+          <span>Attendance</span>
         </li>
         {(role === 'SUPERADMIN' || role === 'ADMIN') && (
           <li

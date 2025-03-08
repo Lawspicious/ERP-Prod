@@ -237,8 +237,37 @@ export const useClient = () => {
       }
 
       try {
+        // Update client in clients collection
         const docRef = doc(db, collectionName, id);
         await updateDoc(docRef, updatedData);
+
+        // Update client references in cases collection
+        if (updatedData.name || updatedData.email || updatedData.mobile) {
+          // Find all cases that reference this client
+          const casesCollectionRef = collection(db, 'cases');
+          const casesQuery = query(
+            casesCollectionRef,
+            where('clientDetails.id', '==', id),
+          );
+          const casesSnapshot = await getDocs(casesQuery);
+
+          // Update each case with the new client details
+          const updatePromises = casesSnapshot.docs.map(async (caseDoc) => {
+            const caseRef = doc(db, 'cases', caseDoc.id);
+            const caseData = caseDoc.data();
+            const updatedClientDetails = {
+              ...caseData.clientDetails,
+              name: updatedData.name || caseData.clientDetails.name,
+              email: updatedData.email || caseData.clientDetails.email,
+              mobile: updatedData.mobile || caseData.clientDetails.mobile,
+            };
+
+            return updateDoc(caseRef, { clientDetails: updatedClientDetails });
+          });
+
+          await Promise.all(updatePromises);
+        }
+
         newToast({
           message: 'Client Updated Successfully',
           status: 'success',

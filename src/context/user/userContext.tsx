@@ -11,7 +11,20 @@ import FirebaseAuth, {
   onAuthStateChanged,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  where,
+  orderBy,
+  limit,
+  updateDoc,
+  getDocs,
+} from 'firebase/firestore';
 import {
   createContext,
   useCallback,
@@ -39,6 +52,13 @@ interface UserContextValue {
   verificationIdState: string | undefined;
   verifyOTPcode(code: string): Promise<void>;
   isAuthLoading: boolean;
+  tokenExpiration?: Date | null;
+  logAttendance: (
+    userId: string,
+    username: string,
+    email: string,
+    type: 'login' | 'logout',
+  ) => Promise<void>;
 }
 
 const defaultValues = {
@@ -51,9 +71,20 @@ const defaultValues = {
   verificationIdState: undefined,
   verifyOTPcode: async () => {},
   isAuthLoading: true,
+  logAttendance: async () => {},
+  tokenExpiration: null,
 };
 
 const UserContext = createContext<UserContextValue>(defaultValues);
+
+interface AttendanceRecord {
+  userId: string;
+  userEmail: string;
+  loginTime: Date;
+  logoutTime?: Date;
+  duration?: number; // in minutes
+  logoutType: 'manual' | 'automatic' | 'browser_closed';
+}
 
 export const UserProvider = ({ children }: any) => {
   const [authUser, setAuthUser] = useState<FirebaseAuth.User | null>(null);
@@ -64,6 +95,7 @@ export const UserProvider = ({ children }: any) => {
   const [resolverState, setResolverState] = useState<MultiFactorResolver>();
   const [role, setRole] = useState<string | undefined>();
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
+  const [tokenExpiration, setTokenExpiration] = useState<Date | null>(null);
   const router = useRouter();
   const toast = useToast();
 
@@ -86,19 +118,55 @@ export const UserProvider = ({ children }: any) => {
     [authUser],
   );
 
+  const logAttendance = async (
+    userId: string,
+    username: string,
+    email: string,
+    type: 'login' | 'logout',
+  ) => {
+    try {
+      const attendanceCollection = collection(db, 'attendance');
+
+      await addDoc(attendanceCollection, {
+        userId,
+        userEmail: email,
+        username,
+        eventType: type,
+        timestamp: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error logging attendance:', error);
+    }
+  };
+
   const signin = async (
     email: string,
     password: string,
     recaptcha: FirebaseAuth.ApplicationVerifier | undefined,
   ) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password).then(
-        async (value: FirebaseAuth.UserCredential) => {
-          const userID = value.user.uid;
-          await fetchUser(userID);
-          await createDefaultAnnouncementForUserOnFirstLogin(userID);
-        },
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
       );
+      const expirationTime = (await userCredential.user.getIdTokenResult())
+        .expirationTime;
+      setTokenExpiration(new Date(expirationTime));
+      if (window !== undefined && window.localStorage !== undefined) {
+        window.localStorage.setItem('tokenExpiration', expirationTime);
+      }
+      const userID = userCredential.user.uid;
+
+      const userRef = doc(db, 'users', userID);
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.data();
+      const username = userData?.name;
+      // Log attendance on successful login
+      await logAttendance(userID, username || '', email, 'login');
+
+      await fetchUser(userID);
+      await createDefaultAnnouncementForUserOnFirstLogin(userID);
 
       toast({
         title: 'Login Successful',
@@ -280,39 +348,46 @@ export const UserProvider = ({ children }: any) => {
   };
 
   const logout = async () => {
+    if (authUser) {
+      // Log attendance before signing out
+      console.log('Logging out');
+      const userRef = doc(db, 'users', authUser.uid);
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.data();
+      const username = userData?.name;
+      await logAttendance(
+        authUser.uid,
+        username || '',
+        authUser.email!,
+        'logout',
+      );
+    }
     await auth.signOut();
     setResolverState(undefined);
     setVerificationIdState(undefined);
+    setTokenExpiration(null);
+    if (window !== undefined && window.localStorage !== undefined) {
+      window.localStorage.removeItem('tokenExpiration');
+    }
     router.push('/');
   };
 
-  // useEffect(() => {
-  //   const res = auth.onAuthStateChanged((user) => {
-  //     if (user) {
-  //       setAuthUser(user);
-  //       getRole(user.uid);
-  //     }
-  //     setIsLoading(false);
-  //   });
-  //   return res;
-  // }, []);
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Assuming you fetch the role from somewhere (e.g., Firestore)
-
         setAuthUser(user);
-        getRole(user.uid); // Or fetch the user's role
+        getRole(user.uid);
       } else {
         setAuthUser(null);
         setRole('');
       }
-      setIsAuthLoading(false); // Finished initializing
+      setIsAuthLoading(false);
     });
 
-    return () => unsubscribe();
-  }, []);
+    return () => {
+      unsubscribe();
+    };
+  }, [authUser]);
 
   const value: UserContextValue = {
     authUser,
@@ -324,6 +399,8 @@ export const UserProvider = ({ children }: any) => {
     resolverState,
     verifyOTPcode,
     isAuthLoading,
+    logAttendance,
+    tokenExpiration,
   };
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

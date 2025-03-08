@@ -10,6 +10,11 @@ import { useCases } from '@/hooks/useCasesHook';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { today } from '@/lib/utils/todayDate';
 import { useAuth } from '@/context/user/userContext';
+import { useDisclosure } from '@chakra-ui/react';
+import InvalidEmailModal from '@/components/ui/invalid-email-modal';
+import { sendUpdateEmailToClientForNextHearings } from '@/lib/utils/emailInvoiceToClient';
+import { useToast } from '@chakra-ui/react';
+import InvalidHearingDateModal from '@/components/ui/invalid-hearing-date-modal';
 
 const CaseTab = () => {
   const router = useRouter();
@@ -26,6 +31,18 @@ const CaseTab = () => {
   const [isChecked, setIsChecked] = useState(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const { authUser, role } = useAuth();
+  const [selectedCase, setSelectedCase] = useState<any>(null);
+  const {
+    isOpen: isEmailModalOpen,
+    onOpen: onEmailModalOpen,
+    onClose: onEmailModalClose,
+  } = useDisclosure();
+  const {
+    isOpen: isDateModalOpen,
+    onOpen: onDateModalOpen,
+    onClose: onDateModalClose,
+  } = useDisclosure();
+  const toast = useToast();
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIsChecked(e.target.checked);
@@ -120,6 +137,71 @@ const CaseTab = () => {
     }
   }, [transformedData]);
 
+  // Function to validate email
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Function to validate date
+  const isValidDate = (dateString: string) => {
+    if (!dateString) return false;
+
+    const date = new Date(dateString);
+    return !isNaN(date.getTime());
+  };
+
+  // Function to handle sending update email
+  const handleSendUpdateEmail = async (caseData: any) => {
+    // First check if client email is valid
+    if (
+      !caseData.clientDetails?.email ||
+      !isValidEmail(caseData.clientDetails.email)
+    ) {
+      setSelectedCase(caseData);
+      onEmailModalOpen();
+      return;
+    }
+
+    // Then check if next hearing date is valid
+    if (!caseData.nextHearing || !isValidDate(caseData.nextHearing)) {
+      setSelectedCase(caseData);
+      onDateModalOpen();
+      return;
+    }
+
+    // If both are valid, send the email
+    await sendEmailNotification(caseData);
+  };
+
+  // Function to send the email notification
+  const sendEmailNotification = async (caseData: any) => {
+    try {
+      await sendUpdateEmailToClientForNextHearings(caseData);
+      toast({
+        title: 'Email Sent',
+        description: `Notification sent to ${caseData.clientDetails.name} successfully.`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send notification email.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  // Find the case data by ID
+  const getCaseDataById = (id: string) => {
+    return allCases.find((caseItem) => caseItem.caseId === id);
+  };
+
   const actionButtons = (id: string, deleteName: string): ReactElement[] => [
     <DialogButton
       title={'Delete'}
@@ -143,6 +225,14 @@ const CaseTab = () => {
       onClick={() => window.open(`/case/${id}`, '_blank')}
     >
       View
+    </Button>,
+    <Button
+      colorScheme="blue"
+      mt={2}
+      className="w-full"
+      onClick={() => handleSendUpdateEmail(getCaseDataById(id))}
+    >
+      Notify Next Hearing
     </Button>,
   ];
   return (
@@ -187,6 +277,30 @@ const CaseTab = () => {
             actionButton={actionButtons}
           />
         )
+      )}
+
+      {/* Invalid Email Modal */}
+      {selectedCase && (
+        <InvalidEmailModal
+          isOpen={isEmailModalOpen}
+          onClose={onEmailModalClose}
+          clientName={selectedCase.clientDetails?.name || 'Unknown Client'}
+          caseId={selectedCase.caseId}
+        />
+      )}
+
+      {/* Invalid Hearing Date Modal */}
+      {selectedCase && (
+        <InvalidHearingDateModal
+          isOpen={isDateModalOpen}
+          onClose={onDateModalClose}
+          caseNo={selectedCase.caseNo || 'Unknown Case'}
+          caseId={selectedCase.caseId}
+          sendAnyway={() => {
+            onDateModalClose();
+            sendEmailNotification(selectedCase);
+          }}
+        />
       )}
     </TabLayout>
   );
