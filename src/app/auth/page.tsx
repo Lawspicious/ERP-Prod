@@ -5,14 +5,23 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function SignIn() {
-  const { authUser } = useAuth();
+  const { authUser, tokenExpiration, isAuthLoading } = useAuth();
+  const overallTokenExpiration = tokenExpiration
+    ? new Date(tokenExpiration)
+    : window.localStorage.getItem('tokenExpiration')
+      ? new Date(window.localStorage.getItem('tokenExpiration')!)
+      : null;
+
+  const hasTokenExpired =
+    overallTokenExpiration && new Date(overallTokenExpiration) < new Date();
 
   const router = useRouter();
   useEffect(() => {
-    if (authUser) {
+    if (authUser && !hasTokenExpired && !isAuthLoading) {
       router.push('/dashboard');
     }
-  }, [authUser]);
+  }, [authUser, hasTokenExpired, router, isAuthLoading]);
+
   return (
     <main className="flex h-screen flex-col items-center justify-center bg-bgPrimary">
       <AuthUI />
