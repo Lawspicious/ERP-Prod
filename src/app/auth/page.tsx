@@ -8,7 +8,8 @@ export default function SignIn() {
   const { authUser, tokenExpiration, isAuthLoading } = useAuth();
   const overallTokenExpiration = tokenExpiration
     ? new Date(tokenExpiration)
-    : window.localStorage.getItem('tokenExpiration')
+    : typeof window !== 'undefined' &&
+        window.localStorage.getItem('tokenExpiration')
       ? new Date(window.localStorage.getItem('tokenExpiration')!)
       : null;
 
