@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { Button, useToast } from '@chakra-ui/react';
 import { Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/config/firebase.config';
+import { format } from 'date-fns';
 
 const ExportAllData = () => {
   const [isExporting, setIsExporting] = useState(false);
@@ -147,6 +148,79 @@ const ExportAllData = () => {
       if (appointmentsData.length > 0) {
         const wsAppointments = XLSX.utils.json_to_sheet(appointmentsData);
         XLSX.utils.book_append_sheet(wb, wsAppointments, 'Appointments');
+      }
+
+      // Client Invoices
+      const invoicesSnapshot = await getDocs(collection(db, 'invoices'));
+      const clientInvoicesData = invoicesSnapshot.docs
+        .filter((doc) => doc.data().billTo === 'client')
+        .map((doc) => {
+          const data = doc.data();
+          return {
+            'Invoice No': doc.id,
+            Date: data.createdAt,
+            'Payment Date': data.paymentDate || 'N/A',
+            'Client Name': data.clientDetails?.name || 'N/A',
+            Total: data.totalAmount,
+            Status: data.paymentStatus,
+            Type: data.invoiceType || 'N/A',
+          };
+        });
+
+      if (clientInvoicesData.length > 0) {
+        const wsClientInvoices = XLSX.utils.json_to_sheet(clientInvoicesData);
+        XLSX.utils.book_append_sheet(wb, wsClientInvoices, 'Client Invoices');
+      }
+
+      // Organization Invoices
+      const orgInvoicesData = invoicesSnapshot.docs
+        .filter((doc) => doc.data().billTo === 'organization')
+        .map((doc) => {
+          const data = doc.data();
+          return {
+            'Invoice No': doc.id,
+            Date: data.createdAt,
+            'Payment Date': data.paymentDate || 'N/A',
+            'Client Name': data.clientDetails?.name || 'N/A',
+            Total: data.totalAmount,
+            Status: data.paymentStatus,
+            Type: data.invoiceType || 'N/A',
+            'Team Members': data.teamMember
+              ? data.teamMember.map((m: any) => m.name).join(', ')
+              : 'N/A',
+          };
+        });
+
+      if (orgInvoicesData.length > 0) {
+        const wsOrgInvoices = XLSX.utils.json_to_sheet(orgInvoicesData);
+        XLSX.utils.book_append_sheet(
+          wb,
+          wsOrgInvoices,
+          'Organization Invoices',
+        );
+      }
+
+      // Attendance Logs
+      const attendanceQuery = query(
+        collection(db, 'attendance'),
+        orderBy('timestamp', 'desc'),
+      );
+      const attendanceSnapshot = await getDocs(attendanceQuery);
+      const attendanceData = attendanceSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        const timestamp = data.timestamp?.toDate() || new Date();
+        return {
+          'User Name': data.username || 'Unknown User',
+          Email: data.userEmail,
+          'Event Type': data.eventType === 'login' ? 'Login' : 'Logout',
+          Date: format(timestamp, 'MMM dd, yyyy'),
+          Time: format(timestamp, 'hh:mm:ss a'),
+        };
+      });
+
+      if (attendanceData.length > 0) {
+        const wsAttendance = XLSX.utils.json_to_sheet(attendanceData);
+        XLSX.utils.book_append_sheet(wb, wsAttendance, 'Attendance Logs');
       }
 
       // Performance Data

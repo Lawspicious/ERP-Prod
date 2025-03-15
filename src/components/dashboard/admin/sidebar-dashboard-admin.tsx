@@ -187,7 +187,7 @@ const Sidebar = () => {
       </ul>
 
       {/* Use the ExportAllData component */}
-      <ExportAllData />
+      {role === 'SUPERADMIN' && <ExportAllData />}
 
       <Button colorScheme="purple" my={4} className="w-full" onClick={logout}>
         Logout
