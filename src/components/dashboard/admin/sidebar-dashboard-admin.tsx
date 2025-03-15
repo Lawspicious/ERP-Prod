@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/user/userContext';
 import { Badge, Button } from '@chakra-ui/react';
+import ExportAllData from './ExportAllData';
 
 const Sidebar = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -184,7 +185,11 @@ const Sidebar = () => {
           </li>
         </ul>
       </ul>
-      <Button colorScheme="purple" my={8} className="w-full" onClick={logout}>
+
+      {/* Use the ExportAllData component */}
+      <ExportAllData />
+
+      <Button colorScheme="purple" my={4} className="w-full" onClick={logout}>
         Logout
       </Button>
     </div>
