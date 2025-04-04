@@ -99,7 +99,7 @@ const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
             <View style={styles.billTo}>
               <Text>Name: Lawspicious</Text>
               <Text>Bank: HDFC Bank, Kolkata High Court Branch</Text>
-              <Text>Acc no. 5020008284412</Text>
+              <Text>Acc no. 50200088284412</Text>
               <Text>IFSC-HDFC0006504</Text>
               <Text>PAN-AALFL0025D</Text>
               <Text>GSTIN: 19AALFL0025D1ZO</Text>
