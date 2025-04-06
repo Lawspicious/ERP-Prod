@@ -22,11 +22,15 @@ import {
   Tag,
   TagLabel,
   TagCloseButton,
+  useToast,
 } from '@chakra-ui/react';
-import { ArrowUp, ArrowDown, MoreVertical } from 'lucide-react';
+import { ArrowUp, ArrowDown, MoreVertical, ChevronDown } from 'lucide-react';
 import Pagination from '@/components/dashboard/shared/Pagination';
 import { useTeam } from '@/hooks/useTeamHook';
 import { IUser } from '@/types/user';
+import CloneTaskModal from './action-button/clone-task-modal';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/config/firebase.config';
 
 interface Column {
   key: string;
@@ -53,14 +57,14 @@ enum SortOrder {
   DESC = 'desc',
 }
 
-const TasksTable: React.FC<TasksTableProps> = ({
+const TasksTable = ({
   data,
   columns,
   tabField,
   actionButton,
   onBulkUpdate,
   onDeleteTasks,
-}) => {
+}: TasksTableProps): JSX.Element => {
   const { getAllTeam } = useTeam();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [lawyers, setLawyers] = useState<IUser[]>([]);
@@ -73,8 +77,10 @@ const TasksTable: React.FC<TasksTableProps> = ({
   }>({ key: '', direction: null });
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
-  const [newEndDate, setNewEndDate] = useState<string>('');
+  const [extensionDays, setExtensionDays] = useState<number>(1);
+  const [isExtending, setIsExtending] = useState<boolean>(false);
   const rowsPerPage = 10;
+  const toast = useToast();
 
   const handleSort = (key: string) => {
     let direction = SortOrder.ASC;
@@ -164,10 +170,109 @@ const TasksTable: React.FC<TasksTableProps> = ({
     }
   };
 
-  const handleApplyNewDate = () => {
-    if (newEndDate) {
-      onBulkUpdate(selectedTasks, 'endDate', newEndDate);
-      setNewEndDate('');
+  const calculateHours = (taskId: string, newEndDate: string): string => {
+    const task = data.find((item) => item.id === taskId);
+    if (!task) return '24 hours'; // Default fallback
+
+    // Get the start date from the task
+    const startDate = new Date(task.startDate);
+    const endDate = new Date(newEndDate);
+
+    // Calculate the difference in hours
+    const diffInMs = endDate.getTime() - startDate.getTime();
+    const diffInHours = Math.ceil(diffInMs / (1000 * 60 * 60));
+
+    return `${diffInHours} hours`;
+  };
+
+  const calculateNewEndDate = (
+    taskId: string,
+    daysToAdd: number,
+  ): string | null => {
+    const task = data.find((item) => item.id === taskId);
+    if (!task) return null;
+
+    const currentEndDate = new Date(task.endDate);
+    if (isNaN(currentEndDate.getTime())) {
+      const today = new Date();
+      today.setDate(today.getDate() + daysToAdd);
+      return today.toISOString().split('T')[0];
+    }
+
+    currentEndDate.setDate(currentEndDate.getDate() + daysToAdd);
+    return currentEndDate.toISOString().split('T')[0];
+  };
+
+  const directUpdateTask = async (
+    taskId: string,
+    endDate: string,
+    timeLimit: string,
+  ) => {
+    try {
+      const taskRef = doc(db, 'tasks', taskId);
+
+      await updateDoc(taskRef, {
+        endDate: endDate,
+        timeLimit: timeLimit,
+      });
+
+      toast({
+        title: 'Task Updated',
+        description: `End date extended for task`,
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+        position: 'top',
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error updating task:', error);
+
+      toast({
+        title: 'Update Failed',
+        description: 'Could not update task end date',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+        position: 'top',
+      });
+
+      return false;
+    }
+  };
+
+  const extendEndDate = async () => {
+    if (extensionDays <= 0 || selectedTasks.size === 0) {
+      return;
+    }
+
+    setIsExtending(true);
+
+    try {
+      const taskIds = Array.from(selectedTasks);
+
+      for (const taskId of taskIds) {
+        const newEndDate = calculateNewEndDate(taskId, extensionDays);
+
+        if (newEndDate) {
+          // Calculate time limit based on start date and new end date
+          const newTimeLimit = calculateHours(taskId, newEndDate);
+          await directUpdateTask(taskId, newEndDate, newTimeLimit);
+        }
+      }
+    } catch (error) {
+      console.error('Error in bulk end date extension:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to extend end dates for all tasks',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+        position: 'top',
+      });
+    } finally {
+      setIsExtending(false);
     }
   };
 
@@ -316,22 +421,73 @@ const TasksTable: React.FC<TasksTableProps> = ({
                 >
                   Delete Selected
                 </Button>
-                <Button
-                  colorScheme="blue"
-                  onClick={() =>
-                    onBulkUpdate(selectedTasks, 'taskStatus', 'COMPLETED')
-                  }
-                >
-                  Mark as Completed
-                </Button>
-                <Button
-                  colorScheme="yellow"
-                  onClick={() =>
-                    onBulkUpdate(selectedTasks, 'taskStatus', 'PENDING')
-                  }
-                >
-                  Mark as Pending
-                </Button>
+
+                {/* Status Dropdown Menu */}
+                <Menu>
+                  <MenuButton
+                    as={Button}
+                    rightIcon={<ChevronDown />}
+                    colorScheme="blue"
+                  >
+                    Change Status
+                  </MenuButton>
+                  <MenuList>
+                    <MenuItem
+                      onClick={() =>
+                        onBulkUpdate(selectedTasks, 'taskStatus', 'COMPLETED')
+                      }
+                    >
+                      Mark as Completed
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() =>
+                        onBulkUpdate(selectedTasks, 'taskStatus', 'PENDING')
+                      }
+                    >
+                      Mark as Pending
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
+
+                {/* Priority Dropdown Menu */}
+                <Menu>
+                  <MenuButton
+                    as={Button}
+                    rightIcon={<ChevronDown />}
+                    colorScheme="orange"
+                  >
+                    Change Priority
+                  </MenuButton>
+                  <MenuList>
+                    <MenuItem
+                      onClick={() =>
+                        onBulkUpdate(selectedTasks, 'priority', 'LOW')
+                      }
+                    >
+                      Set to Low
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() =>
+                        onBulkUpdate(selectedTasks, 'priority', 'MEDIUM')
+                      }
+                    >
+                      Set to Medium
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() =>
+                        onBulkUpdate(selectedTasks, 'priority', 'HIGH')
+                      }
+                    >
+                      Set to High
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
+
+                {selectedTasks.size === 1 && (
+                  <Box width="120px">
+                    <CloneTaskModal taskId={Array.from(selectedTasks)[0]} />
+                  </Box>
+                )}
               </Flex>
             </Flex>
           )}
@@ -339,14 +495,27 @@ const TasksTable: React.FC<TasksTableProps> = ({
         {selectedTasks.size > 0 && (
           <>
             <Flex align="center" gap={2} wrap="wrap">
-              <Input
-                type="date"
-                value={newEndDate}
-                onChange={(e) => setNewEndDate(e.target.value)}
+              <Select
+                value={extensionDays}
+                onChange={(e) => setExtensionDays(Number(e.target.value))}
                 maxW={['100%', '150px']}
-              />
-              <Button colorScheme="teal" onClick={handleApplyNewDate}>
-                Apply End Date
+                isDisabled={isExtending}
+              >
+                <option value={1}>Extend by 1 day</option>
+                <option value={2}>Extend by 2 days</option>
+                <option value={3}>Extend by 3 days</option>
+                <option value={4}>Extend by 4 days</option>
+                <option value={5}>Extend by 5 days</option>
+                <option value={6}>Extend by 6 days</option>
+                <option value={7}>Extend by 7 days</option>
+              </Select>
+              <Button
+                colorScheme="teal"
+                onClick={() => extendEndDate()}
+                isLoading={isExtending}
+                loadingText="Extending"
+              >
+                Extend End Date
               </Button>
             </Flex>
             <Flex align="center" gap={2} wrap="wrap" mt={4}>

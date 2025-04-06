@@ -136,19 +136,65 @@ const TaskTab = () => {
     field: string,
     value: string,
   ) => {
-    const selectedTaskIds = Array.from(
-      transformedTaskData
-        .filter((task) => task.selected)
-        .map((task) => task.id),
-    );
-    console.log('selectedTasks', selectedTasks);
-    for (const taskId of selectedTasks) {
-      const task = allTask.find((t) => t.id === taskId);
-      if (task && taskId) {
-        const updatedTask = { ...task, [field]: value };
-        console.log('updatedTask', updatedTask);
-        await updateTask(taskId, updatedTask, task.taskName);
+    // Skip processing if no tasks are selected
+    if (selectedTasks.size === 0) return;
+
+    try {
+      // Handle the special case for combined updates
+      if (field === 'combinedUpdate') {
+        console.log('Processing combined update:', value);
+
+        try {
+          // Parse the combined update values
+          const updateValues = JSON.parse(value);
+
+          // Apply each update in a single batch
+          for (const taskId of selectedTasks) {
+            const task = allTask.find((t) => t.id === taskId);
+            if (task && taskId) {
+              // Create updated task with all the fields from the combined update
+              const updatedTask = { ...task } as Record<string, any>;
+
+              // Apply each property from the combined update
+              Object.keys(updateValues).forEach((key) => {
+                updatedTask[key] = updateValues[key];
+              });
+
+              // Update the task with all changes at once
+              console.log('Combined update for task:', taskId, updatedTask);
+              await updateTask(taskId, updatedTask, task.taskName);
+            }
+          }
+        } catch (parseError) {
+          console.error('Error parsing combined update:', parseError);
+        }
+
+        return; // Exit early since we've handled the combined update
       }
+
+      // Regular single field update
+      console.log(
+        'Updating tasks:',
+        selectedTasks,
+        'Field:',
+        field,
+        'Value:',
+        value,
+      );
+
+      for (const taskId of selectedTasks) {
+        const task = allTask.find((t) => t.id === taskId);
+        if (task && taskId) {
+          const updatedTask = { ...task, [field]: value } as Record<
+            string,
+            any
+          >;
+          console.log('Updating task:', taskId, 'with value:', value);
+          await updateTask(taskId, updatedTask, task.taskName);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating tasks:', error);
     }
   };
 

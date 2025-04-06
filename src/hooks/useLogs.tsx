@@ -11,15 +11,7 @@ import {
   where,
   Timestamp,
 } from 'firebase/firestore';
-
-export interface AttendanceLog {
-  id: string;
-  userId: string;
-  userEmail: string;
-  username: string;
-  eventType: 'login' | 'logout';
-  timestamp: Date;
-}
+import { AttendanceLog } from '@/types/attendance';
 
 export const useLogs = (filterByUser?: string, filterByDate?: Date) => {
   const [logs, setLogs] = useState<AttendanceLog[]>([]);

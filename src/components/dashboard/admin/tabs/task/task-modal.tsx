@@ -7,6 +7,7 @@ import { useInvoice } from '@/hooks/useInvoiceHook';
 import { useTask } from '@/hooks/useTaskHooks';
 import { useTeam } from '@/hooks/useTeamHook';
 import { today } from '@/lib/utils/todayDate';
+import { dayAfterTomorrow } from '@/lib/utils/dayAfterTomorrowDate';
 import { ICase } from '@/types/case';
 import { IClient, IClientProspect } from '@/types/client';
 import { IRE, IService } from '@/types/invoice';
@@ -48,14 +49,14 @@ interface TaskModalProps {
 const initialData = {
   taskName: '',
   startDate: today,
-  endDate: '',
+  endDate: dayAfterTomorrow,
   taskStatus: 'PENDING',
   priority: 'LOW',
   lawyerIds: [] as string[], // Array for multiple lawyer IDs
   caseId: '',
   taskDescription: '',
   otherRelatedTo: '',
-  timeLimit: '',
+  timeLimit: '48 hours',
   payable: false,
 };
 
@@ -205,7 +206,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent mx={4} minWidth="fit-content">
+      <ModalContent mx={'auto'} my={'auto'} minWidth="fit-content">
         {loading ? (
           <div className="flex h-full min-h-[20rem] w-full items-center justify-center">
             <Spinner colorScheme="purple" />
@@ -300,7 +301,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
 
                 {/* Task Status */}
 
-                <FormControl isRequired>
+                {/* <FormControl isRequired>
                   <FormLabel>Task Status</FormLabel>
                   <Select
                     name="taskStatus"
@@ -311,11 +312,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                     <option value="PENDING">Pending</option>
                     <option value="COMPLETED">Completed</option>
                   </Select>
-                </FormControl>
+                </FormControl> */}
 
                 {/* Priority */}
 
-                <FormControl isRequired>
+                {/* <FormControl isRequired>
                   <FormLabel>Priority</FormLabel>
                   <Select
                     name="priority"
@@ -327,11 +328,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                     <option value="MEDIUM">MEDIUM</option>
                     <option value="HIGH">HIGH</option>
                   </Select>
-                </FormControl>
+                </FormControl> */}
 
                 {/* Start Date and End Date (side by side) */}
 
-                <FormControl isRequired>
+                {/* <FormControl isRequired>
                   <FormLabel>Start Date</FormLabel>
                   <Input
                     type="date"
@@ -339,9 +340,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                     value={formInputs.startDate}
                     onChange={handleInputChange}
                   />
-                </FormControl>
+                </FormControl> */}
 
-                <FormControl isRequired>
+                {/* <FormControl isRequired>
                   <FormLabel>End Date</FormLabel>
                   <Input
                     type="date"
@@ -358,41 +359,42 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                     value={formInputs.timeLimit}
                     onChange={handleInputChange}
                   />
-                </FormControl>
+                </FormControl> */}
                 {/* <div /> */}
 
                 {/* Toggle between Case ID and Other Related To */}
                 <div>
-                  <Checkbox
-                    isChecked={useCaseId}
-                    mb={3}
-                    onChange={toggleRelatedField}
-                  >
-                    Use Case ID
-                  </Checkbox>
-
                   {/* Conditionally show either Case ID or Other Related To */}
                   {useCaseId ? (
-                    <FormControl>
-                      <FormLabel>Case ID</FormLabel>
-                      <Select
-                        name="caseId"
-                        placeholder="Enter case ID"
-                        value={formInputs.caseId}
-                        onChange={handleInputChange}
+                    <>
+                      <FormControl>
+                        <FormLabel>Case ID</FormLabel>
+                        <Select
+                          name="caseId"
+                          placeholder="Enter case ID"
+                          value={formInputs.caseId}
+                          onChange={handleInputChange}
+                        >
+                          {allCases.map((individualCase) => (
+                            <option
+                              key={individualCase.caseId}
+                              value={individualCase.caseId}
+                            >
+                              {individualCase.caseNo}-{' '}
+                              {individualCase.petition.petitioner} vs{' '}
+                              {individualCase.respondent.respondentee}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      <Checkbox
+                        isChecked={useCaseId}
+                        mt={3}
+                        onChange={toggleRelatedField}
                       >
-                        {allCases.map((individualCase) => (
-                          <option
-                            key={individualCase.caseId}
-                            value={individualCase.caseId}
-                          >
-                            {individualCase.caseNo}-{' '}
-                            {individualCase.petition.petitioner} vs{' '}
-                            {individualCase.respondent.respondentee}
-                          </option>
-                        ))}
-                      </Select>
-                    </FormControl>
+                        Use Case ID
+                      </Checkbox>
+                    </>
                   ) : (
                     <FormControl>
                       <FormLabel>Other Related To</FormLabel>
@@ -406,7 +408,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                   )}
                 </div>
                 <div>
-                  <FormControl mb={3}>
+                  {/* <FormControl mb={3}>
                     <Checkbox
                       isChecked={formInputs.payable}
                       name="payable"
@@ -423,14 +425,14 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                     <FormHelperText>
                       Select if the task is payable
                     </FormHelperText>
-                  </FormControl>
+                  </FormControl> */}
 
                   {/* Conditionally show either Case ID or Other Related To */}
                 </div>
 
                 {/* Task Description */}
 
-                <FormControl>
+                {/* <FormControl>
                   <FormLabel>Description</FormLabel>
                   <Textarea
                     name="taskDescription"
@@ -438,7 +440,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                     value={formInputs.taskDescription}
                     onChange={handleInputChange}
                   />
-                </FormControl>
+                </FormControl> */}
               </form>
             </ModalBody>
 

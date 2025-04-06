@@ -17,6 +17,7 @@ import {
   TagCloseButton,
   VStack,
   useDisclosure,
+  Checkbox,
 } from '@chakra-ui/react';
 import { IUser } from '@/types/user';
 import LoaderComponent from '@/components/ui/loader';
@@ -25,10 +26,17 @@ import { useTask } from '@/hooks/useTaskHooks';
 import { ILawyer } from '@/types/case';
 import { useTeam } from '@/hooks/useTeamHook';
 import { useLoading } from '@/context/loading/loadingContext';
-import { IInvoice, IRE, IService } from '@/types/invoice';
-import { today } from '@/lib/utils/todayDate';
-import { useInvoice } from '@/hooks/useInvoiceHook';
 import { useAuth } from '@/context/user/userContext';
+import { useClient } from '@/hooks/useClientHook';
+import { IClient, IClientProspect } from '@/types/client';
+import { useCases } from '@/hooks/useCasesHook';
+
+interface IClientDetails {
+  id: string;
+  name: string;
+  email: string;
+  mobile: string;
+}
 
 const TaskEditModal = ({ taskId }: { taskId: string }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -37,40 +45,41 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
   const { getTaskById, updateTask, task } = useTask();
   const { getAllTeam } = useTeam();
   const { role } = useAuth();
+  const { allClients } = useClient();
+  const { allCases, fetchCasesByStatus } = useCases();
+  const [useCaseId, setUseCaseId] = useState(true);
+
   const [formData, setFormData] = useState<{
-    endDate: string;
-    taskStatus: string;
-    priority: string;
+    taskName: string;
     lawyerDetails: ILawyer[];
-    amount: number | null;
-    payable: boolean;
+    clientId: string;
+    caseId: string;
+    otherRelatedTo: string;
   }>({
-    endDate: '',
-    taskStatus: '',
-    priority: '',
+    taskName: '',
     lawyerDetails: [],
-    amount: 0,
-    payable: false,
+    clientId: '',
+    caseId: '',
+    otherRelatedTo: '',
   });
   const [selectedLawyerIds, setSelectedLawyerIds] = useState<string[]>([]);
-  const { createInvoice } = useInvoice();
 
   const handleFetchTask = async () => {
     try {
       const task = await getTaskById(taskId);
       if (task) {
         setFormData({
-          endDate: task.endDate,
-          taskStatus: task.taskStatus,
-          priority: task.priority,
+          taskName: task.taskName,
           lawyerDetails: task.lawyerDetails,
-          payable: task?.payable as boolean,
-          amount: task?.amount as number,
+          clientId: task.clientDetails?.id || '',
+          caseId: task.caseDetails?.caseId || '',
+          otherRelatedTo: task.taskType || '',
         });
         const lawyerIds = task.lawyerDetails.map(
           (lawyer: ILawyer) => lawyer.id,
         );
         setSelectedLawyerIds(lawyerIds);
+        setUseCaseId(!!task.caseDetails?.caseId);
       }
     } catch (error) {
       console.log(error);
@@ -79,14 +88,15 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
 
   useEffect(() => {
     const handleFetch = async () => {
+      setLoading(true);
       await handleFetchTask();
       const res = await getAllTeam();
       setLawyers(res as IUser[]);
+      await fetchCasesByStatus('RUNNING');
+      setLoading(false);
     };
 
-    setLoading(true);
     handleFetch();
-    setLoading(false);
   }, [taskId]);
 
   const handleInputChange = (e: any) => {
@@ -108,34 +118,14 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
     setSelectedLawyerIds(selectedLawyerIds.filter((id) => id !== lawyerId));
   };
 
-  // const handleCreateInvoice = async () => {
-  //   if (!task?.payable) {
-  //     return;
-  //   }
-
-  //   const invoiceData: IInvoice = {
-  //     createdAt: today,
-  //     billTo: 'organization',
-  //     dueDate: '',
-  //     services: [
-  //       {
-  //         name: task?.taskName,
-  //         description: task?.taskDescription,
-  //         amount: formData.amount || 0,
-  //       },
-  //     ] as IService[],
-  //     paymentStatus: 'unpaid',
-  //     totalAmount: formData.amount || task.amount || 0,
-  //     RE: [{ caseId: task?.caseDetails.caseId }] as IRE[],
-  //     teamMember: task?.lawyerDetails,
-  //     gstNote: '',
-  //     panNo: '',
-  //     paymentDate: '',
-  //     clientDetails: null,
-  //   };
-  //   console.log(invoiceData);
-  //   await createInvoice(invoiceData);
-  // };
+  const toggleRelatedField = () => {
+    setUseCaseId((prev) => !prev);
+    setFormData((prev) => ({
+      ...prev,
+      caseId: '',
+      otherRelatedTo: '',
+    }));
+  };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -143,20 +133,50 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
       const selectedLawyers = lawyers
         .filter((lawyer) => selectedLawyerIds.includes(lawyer.id as string))
         .map((lawyer) => ({
-          id: lawyer.id,
+          id: lawyer.id as string,
           name: lawyer.name,
           email: lawyer.email,
           phoneNumber: lawyer.phoneNumber,
         }));
-      const updatedFormData = {
-        ...formData,
-        lawyerDetails: selectedLawyers,
+
+      // Get client details
+      let clientDetails: IClientDetails | null = null;
+      if (formData.clientId) {
+        const selectedClient = allClients.find(
+          (client) => client.id === formData.clientId,
+        );
+        if (selectedClient) {
+          clientDetails = {
+            id: selectedClient.id as string,
+            name: selectedClient.name,
+            email: selectedClient.email,
+            mobile: selectedClient.mobile,
+          };
+        }
+      }
+
+      // Get case details or prepare task type
+      let updatedData: Partial<ITask> = {
+        taskName: formData.taskName,
+        lawyerDetails: selectedLawyers as ILawyer[],
+        clientDetails: clientDetails,
       };
-      await updateTask(
-        taskId,
-        updatedFormData as ITask,
-        task?.taskName as string,
-      );
+
+      if (useCaseId && formData.caseId) {
+        // Use existing case details but update the caseId
+        if (task?.caseDetails) {
+          updatedData.caseDetails = {
+            ...task.caseDetails,
+            caseId: formData.caseId,
+          };
+        }
+      } else if (formData.otherRelatedTo) {
+        updatedData.taskType = formData.otherRelatedTo as any;
+        // Remove case details completely if using otherRelatedTo
+        updatedData.caseDetails = undefined;
+      }
+
+      await updateTask(taskId, updatedData as ITask, task?.taskName as string);
       onClose();
     } catch (error) {
       console.log(error);
@@ -178,110 +198,126 @@ const TaskEditModal = ({ taskId }: { taskId: string }) => {
               <ModalHeader>Edit Task Details</ModalHeader>
               <ModalCloseButton />
               <ModalBody>
-                <FormControl mb={4}>
-                  <FormLabel>End Date</FormLabel>
-                  <Input
-                    type="date"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-
-                <FormControl mb={4}>
-                  <FormLabel>Status</FormLabel>
-                  <Select
-                    name="taskStatus"
-                    value={formData.taskStatus}
-                    onChange={handleInputChange}
-                  >
-                    <option value="PENDING">Pending</option>
-                    <option value="COMPLETED">Completed</option>
-                  </Select>
-                </FormControl>
-                {formData.payable && (
-                  <FormControl mb={4}>
-                    <FormLabel>Amount</FormLabel>
+                <form
+                  className="grid grid-cols-1 gap-6 md:w-[60vw] md:grid-cols-2 lg:w-[40vw]"
+                  onSubmit={handleSubmit}
+                >
+                  <FormControl isRequired mb={4}>
+                    <FormLabel>Task Name</FormLabel>
                     <Input
-                      type="number"
-                      name="amount"
-                      value={
-                        formData.amount !== null &&
-                        formData.amount !== undefined
-                          ? formData.amount
-                          : ''
-                      }
-                      placeholder="Enter task Amount"
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const value = e.target.value;
-                        setFormData({
-                          ...formData,
-                          amount: value === '' ? null : parseFloat(value), // Handle empty state
-                        });
-                      }}
-                      readOnly={role !== 'SUPERADMIN' && task?.amount !== 0}
+                      name="taskName"
+                      value={formData.taskName}
+                      onChange={handleInputChange}
                     />
                   </FormControl>
-                )}
 
-                <FormControl mb={4}>
-                  <FormLabel>Priority</FormLabel>
-                  <Select
-                    value={formData.priority}
-                    name="priority"
-                    onChange={handleInputChange}
-                  >
-                    <option value="LOW">LOW</option>
-                    <option value="MEDIUM">MEDIUM</option>
-                    <option value="HIGH">HIGH</option>
-                  </Select>
-                </FormControl>
+                  <FormControl mb={4}>
+                    <FormLabel>Select Members</FormLabel>
+                    <Select
+                      placeholder="Select team member"
+                      onChange={handleSelectLawyer}
+                    >
+                      {/* Group for Lawyers */}
+                      <optgroup label="Lawyers">
+                        {lawyers
+                          .filter((team: IUser) => team.role === 'LAWYER')
+                          .map((lawyer: IUser) => (
+                            <option key={lawyer.id} value={lawyer.id}>
+                              {lawyer.name}
+                            </option>
+                          ))}
+                      </optgroup>
 
-                <FormControl mb={4}>
-                  <FormLabel>Select Lawyers</FormLabel>
-                  <Select
-                    placeholder="Select team member"
-                    onChange={handleSelectLawyer}
-                  >
-                    {/* Group for Lawyers */}
-                    <optgroup label="Lawyers">
-                      {lawyers
-                        .filter((team: IUser) => team.role === 'LAWYER')
-                        .map((lawyer: IUser) => (
-                          <option key={lawyer.id} value={lawyer.id}>
-                            {lawyer.name}
-                          </option>
-                        ))}
-                    </optgroup>
+                      {/* Group for Admins */}
+                      <optgroup label="Admins">
+                        {lawyers
+                          .filter((team: IUser) => team.role === 'ADMIN')
+                          .map((admin: IUser) => (
+                            <option key={admin.id} value={admin.id}>
+                              {admin.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                    </Select>
 
-                    {/* Group for Admins */}
-                    <optgroup label="Admins">
-                      {lawyers
-                        .filter((team: IUser) => team.role === 'ADMIN')
-                        .map((admin: IUser) => (
-                          <option key={admin.id} value={admin.id}>
-                            {admin.name}
-                          </option>
-                        ))}
-                    </optgroup>
-                  </Select>
+                    <VStack mt={2} align="start">
+                      {selectedLawyerIds.map((lawyerId) => {
+                        const selectedLawyer = lawyers.find(
+                          (lawyer) => lawyer.id === lawyerId,
+                        );
+                        return (
+                          <Tag key={lawyerId} size="lg" colorScheme="teal">
+                            <TagLabel>{selectedLawyer?.name}</TagLabel>
+                            <TagCloseButton
+                              onClick={() => handleRemoveLawyer(lawyerId)}
+                            />
+                          </Tag>
+                        );
+                      })}
+                    </VStack>
+                  </FormControl>
 
-                  <VStack mt={2} align="start">
-                    {selectedLawyerIds.map((lawyerId) => {
-                      const selectedLawyer = lawyers.find(
-                        (lawyer) => lawyer.id === lawyerId,
-                      );
-                      return (
-                        <Tag key={lawyerId} size="lg" colorScheme="teal">
-                          <TagLabel>{selectedLawyer?.name}</TagLabel>
-                          <TagCloseButton
-                            onClick={() => handleRemoveLawyer(lawyerId)}
-                          />
-                        </Tag>
-                      );
-                    })}
-                  </VStack>
-                </FormControl>
+                  <FormControl mb={4}>
+                    <FormLabel>Select Client</FormLabel>
+                    <Select
+                      placeholder="Select Client"
+                      name="clientId"
+                      value={formData.clientId}
+                      onChange={handleInputChange}
+                    >
+                      {allClients.map((client: IClient | IClientProspect) => (
+                        <option key={client.id} value={client.id}>
+                          {client.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <div>
+                    {/* Conditionally show either Case ID or Other Related To */}
+                    {useCaseId ? (
+                      <>
+                        <FormControl>
+                          <FormLabel>Case ID</FormLabel>
+                          <Select
+                            name="caseId"
+                            placeholder="Enter case ID"
+                            value={formData.caseId}
+                            onChange={handleInputChange}
+                          >
+                            {allCases.map((individualCase) => (
+                              <option
+                                key={individualCase.caseId}
+                                value={individualCase.caseId}
+                              >
+                                {individualCase.caseNo}-{' '}
+                                {individualCase.petition.petitioner} vs{' '}
+                                {individualCase.respondent.respondentee}
+                              </option>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <Checkbox
+                          isChecked={useCaseId}
+                          mt={3}
+                          onChange={toggleRelatedField}
+                        >
+                          Use Case ID
+                        </Checkbox>
+                      </>
+                    ) : (
+                      <FormControl>
+                        <FormLabel>Other Related To</FormLabel>
+                        <Input
+                          name="otherRelatedTo"
+                          placeholder="Enter related details"
+                          value={formData.otherRelatedTo}
+                          onChange={handleInputChange}
+                        />
+                      </FormControl>
+                    )}
+                  </div>
+                </form>
               </ModalBody>
               <ModalFooter>
                 <Button colorScheme="purple" mr={3} onClick={handleSubmit}>

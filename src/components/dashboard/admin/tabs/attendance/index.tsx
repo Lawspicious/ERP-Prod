@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useLogs } from '@/hooks/useLogs';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Heading,
@@ -18,64 +19,160 @@ import {
   InputLeftElement,
   Select,
   Stack,
-  Button,
   useColorModeValue,
   Alert,
   AlertIcon,
   AlertTitle,
   AlertDescription,
   Card,
-  CardHeader,
   CardBody,
   Stat,
   StatLabel,
   StatNumber,
   StatGroup,
-  HStack,
   IconButton,
   Tooltip,
+  Switch,
+  useToast,
 } from '@chakra-ui/react';
-import { Search, RefreshCw, Calendar, User, Clock } from 'lucide-react';
-import { format } from 'date-fns';
+import { Search, RefreshCw, Calendar, ExternalLink } from 'lucide-react';
+import { format, isToday } from 'date-fns';
 import Pagination from '@/components/dashboard/shared/Pagination';
+import { db } from '@/lib/config/firebase.config';
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+  addDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { UserAttendanceData, AttendanceOverride } from '@/types/attendance';
 
 export default function AttendanceTab() {
+  const router = useRouter();
+  const toast = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [overrides, setOverrides] = useState<
+    Record<string, Record<string, 'present' | 'absent'>>
+  >({});
 
   const { logs, isLoading, error, refreshLogs } = useLogs(
     undefined,
     selectedDate,
   );
 
-  const filteredLogs = useMemo(() => {
-    return logs.filter(
-      (log) =>
-        log.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.userEmail.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
-  }, [logs, searchTerm]);
+  // Load existing overrides from database
+  useEffect(() => {
+    const loadOverrides = async () => {
+      try {
+        const overridesQuery = query(collection(db, 'attendance_overrides'));
+        const snapshot = await getDocs(overridesQuery);
 
-  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / rowsPerPage));
+        const overridesData: Record<
+          string,
+          Record<string, 'present' | 'absent'>
+        > = {};
+
+        snapshot.forEach((doc) => {
+          const data = doc.data() as AttendanceOverride;
+          if (!overridesData[data.userId]) {
+            overridesData[data.userId] = {};
+          }
+
+          overridesData[data.userId][data.date] = data.status;
+        });
+
+        setOverrides(overridesData);
+      } catch (err) {
+        console.error('Error loading attendance overrides:', err);
+        toast({
+          title: 'Error',
+          description: 'Failed to load attendance overrides',
+          status: 'error',
+          duration: 5000,
+        });
+      }
+    };
+
+    loadOverrides();
+  }, [toast]);
+
+  // Get the ISO date string for today
+  const todayIsoDate = useMemo(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  }, []);
+
+  // Generate user attendance data with override status
+  const userAttendanceData = useMemo(() => {
+    const usersMap = new Map<string, UserAttendanceData>();
+
+    // First pass: Create user entries and set login info
+    logs.forEach((log) => {
+      if (!usersMap.has(log.userId)) {
+        usersMap.set(log.userId, {
+          userId: log.userId,
+          username: log.username,
+          userEmail: log.userEmail,
+          lastLogin: null,
+          status: 'absent',
+          statusOverridden: false,
+        });
+      }
+
+      const userData = usersMap.get(log.userId)!;
+
+      // Always update the last login time if this is a login event and more recent
+      if (log.eventType === 'login') {
+        if (!userData.lastLogin || log.timestamp > userData.lastLogin) {
+          userData.lastLogin = log.timestamp;
+
+          // Mark as present if logged in today (unless overridden)
+          if (isToday(log.timestamp) && !userData.statusOverridden) {
+            userData.status = 'present';
+          }
+        }
+      }
+    });
+
+    // Second pass: Apply overrides
+    for (const user of usersMap.values()) {
+      const userOverrides = overrides[user.userId] || {};
+      if (userOverrides[todayIsoDate]) {
+        user.status = userOverrides[todayIsoDate];
+        user.statusOverridden = true;
+      }
+    }
+
+    return Array.from(usersMap.values());
+  }, [logs, overrides, todayIsoDate]);
+
+  const filteredUsers = useMemo(() => {
+    return userAttendanceData.filter(
+      (user) =>
+        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.userEmail.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+  }, [userAttendanceData, searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / rowsPerPage));
 
   // Reset to first page when search term changes
   useMemo(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedDate]);
 
-  const paginatedLogs = useMemo(() => {
+  const paginatedUsers = useMemo(() => {
     const startIndex = (currentPage - 1) * rowsPerPage;
-    return filteredLogs.slice(startIndex, startIndex + rowsPerPage);
-  }, [filteredLogs, currentPage, rowsPerPage]);
-
-  const loginCount = filteredLogs.filter(
-    (log) => log.eventType === 'login',
-  ).length;
-  const logoutCount = filteredLogs.filter(
-    (log) => log.eventType === 'logout',
-  ).length;
+    return filteredUsers.slice(startIndex, startIndex + rowsPerPage);
+  }, [filteredUsers, currentPage, rowsPerPage]);
 
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -92,6 +189,181 @@ export default function AttendanceTab() {
 
   const handleRefresh = () => {
     refreshLogs();
+  };
+
+  // Save attendance override to Firestore
+  const saveAttendanceOverride = async (
+    userId: string,
+    status: 'present' | 'absent',
+  ) => {
+    setIsUpdating(true);
+
+    try {
+      // Get today's date in ISO format for the record
+      const date = new Date().toISOString().split('T')[0];
+
+      // Create or update the override document
+      const overrideRef = collection(db, 'attendance_overrides');
+
+      // Check if an override already exists for this user and date
+      const existingQuery = query(
+        overrideRef,
+        where('userId', '==', userId),
+        where('date', '==', date),
+      );
+
+      const existingSnapshot = await getDocs(existingQuery);
+
+      if (!existingSnapshot.empty) {
+        // Update existing override
+        const docId = existingSnapshot.docs[0].id;
+        await updateDoc(doc(db, 'attendance_overrides', docId), {
+          status,
+          timestamp: serverTimestamp(),
+        });
+      } else {
+        // Create new override
+        await addDoc(overrideRef, {
+          userId,
+          date,
+          status,
+          overriddenBy: 'Admin', // In a real app, use the current admin's ID/name
+          timestamp: serverTimestamp(),
+        });
+      }
+
+      // Update local state
+      setOverrides((prev) => ({
+        ...prev,
+        [userId]: {
+          ...(prev[userId] || {}),
+          [date]: status,
+        },
+      }));
+
+      // Show success message
+      toast({
+        title: 'Status updated',
+        description: `User has been marked as ${status} and saved to database.`,
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (err) {
+      console.error('Error saving attendance override:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to save attendance status',
+        status: 'error',
+        duration: 5000,
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleStatusChange = useCallback(
+    (userId: string, status: 'present' | 'absent') => {
+      // Save to database
+      saveAttendanceOverride(userId, status);
+    },
+    [],
+  );
+
+  // Toggle status with a switch
+  const toggleStatus = useCallback(
+    (userId: string, currentStatus: 'present' | 'absent') => {
+      const newStatus = currentStatus === 'present' ? 'absent' : 'present';
+
+      // If toggling from absent to present, we should restore the data based on actual logins
+      if (newStatus === 'present') {
+        // Find the user's last login today (if any)
+        const userLogs = logs.filter(
+          (log) => log.userId === userId && log.eventType === 'login',
+        );
+        const todaysLogins = userLogs.filter((log) => isToday(log.timestamp));
+
+        // If they have logged in today, we'll just remove the override
+        if (todaysLogins.length > 0) {
+          // Remove the override by deleting it from the database
+          removeAttendanceOverride(userId);
+          return;
+        }
+      }
+
+      // Otherwise proceed with normal override
+      handleStatusChange(userId, newStatus);
+    },
+    [handleStatusChange, logs],
+  );
+
+  // Function to remove an attendance override
+  const removeAttendanceOverride = async (userId: string) => {
+    setIsUpdating(true);
+
+    try {
+      // Get today's date in ISO format
+      const date = new Date().toISOString().split('T')[0];
+
+      // Find existing override document
+      const overrideRef = collection(db, 'attendance_overrides');
+      const existingQuery = query(
+        overrideRef,
+        where('userId', '==', userId),
+        where('date', '==', date),
+      );
+
+      const existingSnapshot = await getDocs(existingQuery);
+
+      if (!existingSnapshot.empty) {
+        // Delete existing override
+        const docId = existingSnapshot.docs[0].id;
+        await updateDoc(doc(db, 'attendance_overrides', docId), {
+          status: 'present', // Set to present to reflect actual login status
+          timestamp: serverTimestamp(),
+        });
+
+        // Update local state
+        setOverrides((prev) => {
+          const newOverrides = { ...prev };
+          if (newOverrides[userId]) {
+            // Remove this specific date override
+            const userOverrides = { ...newOverrides[userId] };
+            delete userOverrides[date];
+            newOverrides[userId] = userOverrides;
+          }
+          return newOverrides;
+        });
+
+        // Show success message
+        toast({
+          title: 'Status updated',
+          description:
+            'User has been marked as present based on their login activity.',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+
+      // Refresh the logs to update the UI
+      refreshLogs();
+    } catch (err) {
+      console.error('Error removing attendance override:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to update attendance status',
+        status: 'error',
+        duration: 5000,
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Function to navigate to a user's detailed attendance page
+  const navigateToUserDetail = (userId: string) => {
+    router.push(`/attendance/${userId}`);
   };
 
   // Generate array of page numbers that have content
@@ -122,24 +394,34 @@ export default function AttendanceTab() {
         <Card flex={1} mr={4} variant="outline">
           <CardBody>
             <Stat>
-              <StatLabel>Total Records</StatLabel>
-              <StatNumber>{filteredLogs.length}</StatNumber>
+              <StatLabel>Total Users</StatLabel>
+              <StatNumber>{filteredUsers.length}</StatNumber>
             </Stat>
           </CardBody>
         </Card>
         <Card flex={1} mr={4} variant="outline">
           <CardBody>
             <Stat>
-              <StatLabel>Login Events</StatLabel>
-              <StatNumber>{loginCount}</StatNumber>
+              <StatLabel>Present Today</StatLabel>
+              <StatNumber>
+                {
+                  filteredUsers.filter((user) => user.status === 'present')
+                    .length
+                }
+              </StatNumber>
             </Stat>
           </CardBody>
         </Card>
         <Card flex={1} variant="outline">
           <CardBody>
             <Stat>
-              <StatLabel>Logout Events</StatLabel>
-              <StatNumber>{logoutCount}</StatNumber>
+              <StatLabel>Absent Today</StatLabel>
+              <StatNumber>
+                {
+                  filteredUsers.filter((user) => user.status === 'absent')
+                    .length
+                }
+              </StatNumber>
             </Stat>
           </CardBody>
         </Card>
@@ -181,9 +463,9 @@ export default function AttendanceTab() {
             Loading attendance logs...
           </Text>
         </Flex>
-      ) : filteredLogs.length === 0 ? (
+      ) : filteredUsers.length === 0 ? (
         <Box textAlign="center" py={10} px={6}>
-          <Text fontSize="lg">No attendance logs found.</Text>
+          <Text fontSize="lg">No attendance records found.</Text>
         </Box>
       ) : (
         <>
@@ -197,36 +479,89 @@ export default function AttendanceTab() {
               <Thead bg={useColorModeValue('gray.50', 'gray.700')}>
                 <Tr>
                   <Th>User</Th>
-                  <Th>Event</Th>
-                  <Th>Date</Th>
-                  <Th>Time</Th>
+                  <Th>Latest Login</Th>
+                  <Th>Status</Th>
+                  <Th>Action</Th>
                 </Tr>
               </Thead>
               <Tbody>
-                {paginatedLogs.map((log) => (
-                  <Tr key={log.id}>
+                {paginatedUsers.map((user) => (
+                  <Tr key={user.userId}>
                     <Td>
                       <Box>
-                        <Text fontWeight="medium">{log.username}</Text>
+                        <Flex alignItems="center">
+                          <Text
+                            fontWeight="medium"
+                            _hover={{
+                              color: 'blue.500',
+                              textDecoration: 'underline',
+                              cursor: 'pointer',
+                            }}
+                            display="flex"
+                            alignItems="center"
+                            onClick={() => navigateToUserDetail(user.userId)}
+                          >
+                            {user.username}
+                            <ExternalLink
+                              size={14}
+                              style={{ marginLeft: '5px' }}
+                            />
+                          </Text>
+                        </Flex>
                         <Text fontSize="sm" color="gray.500">
-                          {log.userEmail}
+                          {user.userEmail}
                         </Text>
                       </Box>
                     </Td>
                     <Td>
+                      {user.lastLogin
+                        ? format(user.lastLogin, 'MMM dd, yyyy hh:mm a')
+                        : 'No login recorded'}
+                    </Td>
+                    <Td>
                       <Badge
                         colorScheme={
-                          log.eventType === 'login' ? 'green' : 'red'
+                          user.status === 'present' ? 'green' : 'yellow'
                         }
                         borderRadius="full"
                         px={2}
                         py={1}
                       >
-                        {log.eventType === 'login' ? 'Login' : 'Logout'}
+                        {user.status === 'present' ? 'Present' : 'Absent'}
                       </Badge>
                     </Td>
-                    <Td>{format(log.timestamp, 'MMM dd, yyyy')}</Td>
-                    <Td>{format(log.timestamp, 'hh:mm:ss a')}</Td>
+                    <Td>
+                      <Flex alignItems="center" justifyContent="space-between">
+                        <Tooltip
+                          label={`Mark as ${user.status === 'present' ? 'absent' : 'present'}`}
+                        >
+                          <Switch
+                            colorScheme="green"
+                            isChecked={user.status === 'present'}
+                            onChange={() =>
+                              toggleStatus(user.userId, user.status)
+                            }
+                            mr={2}
+                            isDisabled={isUpdating}
+                          />
+                        </Tooltip>
+                        <Select
+                          value={user.status}
+                          size="sm"
+                          width="110px"
+                          onChange={(e) =>
+                            handleStatusChange(
+                              user.userId,
+                              e.target.value as 'present' | 'absent',
+                            )
+                          }
+                          isDisabled={isUpdating}
+                        >
+                          <option value="present">Present</option>
+                          <option value="absent">Absent</option>
+                        </Select>
+                      </Flex>
+                    </Td>
                   </Tr>
                 ))}
               </Tbody>
@@ -234,7 +569,7 @@ export default function AttendanceTab() {
           </Box>
 
           {/* Pagination */}
-          {filteredLogs.length > rowsPerPage && (
+          {filteredUsers.length > rowsPerPage && (
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
