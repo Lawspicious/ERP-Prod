@@ -62,6 +62,7 @@ export default function AttendanceTab() {
   const [overrides, setOverrides] = useState<
     Record<string, Record<string, 'present' | 'absent'>>
   >({});
+  const [hoveredUser, setHoveredUser] = useState<string | null>(null);
 
   const { logs, isLoading, error, refreshLogs } = useLogs(
     undefined,
@@ -532,19 +533,59 @@ export default function AttendanceTab() {
                     </Td>
                     <Td>
                       <Flex alignItems="center" justifyContent="space-between">
-                        <Tooltip
-                          label={`Mark as ${user.status === 'present' ? 'absent' : 'present'}`}
-                        >
-                          <Switch
-                            colorScheme="green"
-                            isChecked={user.status === 'present'}
-                            onChange={() =>
-                              toggleStatus(user.userId, user.status)
-                            }
-                            mr={2}
-                            isDisabled={isUpdating}
-                          />
-                        </Tooltip>
+                        <Box position="relative">
+                          <Box
+                            onMouseEnter={() => setHoveredUser(user.userId)}
+                            onMouseLeave={() => setHoveredUser(null)}
+                          >
+                            <Switch
+                              colorScheme="green"
+                              isChecked={user.status === 'present'}
+                              onChange={() =>
+                                toggleStatus(user.userId, user.status)
+                              }
+                              mr={2}
+                              isDisabled={isUpdating}
+                            />
+                            {hoveredUser === user.userId && (
+                              <Box
+                                position="absolute"
+                                bottom="calc(100% + 8px)"
+                                left="50%"
+                                transform="translateX(-50%)"
+                                bg={useColorModeValue('gray.800', 'gray.700')}
+                                color="white"
+                                px={2}
+                                py={1}
+                                borderRadius="md"
+                                fontSize="xs"
+                                fontWeight="medium"
+                                whiteSpace="nowrap"
+                                boxShadow="md"
+                                zIndex={1000}
+                                _after={{
+                                  content: '""',
+                                  position: 'absolute',
+                                  top: '100%',
+                                  left: '50%',
+                                  transform: 'translateX(-50%)',
+                                  border: 'solid transparent',
+                                  borderTopColor: useColorModeValue(
+                                    'gray.800',
+                                    'gray.700',
+                                  ),
+                                  borderWidth: '5px',
+                                  marginLeft: '-0px',
+                                }}
+                              >
+                                Mark as{' '}
+                                {user.status === 'present'
+                                  ? 'absent'
+                                  : 'present'}
+                              </Box>
+                            )}
+                          </Box>
+                        </Box>
                         <Select
                           value={user.status}
                           size="sm"
