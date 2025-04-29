@@ -150,8 +150,15 @@ export const UserProvider = ({ children }: any) => {
         email,
         password,
       );
-      const expirationTime = (await userCredential.user.getIdTokenResult())
-        .expirationTime;
+      const firebaseExpirationTime = (
+        await userCredential.user.getIdTokenResult()
+      ).expirationTime;
+
+      // Set expiration to 8 hours from Firebase token expiration
+      const expirationDate = new Date(firebaseExpirationTime);
+      expirationDate.setHours(expirationDate.getHours() + 8);
+      const expirationTime = expirationDate.toISOString();
+
       setTokenExpiration(new Date(expirationTime));
       if (window !== undefined && window.localStorage !== undefined) {
         window.localStorage.setItem('tokenExpiration', expirationTime);
