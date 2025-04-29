@@ -9,30 +9,30 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { tokenExpiration, logout, authUser, isAuthLoading } = useAuth();
+  const { authUser, isAuthLoading } = useAuth();
 
-  useEffect(() => {
-    checkTokenExpiration();
+  // useEffect(() => {
+  //   checkTokenExpiration();
 
-    const intervalId = setInterval(checkTokenExpiration, 60000);
+  //   const intervalId = setInterval(checkTokenExpiration, 60000);
 
-    return () => clearInterval(intervalId);
+  //   return () => clearInterval(intervalId);
 
-    function checkTokenExpiration() {
-      const currentExpiration =
-        tokenExpiration ||
-        (typeof window !== 'undefined' &&
-        window.localStorage.getItem('tokenExpiration')
-          ? new Date(window.localStorage.getItem('tokenExpiration')!)
-          : null);
+  //   function checkTokenExpiration() {
+  //     const currentExpiration =
+  //       tokenExpiration ||
+  //       (typeof window !== 'undefined' &&
+  //       window.localStorage.getItem('tokenExpiration')
+  //         ? new Date(window.localStorage.getItem('tokenExpiration')!)
+  //         : null);
 
-      if (currentExpiration && new Date(currentExpiration) < new Date()) {
-        logout();
-        router.push('/auth');
-        return;
-      }
-    }
-  }, [router, logout, tokenExpiration]);
+  //     if (currentExpiration && new Date(currentExpiration) < new Date()) {
+  //       logout();
+  //       router.push('/auth');
+  //       return;
+  //     }
+  //   }
+  // }, [router, logout, tokenExpiration]);
 
   useEffect(() => {
     if (!authUser && !isAuthLoading) {
