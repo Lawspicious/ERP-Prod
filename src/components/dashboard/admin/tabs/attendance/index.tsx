@@ -34,9 +34,10 @@ import {
   Tooltip,
   Switch,
   useToast,
+  Button,
 } from '@chakra-ui/react';
-import { Search, RefreshCw, Calendar, ExternalLink } from 'lucide-react';
-import { format, isToday } from 'date-fns';
+import { Search, RefreshCw, Calendar, ExternalLink, Bug } from 'lucide-react';
+import { format, isToday, parseISO } from 'date-fns';
 import Pagination from '@/components/dashboard/shared/Pagination';
 import { db } from '@/lib/config/firebase.config';
 import {
@@ -48,6 +49,7 @@ import {
   updateDoc,
   addDoc,
   serverTimestamp,
+  deleteDoc,
 } from 'firebase/firestore';
 import { UserAttendanceData, AttendanceOverride } from '@/types/attendance';
 
@@ -63,97 +65,316 @@ export default function AttendanceTab() {
     Record<string, Record<string, 'present' | 'absent'>>
   >({});
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
+  const [allUsers, setAllUsers] = useState<
+    Array<{
+      id: string;
+      username: string;
+      email: string;
+    }>
+  >([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [debugMode, setDebugMode] = useState(true);
 
-  const { logs, isLoading, error, refreshLogs } = useLogs(
-    undefined,
-    selectedDate,
-  );
-
-  // Load existing overrides from database
+  // TEMPORARY: Set a specific date for debugging the May 1st issue
   useEffect(() => {
-    const loadOverrides = async () => {
+    if (debugMode && !selectedDate) {
+      const mayFirst = new Date('2023-05-01T00:00:00');
+      console.log(
+        'DEBUG: Setting date to May 1st for testing:',
+        mayFirst.toISOString(),
+      );
+      //setSelectedDate(mayFirst);
+    }
+  }, [debugMode, selectedDate]);
+
+  const {
+    logs,
+    isLoading: isLoadingLogs,
+    error: logsError,
+    refreshLogs,
+  } = useLogs(undefined, selectedDate);
+
+  // Debug function
+  const debugLog = (message: string, data?: any) => {
+    if (debugMode) {
+      console.log(`[Attendance Debug] ${message}`, data || '');
+    }
+  };
+
+  // Load users from database
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setIsLoadingUsers(true);
       try {
-        const overridesQuery = query(collection(db, 'attendance_overrides'));
-        const snapshot = await getDocs(overridesQuery);
+        const usersQuery = query(collection(db, 'users'));
+        const snapshot = await getDocs(usersQuery);
 
-        const overridesData: Record<
-          string,
-          Record<string, 'present' | 'absent'>
-        > = {};
-
-        snapshot.forEach((doc) => {
-          const data = doc.data() as AttendanceOverride;
-          if (!overridesData[data.userId]) {
-            overridesData[data.userId] = {};
-          }
-
-          overridesData[data.userId][data.date] = data.status;
+        const usersData = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            username: data.name || data.displayName || 'Unknown User',
+            email: data.email || 'No email',
+          };
         });
 
-        setOverrides(overridesData);
+        debugLog(`Fetched ${usersData.length} users`);
+        setAllUsers(usersData);
       } catch (err) {
-        console.error('Error loading attendance overrides:', err);
+        console.error('Error loading users:', err);
         toast({
           title: 'Error',
-          description: 'Failed to load attendance overrides',
+          description: 'Failed to load users',
           status: 'error',
           duration: 5000,
         });
+      } finally {
+        setIsLoadingUsers(false);
       }
     };
 
-    loadOverrides();
-  }, [toast]);
+    fetchUsers();
+  }, [toast, debugMode]);
 
-  // Get the ISO date string for today
-  const todayIsoDate = useMemo(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  }, []);
+  // Load existing overrides from database
+  const loadAttendanceOverrides = useCallback(async () => {
+    try {
+      debugLog('Loading attendance overrides');
+      const overridesQuery = query(collection(db, 'attendance_overrides'));
+      const snapshot = await getDocs(overridesQuery);
 
-  // Generate user attendance data with override status
+      const overridesData: Record<
+        string,
+        Record<string, 'present' | 'absent'>
+      > = {};
+
+      snapshot.forEach((doc) => {
+        const data = doc.data() as AttendanceOverride;
+        if (!overridesData[data.userId]) {
+          overridesData[data.userId] = {};
+        }
+
+        overridesData[data.userId][data.date] = data.status;
+      });
+
+      debugLog('Loaded overrides data', overridesData);
+      setOverrides(overridesData);
+      return overridesData;
+    } catch (err) {
+      console.error('Error loading attendance overrides:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to load attendance overrides',
+        status: 'error',
+        duration: 5000,
+      });
+      return {};
+    }
+  }, [toast, debugMode]);
+
+  // Load overrides on component mount
+  useEffect(() => {
+    loadAttendanceOverrides();
+  }, [loadAttendanceOverrides]);
+
+  // Toggle debug mode
+  const toggleDebugMode = () => {
+    setDebugMode((prev) => !prev);
+    if (!debugMode) {
+      toast({
+        title: 'Debug Mode Enabled',
+        description: 'Check the console for detailed logs',
+        status: 'info',
+        duration: 3000,
+      });
+    }
+  };
+
+  // Helper function to properly convert any date to IST format YYYY-MM-DD
+  const dateToISTString = (date: Date): string => {
+    // Create a string representation in the IST timezone (UTC+5:30)
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: 'Asia/Kolkata', // IST timezone
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    };
+
+    // Format the date in IST
+    const formatter = new Intl.DateTimeFormat('en-CA', options); // en-CA uses YYYY-MM-DD format
+    const formattedDate = formatter.format(date);
+
+    // This will return the date as YYYY-MM-DD in IST timezone
+    return formattedDate;
+  };
+
+  // Helper function to get today's ISO date string in IST
+  const todayIsoString = () => {
+    return dateToISTString(new Date());
+  };
+
+  // Get the ISO date string for today or the selected date in IST timezone
+  const relevantDateIsoString = useMemo(() => {
+    if (selectedDate) {
+      // If we have a selected date, convert it to IST
+      const dateStr = dateToISTString(selectedDate);
+      debugLog(`Using selected date in IST: ${dateStr}`);
+      return dateStr;
+    }
+
+    // For current date, get today in IST
+    const dateStr = todayIsoString();
+    debugLog(`Using current IST date: ${dateStr}`);
+    return dateStr;
+  }, [selectedDate, debugMode]);
+
+  // Determine if we're looking at May 1st
+  const isMayFirst = useMemo(() => {
+    return relevantDateIsoString === '2023-05-01';
+  }, [relevantDateIsoString]);
+
+  // Combine users with logs data to create a complete attendance record
   const userAttendanceData = useMemo(() => {
-    const usersMap = new Map<string, UserAttendanceData>();
+    debugLog('Generating user attendance data');
+    debugLog(
+      `Using date: ${relevantDateIsoString} | Logs count: ${logs.length}`,
+    );
 
-    // First pass: Create user entries and set login info
+    // For debugging, let's see what logs we have
+    if (debugMode) {
+      console.log('-------------------------');
+      console.log(`LOGS FOR DATE: ${relevantDateIsoString}`);
+      logs.forEach((log) => {
+        const logDateIST = dateToISTString(log.timestamp);
+        const isMayFirstLog = logDateIST === '2023-05-01';
+        console.log(
+          `Log: ${log.username}, ${log.eventType}, ${log.timestamp.toISOString()}, IST: ${logDateIST} ${isMayFirstLog ? '** MAY 1ST **' : ''}`,
+        );
+      });
+      console.log('-------------------------');
+    }
+
+    // Create a map to efficiently lookup log data for each user
+    const userLogsMap = new Map<
+      string,
+      {
+        lastLogin: Date | null;
+        hasLoggedInOnRelevantDate: boolean;
+        hasAnyAttendanceRecord: boolean;
+      }
+    >();
+
     logs.forEach((log) => {
-      if (!usersMap.has(log.userId)) {
-        usersMap.set(log.userId, {
-          userId: log.userId,
-          username: log.username,
-          userEmail: log.userEmail,
+      const userId = log.userId;
+
+      if (!userLogsMap.has(userId)) {
+        userLogsMap.set(userId, {
           lastLogin: null,
-          status: 'absent',
-          statusOverridden: false,
+          hasLoggedInOnRelevantDate: false,
+          hasAnyAttendanceRecord: true, // If user appears in logs, they have records
         });
       }
 
-      const userData = usersMap.get(log.userId)!;
+      const userData = userLogsMap.get(userId)!;
 
-      // Always update the last login time if this is a login event and more recent
+      // Update last login time if this is a login event and more recent
       if (log.eventType === 'login') {
         if (!userData.lastLogin || log.timestamp > userData.lastLogin) {
           userData.lastLogin = log.timestamp;
 
-          // Mark as present if logged in today (unless overridden)
-          if (isToday(log.timestamp) && !userData.statusOverridden) {
-            userData.status = 'present';
+          // Convert the log timestamp to IST date string for comparison
+          const logDateISTString = dateToISTString(log.timestamp);
+
+          debugLog(
+            `Comparing log date ${logDateISTString} with relevant date ${relevantDateIsoString} for user ${userId}`,
+          );
+
+          // If date strings match in YYYY-MM-DD format, user logged in on that date
+          if (logDateISTString === relevantDateIsoString) {
+            debugLog(`✅ User ${userId} logged in on the relevant date`);
+            userData.hasLoggedInOnRelevantDate = true;
           }
         }
       }
     });
 
-    // Second pass: Apply overrides
-    for (const user of usersMap.values()) {
-      const userOverrides = overrides[user.userId] || {};
-      if (userOverrides[todayIsoDate]) {
-        user.status = userOverrides[todayIsoDate];
-        user.statusOverridden = true;
+    // Now create a combined dataset of all users with their attendance status
+    const combinedUsers = allUsers.map((user) => {
+      const logData = userLogsMap.get(user.id) || {
+        lastLogin: null,
+        hasLoggedInOnRelevantDate: false,
+        hasAnyAttendanceRecord: false,
+      };
+
+      const userOverrides = overrides[user.id] || {};
+
+      // If user has overrides, they have attendance records
+      const hasOverrides = Object.keys(userOverrides).length > 0;
+      const hasAttendanceRecord =
+        logData.hasAnyAttendanceRecord || hasOverrides;
+
+      // Determine status (overrides take precedence over login data)
+      let status: 'present' | 'absent' = 'absent';
+      let statusOverridden = false;
+
+      if (userOverrides[relevantDateIsoString]) {
+        debugLog(
+          `User ${user.id} has override for date ${relevantDateIsoString}: ${userOverrides[relevantDateIsoString]}`,
+        );
+        status = userOverrides[relevantDateIsoString];
+        statusOverridden = true;
+      } else if (logData.hasLoggedInOnRelevantDate) {
+        debugLog(
+          `User ${user.id} is present based on login data for date ${relevantDateIsoString}`,
+        );
+        status = 'present';
+      }
+
+      return {
+        userId: user.id,
+        username: user.username,
+        userEmail: user.email,
+        lastLogin: logData.lastLogin,
+        status,
+        statusOverridden,
+        hasAttendanceRecord,
+        hasLoggedInOnDate: logData.hasLoggedInOnRelevantDate,
+      } as UserAttendanceData & {
+        hasAttendanceRecord: boolean;
+        hasLoggedInOnDate: boolean;
+      };
+    });
+
+    if (debugMode) {
+      // Print all users with "present" status for the current date
+      console.log(`Users present on ${relevantDateIsoString}:`);
+      combinedUsers
+        .filter((u) => u.status === 'present')
+        .forEach((u) =>
+          console.log(
+            `- ${u.username} (override: ${u.statusOverridden}, logged in: ${u.hasLoggedInOnDate})`,
+          ),
+        );
+
+      // Print all users with login records on May 1st
+      if (isMayFirst) {
+        console.log('Users with login on May 1st:');
+        combinedUsers
+          .filter((u) => u.hasLoggedInOnDate)
+          .forEach((u) => console.log(`- ${u.username}`));
       }
     }
 
-    return Array.from(usersMap.values());
-  }, [logs, overrides, todayIsoDate]);
+    // Sort: users with attendance records first, then alphabetically by name
+    return combinedUsers.sort((a, b) => {
+      // First sort by whether they have attendance records
+      if (a.hasAttendanceRecord && !b.hasAttendanceRecord) return -1;
+      if (!a.hasAttendanceRecord && b.hasAttendanceRecord) return 1;
+
+      // If both have the same attendance record status, sort by name
+      return a.username.localeCompare(b.username);
+    });
+  }, [allUsers, logs, overrides, relevantDateIsoString, debugMode, isMayFirst]);
 
   const filteredUsers = useMemo(() => {
     return userAttendanceData.filter(
@@ -166,7 +387,7 @@ export default function AttendanceTab() {
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / rowsPerPage));
 
   // Reset to first page when search term changes
-  useMemo(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedDate]);
 
@@ -180,28 +401,40 @@ export default function AttendanceTab() {
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const dateValue = e.target.value;
+
     if (dateValue) {
-      setSelectedDate(new Date(dateValue));
+      const newDate = new Date(dateValue);
+      debugLog(`Date selected: ${dateValue} -> ${newDate.toISOString()}`);
+      console.log(
+        `Selected date: ${dateValue}, Date object: ${newDate.toISOString()}, IST: ${dateToISTString(newDate)}`,
+      );
+      setSelectedDate(newDate);
     } else {
+      debugLog('Date cleared, using today');
       setSelectedDate(undefined);
     }
     setCurrentPage(1); // Reset to first page when date changes
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
+    debugLog('Refreshing data');
+    // Reload both logs and overrides
+    await loadAttendanceOverrides();
     refreshLogs();
   };
 
-  // Save attendance override to Firestore
+  // Save attendance override to Firestore - this is the core function
   const saveAttendanceOverride = async (
     userId: string,
     status: 'present' | 'absent',
+    dateToOverride: string,
   ) => {
     setIsUpdating(true);
 
     try {
-      // Get today's date in ISO format for the record
-      const date = new Date().toISOString().split('T')[0];
+      debugLog(
+        `Saving override for user ${userId} on date ${dateToOverride} with status ${status}`,
+      );
 
       // Create or update the override document
       const overrideRef = collection(db, 'attendance_overrides');
@@ -210,7 +443,7 @@ export default function AttendanceTab() {
       const existingQuery = query(
         overrideRef,
         where('userId', '==', userId),
-        where('date', '==', date),
+        where('date', '==', dateToOverride),
       );
 
       const existingSnapshot = await getDocs(existingQuery);
@@ -218,38 +451,57 @@ export default function AttendanceTab() {
       if (!existingSnapshot.empty) {
         // Update existing override
         const docId = existingSnapshot.docs[0].id;
+        debugLog(`Updating existing override with ID ${docId}`);
+
         await updateDoc(doc(db, 'attendance_overrides', docId), {
           status,
           timestamp: serverTimestamp(),
         });
       } else {
         // Create new override
-        await addDoc(overrideRef, {
+        debugLog(`Creating new override document`);
+        const newOverrideRef = await addDoc(overrideRef, {
           userId,
-          date,
+          date: dateToOverride,
           status,
           overriddenBy: 'Admin', // In a real app, use the current admin's ID/name
           timestamp: serverTimestamp(),
         });
+
+        debugLog(`Created new override with ID ${newOverrideRef.id}`);
       }
 
       // Update local state
-      setOverrides((prev) => ({
-        ...prev,
-        [userId]: {
-          ...(prev[userId] || {}),
-          [date]: status,
-        },
-      }));
+      setOverrides((prev) => {
+        const newOverrides = {
+          ...prev,
+          [userId]: {
+            ...(prev[userId] || {}),
+            [dateToOverride]: status,
+          },
+        };
+        debugLog('Updated local overrides state', newOverrides);
+        return newOverrides;
+      });
+
+      // For date display in toast
+      const dateObj =
+        dateToOverride === todayIsoString()
+          ? undefined
+          : new Date(dateToOverride);
 
       // Show success message
       toast({
         title: 'Status updated',
-        description: `User has been marked as ${status} and saved to database.`,
+        description: `User has been marked as ${status} for ${dateObj ? format(dateObj, 'MMM dd, yyyy') : 'today'} and saved to database.`,
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
+
+      // Reload data to ensure UI is up to date
+      await loadAttendanceOverrides();
+      refreshLogs();
     } catch (err) {
       console.error('Error saving attendance override:', err);
       toast({
@@ -265,37 +517,33 @@ export default function AttendanceTab() {
 
   const handleStatusChange = useCallback(
     (userId: string, status: 'present' | 'absent') => {
-      // Save to database
-      saveAttendanceOverride(userId, status);
+      // Always capture the current value of relevantDateIsoString
+      const currentDateString = relevantDateIsoString;
+      debugLog(
+        `Status change requested for user ${userId} to ${status} for date ${currentDateString}`,
+      );
+
+      // Save to database using the captured date value
+      saveAttendanceOverride(userId, status, currentDateString);
     },
-    [],
+    [relevantDateIsoString, debugMode],
   );
 
   // Toggle status with a switch
   const toggleStatus = useCallback(
     (userId: string, currentStatus: 'present' | 'absent') => {
       const newStatus = currentStatus === 'present' ? 'absent' : 'present';
+      // Always capture the current value of relevantDateIsoString
+      const currentDateString = relevantDateIsoString;
 
-      // If toggling from absent to present, we should restore the data based on actual logins
-      if (newStatus === 'present') {
-        // Find the user's last login today (if any)
-        const userLogs = logs.filter(
-          (log) => log.userId === userId && log.eventType === 'login',
-        );
-        const todaysLogins = userLogs.filter((log) => isToday(log.timestamp));
+      debugLog(
+        `Toggling status for user ${userId} from ${currentStatus} to ${newStatus} for date ${currentDateString}`,
+      );
 
-        // If they have logged in today, we'll just remove the override
-        if (todaysLogins.length > 0) {
-          // Remove the override by deleting it from the database
-          removeAttendanceOverride(userId);
-          return;
-        }
-      }
-
-      // Otherwise proceed with normal override
+      // Just directly set the override - simpler approach
       handleStatusChange(userId, newStatus);
     },
-    [handleStatusChange, logs],
+    [handleStatusChange, relevantDateIsoString, debugMode],
   );
 
   // Function to remove an attendance override
@@ -303,26 +551,26 @@ export default function AttendanceTab() {
     setIsUpdating(true);
 
     try {
-      // Get today's date in ISO format
-      const date = new Date().toISOString().split('T')[0];
+      // Always use the current value of relevantDateIsoString
+      const dateToRemove = relevantDateIsoString;
+      debugLog(`Removing override for user ${userId} on date ${dateToRemove}`);
 
       // Find existing override document
       const overrideRef = collection(db, 'attendance_overrides');
       const existingQuery = query(
         overrideRef,
         where('userId', '==', userId),
-        where('date', '==', date),
+        where('date', '==', dateToRemove),
       );
 
       const existingSnapshot = await getDocs(existingQuery);
 
       if (!existingSnapshot.empty) {
-        // Delete existing override
+        // Delete the override document
         const docId = existingSnapshot.docs[0].id;
-        await updateDoc(doc(db, 'attendance_overrides', docId), {
-          status: 'present', // Set to present to reflect actual login status
-          timestamp: serverTimestamp(),
-        });
+        debugLog(`Found existing override with ID ${docId}, deleting it`);
+
+        await deleteDoc(doc(db, 'attendance_overrides', docId));
 
         // Update local state
         setOverrides((prev) => {
@@ -330,30 +578,45 @@ export default function AttendanceTab() {
           if (newOverrides[userId]) {
             // Remove this specific date override
             const userOverrides = { ...newOverrides[userId] };
-            delete userOverrides[date];
+            delete userOverrides[dateToRemove];
             newOverrides[userId] = userOverrides;
           }
+          debugLog('Updated local overrides state after removal', newOverrides);
           return newOverrides;
         });
 
+        // For date display in toast
+        const dateObj =
+          dateToRemove === todayIsoString()
+            ? undefined
+            : new Date(dateToRemove);
+
         // Show success message
         toast({
-          title: 'Status updated',
-          description:
-            'User has been marked as present based on their login activity.',
+          title: 'Override removed',
+          description: `Attendance override for ${dateObj ? format(dateObj, 'MMM dd, yyyy') : 'today'} has been removed.`,
           status: 'success',
           duration: 3000,
           isClosable: true,
         });
+      } else {
+        debugLog(`No override found to remove`);
+        toast({
+          title: 'Information',
+          description: 'No override found to remove.',
+          status: 'info',
+          duration: 3000,
+        });
       }
 
-      // Refresh the logs to update the UI
+      // Reload data to ensure UI is up to date
+      await loadAttendanceOverrides();
       refreshLogs();
     } catch (err) {
       console.error('Error removing attendance override:', err);
       toast({
         title: 'Error',
-        description: 'Failed to update attendance status',
+        description: 'Failed to remove attendance override',
         status: 'error',
         duration: 5000,
       });
@@ -376,18 +639,38 @@ export default function AttendanceTab() {
     return pages;
   }, [totalPages]);
 
+  // Determine if the page is loading
+  const isLoading = isLoadingLogs || isLoadingUsers;
+  // Combine errors
+  const error = logsError;
+
   return (
     <Box p={4}>
       <Flex justifyContent="space-between" alignItems="center" mb={6}>
         <Heading size="lg">Attendance Logs</Heading>
-        <Tooltip label="Refresh logs">
-          <IconButton
-            aria-label="Refresh logs"
-            icon={<RefreshCw size={18} />}
-            onClick={handleRefresh}
-            isLoading={isLoading}
-          />
-        </Tooltip>
+        <Flex gap={2}>
+          {selectedDate && (
+            <Text fontWeight="bold" alignSelf="center" color="blue.500">
+              Viewing: {format(selectedDate, 'MMMM dd, yyyy')}
+            </Text>
+          )}
+          <Tooltip label="Debug Mode">
+            <IconButton
+              aria-label="Debug mode"
+              icon={<Bug size={18} />}
+              onClick={toggleDebugMode}
+              colorScheme={debugMode ? 'red' : 'gray'}
+            />
+          </Tooltip>
+          <Tooltip label="Refresh data">
+            <IconButton
+              aria-label="Refresh logs"
+              icon={<RefreshCw size={18} />}
+              onClick={handleRefresh}
+              isLoading={isLoading}
+            />
+          </Tooltip>
+        </Flex>
       </Flex>
 
       {/* Stats Cards */}
@@ -403,7 +686,10 @@ export default function AttendanceTab() {
         <Card flex={1} mr={4} variant="outline">
           <CardBody>
             <Stat>
-              <StatLabel>Present Today</StatLabel>
+              <StatLabel>
+                Present{' '}
+                {selectedDate ? format(selectedDate, 'MMM dd') : 'Today'}
+              </StatLabel>
               <StatNumber>
                 {
                   filteredUsers.filter((user) => user.status === 'present')
@@ -416,7 +702,9 @@ export default function AttendanceTab() {
         <Card flex={1} variant="outline">
           <CardBody>
             <Stat>
-              <StatLabel>Absent Today</StatLabel>
+              <StatLabel>
+                Absent {selectedDate ? format(selectedDate, 'MMM dd') : 'Today'}
+              </StatLabel>
               <StatNumber>
                 {
                   filteredUsers.filter((user) => user.status === 'absent')
@@ -445,7 +733,15 @@ export default function AttendanceTab() {
           <InputLeftElement pointerEvents="none">
             <Calendar size={18} />
           </InputLeftElement>
-          <Input type="date" onChange={handleDateChange} />
+          <Input
+            type="date"
+            onChange={handleDateChange}
+            defaultValue={
+              selectedDate
+                ? selectedDate.toISOString().split('T')[0]
+                : undefined
+            }
+          />
         </InputGroup>
       </Stack>
 
@@ -481,7 +777,12 @@ export default function AttendanceTab() {
                 <Tr>
                   <Th>User</Th>
                   <Th>Latest Login</Th>
-                  <Th>Status</Th>
+                  <Th>
+                    Status for{' '}
+                    {selectedDate
+                      ? format(selectedDate, 'MMM dd, yyyy')
+                      : 'Today'}
+                  </Th>
                   <Th>Action</Th>
                 </Tr>
               </Thead>
@@ -530,6 +831,16 @@ export default function AttendanceTab() {
                       >
                         {user.status === 'present' ? 'Present' : 'Absent'}
                       </Badge>
+                      {user.statusOverridden && (
+                        <Badge
+                          ml={2}
+                          colorScheme="blue"
+                          variant="outline"
+                          fontSize="xs"
+                        >
+                          Manual Override
+                        </Badge>
+                      )}
                     </Td>
                     <Td>
                       <Flex alignItems="center" justifyContent="space-between">
@@ -601,6 +912,22 @@ export default function AttendanceTab() {
                           <option value="present">Present</option>
                           <option value="absent">Absent</option>
                         </Select>
+                        {user.statusOverridden && (
+                          <Tooltip
+                            label={`Remove override for ${selectedDate ? format(selectedDate, 'MMM dd') : 'today'}`}
+                          >
+                            <IconButton
+                              aria-label="Remove override"
+                              icon={<RefreshCw size={14} />}
+                              size="sm"
+                              ml={2}
+                              onClick={() =>
+                                removeAttendanceOverride(user.userId)
+                              }
+                              isDisabled={isUpdating}
+                            />
+                          </Tooltip>
+                        )}
                       </Flex>
                     </Td>
                   </Tr>
@@ -620,6 +947,29 @@ export default function AttendanceTab() {
           )}
         </>
       )}
+
+      {/* Debug info at the bottom */}
+      {/* {debugMode && (
+        <Box mt={6} p={4} borderWidth="1px" borderRadius="md">
+          <Heading size="sm" mb={2}>Debug Info</Heading>
+          <Text>Current date: {relevantDateIsoString}</Text>
+          <Text>Selected date: {selectedDate ? selectedDate.toISOString() : 'None'}</Text>
+          <Text>Today in IST: {todayIsoString()}</Text>
+          <Text>Logs count: {logs.length}</Text>
+          <Text>Users count: {allUsers.length}</Text>
+          <Flex mt={2}>
+            <Button size="sm" onClick={() => {
+              const mayFirst = new Date('2023-05-01T00:00:00');
+              setSelectedDate(mayFirst);
+            }}>
+              Set to May 1st
+            </Button>
+            <Button size="sm" ml={2} onClick={() => setSelectedDate(undefined)}>
+              Clear Date
+            </Button>
+          </Flex>
+        </Box>
+      )} */}
     </Box>
   );
 }
