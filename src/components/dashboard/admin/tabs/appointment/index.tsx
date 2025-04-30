@@ -63,13 +63,13 @@ const AppointmentTab = () => {
           )}
         </div>
         <div className="flex gap-2">
-          <Button
+          {/* <Button
             leftIcon={<DownloadIcon />}
             colorScheme="green"
             onClick={handleExport}
           >
             Export
-          </Button>
+          </Button> */}
           <CreateAppointmentModal />
         </div>
       </section>

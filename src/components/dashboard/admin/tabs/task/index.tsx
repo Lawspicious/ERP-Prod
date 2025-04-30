@@ -247,13 +247,13 @@ const TaskTab = () => {
         </div>
 
         <div className="flex gap-2">
-          <Button
+          {/* <Button
             leftIcon={<DownloadIcon />}
             colorScheme="green"
             onClick={handleExport}
           >
             Export
-          </Button>
+          </Button> */}
           <Button colorScheme="purple" onClick={onOpen}>
             Add Task
           </Button>

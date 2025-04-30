@@ -244,7 +244,7 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
           </TabList>
 
           <Flex justify="space-between" align="center">
-            <Button
+            {/* <Button
               leftIcon={<DownloadIcon />}
               colorScheme="green"
               size="sm"
@@ -256,7 +256,7 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
               }
             >
               Export {currentTab}
-            </Button>
+            </Button> */}
             <Input
               placeholder="Search..."
               value={searchTerm}

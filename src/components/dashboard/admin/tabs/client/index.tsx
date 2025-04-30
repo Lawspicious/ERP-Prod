@@ -58,7 +58,7 @@ const ClientTab = () => {
       <section className="mb-6 flex items-center justify-between">
         <h1 className="heading-primary mb-6">Client</h1>
         <HStack spacing={2}>
-          <Button
+          {/* <Button
             leftIcon={<DownloadIcon />}
             colorScheme="green"
             size="sm"
@@ -73,7 +73,7 @@ const ClientTab = () => {
             onClick={handleExportProspectClients}
           >
             Export Prospect Clients
-          </Button>
+          </Button> */}
           <Button
             colorScheme="purple"
             onClick={() => router.push('/dashboard/admin/add-client')}

@@ -149,13 +149,13 @@ export default function PerformanceOverview() {
                   View user performance metrics, including tasks and cases.
                 </Text>
               </Box>
-              <Button
+              {/* <Button
                 leftIcon={<DownloadIcon />}
                 colorScheme="green"
                 onClick={handleExport}
               >
                 Export to Excel
-              </Button>
+              </Button> */}
             </HStack>
           </Box>
           {hasContent ? (

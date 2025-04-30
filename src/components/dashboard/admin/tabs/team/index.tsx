@@ -51,13 +51,13 @@ const TeamsTab = () => {
       <section className="mb-6 flex items-center justify-between">
         <h1 className="heading-primary mb-6">Team Members</h1>
         <div className="flex gap-2">
-          <Button
+          {/* <Button
             leftIcon={<DownloadIcon />}
             colorScheme="green"
             onClick={handleExport}
           >
             Export
-          </Button>
+          </Button> */}
           <Button
             colorScheme="purple"
             onClick={() => router.push('/dashboard/admin/add-member')}
