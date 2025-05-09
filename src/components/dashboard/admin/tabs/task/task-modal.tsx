@@ -208,7 +208,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
       <ModalContent>
         <ModalHeader>Create Multiple Tasks</ModalHeader>
         <ModalCloseButton />
-        <ModalBody>
+        <ModalBody minH={'60vh'}>
           {loading ? (
             <div className="flex h-40 items-center justify-center">
               <Spinner />
@@ -218,7 +218,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
               {taskRows.map((row, index) => (
                 <div
                   key={index}
-                  className="relative z-20 mb-4 flex gap-3 rounded-lg border border-gray-200 p-4"
+                  className="mb-4 flex flex-wrap gap-3 rounded-lg border border-gray-200 p-4 md:flex-nowrap"
                 >
                   <div className="flex flex-col">
                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 font-bold">
@@ -248,37 +248,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
 
                   <FormControl>
                     <FormLabel>Assign Team Member</FormLabel>
-                    {/* <Select
-                      placeholder="Select"
-                      onChange={(e) =>
-                        handleLawyerSelection(index, e.target.value)
-                      }
-                    >
-                      <optgroup label="Lawyers">
-                        {allTeam
-                          .filter((t) => t.role === 'LAWYER')
-                          .map((lawyer) => (
-                            <option key={lawyer.id} value={lawyer.id}>
-                              {lawyer.name}
-                            </option>
-                          ))}
-                      </optgroup>
-                      <optgroup label="Admins">
-                        {allTeam
-                          .filter((t) => t.role === 'ADMIN')
-                          .map((admin) => (
-                            <option key={admin.id} value={admin.id}>
-                              {admin.name}
-                            </option>
-                          ))}
-                      </optgroup>
-                    </Select> */}
 
                     <SelectSearch
                       placeholder="Select"
                       options={groupedTeamOptions}
                       onChange={(option) => {
-                        // This assumes your function accepts (index, id)
                         handleLawyerSelection(
                           index,
                           (option as unknown as { value: string })?.value || '',

@@ -130,8 +130,6 @@ const TaskTab = () => {
     </Button>,
   ];
 
-  console.log(loading);
-
   // Bulk Update Handlers
   const handleBulkUpdate = async (
     selectedTasks: Set<string>,
