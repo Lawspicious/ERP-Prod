@@ -18,6 +18,10 @@ import {
   Textarea,
   Radio,
   FormHelperText,
+  VStack,
+  Tag,
+  TagLabel,
+  TagCloseButton,
 } from '@chakra-ui/react';
 import { ArrowLeft } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -25,6 +29,9 @@ import AddREForm from './add-RE-form';
 import AddServiceForm from './add-service-form';
 import { useTeam } from '@/hooks/useTeamHook';
 import { IUser } from '@/types/user';
+import SelectSearch from 'react-select';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '@/lib/config/firebase.config';
 
 //Add Invoices as needed
 export const serviceList = ['Service A', 'Service B', 'Service C'];
@@ -53,7 +60,7 @@ const AddInvoiceForm = ({
 }) => {
   const [invoiceType, setInvoiceType] = useState<
     'abhradip' | 'lawspicious' | null
-  >(null);
+  >('lawspicious');
   const [selectedClientId, setSelectedClientId] = useState('');
   const [selectedTeamMemberId, setSelectedTeamMemberId] = useState('');
   const [invoiceDueDate, setInvoiceDueDate] = useState('');
@@ -82,10 +89,38 @@ const AddInvoiceForm = ({
     allCasesLawyer,
   } = useCases();
   const { getAllTeam, allTeam } = useTeam();
-  const [billTo, setBillTo] = useState('client');
+  const [billTo, setBillTo] = useState('organization');
   const [gstNote, setGstNote] = useState('');
   const [panNo, setPanNo] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
+  const [selectedTasks, setSelectedTasks] = useState<
+    { name: string; id: string }[]
+  >([]);
+
+  const [state, newToast] = useToastHook();
+
+  // Handle hash route changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      setLoading(true);
+      const hash = window.location.hash.replace('#', '') || '';
+
+      if (hash === 'client') {
+        setInvoiceType(null);
+        setBillTo('client');
+      }
+      setLoading(false);
+    };
+
+    // Set the active tab based on initial hash
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+
+    // Cleanup the event listener on unmount
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const sendInvoiceEmail = async (invoice: IInvoice) => {
     const message = {
@@ -109,6 +144,14 @@ const AddInvoiceForm = ({
     try {
       let clientDetails = null;
       let teamMember: IUser | undefined = undefined;
+      if (!selectedTasks.length && billTo === 'organization') {
+        newToast({
+          message: 'Task is required',
+          status: 'error',
+        });
+
+        return;
+      }
 
       if (selectedClientId) {
         const client = allClients.find(
@@ -158,6 +201,7 @@ const AddInvoiceForm = ({
         panNo,
         gstNote,
         paymentDate,
+        tasks: selectedTasks,
       };
 
       // Only create and send invoice if clientDetails or selectedClientId is not null
@@ -197,6 +241,62 @@ const AddInvoiceForm = ({
       }
     }
   }, [selectedClientId, billTo, selectedTeamMemberId]);
+
+  const [completedTasks, setCompletedTasks] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCompletedTasks = async () => {
+      try {
+        const q = query(
+          collection(db, 'tasks'),
+          where('taskStatus', '==', 'COMPLETED'),
+        );
+        const snapshot = await getDocs(q);
+
+        const filtered = snapshot.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() }))
+          .filter(
+            (task: any) =>
+              Array.isArray(task.lawyerDetails) &&
+              task.lawyerDetails.some(
+                (lawyer: any) => lawyer.id === selectedTeamMemberId,
+              ),
+          );
+
+        setCompletedTasks(filtered);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchCompletedTasks();
+  }, [selectedTeamMemberId]);
+
+  const taskOptions = completedTasks.map((task: any) => ({
+    value: task.id,
+    label: `${task.taskName} (${task?.startDate})`,
+  }));
+
+  const groupedTeamOptions = [
+    {
+      label: 'Lawyers',
+      options: allTeam
+        .filter((user) => user.role === 'LAWYER')
+        .map((t) => ({
+          value: t.id,
+          label: t.name,
+        })),
+    },
+    {
+      label: 'Admins',
+      options: allTeam
+        .filter((user) => user.role === 'ADMIN')
+        .map((t) => ({
+          value: t.id,
+          label: t.name,
+        })),
+    },
+  ];
 
   return (
     <div>
@@ -248,37 +348,73 @@ const AddInvoiceForm = ({
               </Stack>
             </RadioGroup>
           </FormControl>
+
           {billTo === 'organization' && (
             <FormControl>
               <FormLabel>Team Member</FormLabel>
-              <Select
-                name="Team Member Id"
-                placeholder="Add Team Member"
-                value={selectedTeamMemberId}
-                onChange={(e) => setSelectedTeamMemberId(e.target.value)}
-              >
-                {/* Group for Lawyers */}
-                <optgroup label="Lawyers">
-                  {allTeam
-                    .filter((team: IUser) => team.role === 'LAWYER')
-                    .map((lawyer: IUser) => (
-                      <option key={lawyer.id} value={lawyer.id}>
-                        {lawyer.name}
-                      </option>
-                    ))}
-                </optgroup>
 
-                {/* Group for Admins */}
-                <optgroup label="Admins">
-                  {allTeam
-                    .filter((team: IUser) => team.role === 'ADMIN')
-                    .map((admin: IUser) => (
-                      <option key={admin.id} value={admin.id}>
-                        {admin.name}
-                      </option>
-                    ))}
-                </optgroup>
-              </Select>
+              <SelectSearch
+                name="lawyerId"
+                placeholder="Add team member"
+                options={groupedTeamOptions}
+                value={groupedTeamOptions
+                  .flatMap((group) => group.options)
+                  .find((opt) => opt.value === selectedTeamMemberId)}
+                onChange={(option) =>
+                  setSelectedTeamMemberId(option?.value || '')
+                }
+              />
+            </FormControl>
+          )}
+        </div>
+        <div className="col-span-2 flex justify-between gap-4">
+          <FormControl></FormControl>
+
+          {billTo === 'organization' && (
+            <FormControl>
+              <FormLabel>Task</FormLabel>
+
+              <SelectSearch
+                placeholder="Select"
+                options={taskOptions}
+                onChange={(option) => {
+                  const selected = option as { value: string; label: string };
+                  const taskId = selected?.value;
+                  const taskName = selected?.label;
+                  const alreadySelected = selectedTasks.some(
+                    (task) => task.id === taskId,
+                  );
+                  if (!alreadySelected) {
+                    const updatedTasks = [
+                      ...selectedTasks,
+                      { id: taskId, name: taskName },
+                    ];
+                    setSelectedTasks(updatedTasks);
+                  }
+                }}
+              />
+
+              <VStack align="start" mt={2}>
+                {selectedTasks.map((task) => (
+                  <Tag
+                    size="md"
+                    key={task.id}
+                    borderRadius="full"
+                    variant="solid"
+                    colorScheme="purple"
+                  >
+                    <TagLabel>{task.name}</TagLabel>
+                    <TagCloseButton
+                      onClick={() => {
+                        const updatedTasks = selectedTasks.filter(
+                          (t) => t.id !== task.id,
+                        );
+                        setSelectedTasks(updatedTasks);
+                      }}
+                    />
+                  </Tag>
+                ))}
+              </VStack>
             </FormControl>
           )}
         </div>

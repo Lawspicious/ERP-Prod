@@ -36,6 +36,7 @@ import EditInvoiceModal from './action-button/edit-invoice-modal';
 import withAuth from '@/components/shared/hoc-middlware';
 import { IInvoice } from '@/types/invoice';
 import * as XLSX from 'xlsx';
+import { useAuth } from '@/context/user/userContext';
 
 const OrganizationInvoiceTable = ({
   organizationInvoices,
@@ -52,6 +53,8 @@ const OrganizationInvoiceTable = ({
     new Set(),
   );
   const rowsPerPage = 10;
+
+  const { role } = useAuth();
 
   const handleExportToExcel = () => {
     const wb = XLSX.utils.book_new();
@@ -98,7 +101,10 @@ const OrganizationInvoiceTable = ({
           invoice.clientDetails?.name
             ?.toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
-          invoice.id?.toLowerCase().includes(searchQuery.toLowerCase()),
+          invoice.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          invoice.teamMember?.some((member) =>
+            member.name?.toLowerCase().includes(searchQuery.toLowerCase()),
+          ),
       );
     }
 
@@ -207,7 +213,7 @@ const OrganizationInvoiceTable = ({
                       Export to Excel
                     </Button>
                   </Flex>
-                  {selectedInvoices.size > 0 && (
+                  {selectedInvoices.size > 0 && role === 'SUPERADMIN' && (
                     <Flex mb={4} gap={2}>
                       <Button colorScheme="red" onClick={handleBulkDelete}>
                         Delete Selected
@@ -307,20 +313,29 @@ const OrganizationInvoiceTable = ({
                                         Go to Invoice
                                       </Button>
                                     </MenuItem>
-                                    <MenuItem>
-                                      <EditInvoiceModal invoiceData={invoice} />
-                                    </MenuItem>
-                                    <MenuItem>
-                                      <DialogButton
-                                        title="Delete"
-                                        message="Do you want to delete the invoice?"
-                                        onConfirm={async () =>
-                                          deleteInvoice(invoice.id as string)
-                                        }
-                                        confirmButtonColorScheme="red"
-                                        children="Delete"
-                                      />
-                                    </MenuItem>
+                                    {role === 'SUPERADMIN' ? (
+                                      <>
+                                        <MenuItem>
+                                          <EditInvoiceModal
+                                            invoiceData={invoice}
+                                          />
+                                        </MenuItem>
+                                        <MenuItem>
+                                          <DialogButton
+                                            title="Delete"
+                                            message="Do you want to delete the invoice?"
+                                            onConfirm={async () =>
+                                              deleteInvoice(
+                                                invoice.id as string,
+                                              )
+                                            }
+                                            confirmButtonColorScheme="red"
+                                            children="Delete"
+                                          />
+                                        </MenuItem>
+                                      </>
+                                    ) : null}
+
                                     <MenuItem>
                                       <PrintLawyerInvoiceButton
                                         invoiceData={invoice}

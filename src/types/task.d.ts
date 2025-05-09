@@ -3,9 +3,9 @@ import { IClient, IClientProspect } from './client';
 export interface ITask {
   id?: string;
   taskStatus: 'PENDING' | 'COMPLETED'; // Based on status types
-  taskType: 'string'; // Add more task types as needed
+  taskType: 'string' | null; // Add more task types as needed
   priority: 'HIGH' | 'MEDIUM' | 'LOW'; // Add more priorities if applicable
-  caseDetails: ICase;
+  caseDetails?: ICase | null;
   lawyerDetails: ILawyer[];
   clientDetails?: IClientDetails | null;
   taskName: string;
@@ -16,6 +16,7 @@ export interface ITask {
   payable?: boolean;
   amount?: number;
   createdBy: ICreatorDetails;
+  createdAt?: string;
 }
 
 interface ILawyer {

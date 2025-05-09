@@ -29,6 +29,8 @@ const InvoiceViewPage = ({
   useEffect(() => {
     getInvoiceById(params.invoiceId as string);
   }, []);
+
+  console.log(invoice);
   return (
     <PageLayout screen="margined">
       <Box className="rounded-lg bg-white p-8 shadow-md">
@@ -213,6 +215,23 @@ const InvoiceViewPage = ({
             ) : (
               <Text color="gray.500">No team members assigned</Text>
             )}
+            {invoice.tasks ? (
+              <Box mb={10}>
+                <Text fontSize="2xl" fontWeight="bold" color="gray.700" mb={4}>
+                  Tasks
+                </Text>
+                {invoice.tasks.map((task, index) => (
+                  <Box
+                    key={index}
+                    className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4"
+                  >
+                    <Text fontWeight="bold" color="gray.800">
+                      {task.name || 'Not provided'}
+                    </Text>
+                  </Box>
+                ))}
+              </Box>
+            ) : null}
 
             {/* Total Amount & Notes */}
             <Box>

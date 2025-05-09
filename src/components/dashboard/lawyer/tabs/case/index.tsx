@@ -1,5 +1,5 @@
 // components/tabs/ProfileTab.tsx
-import { Button, Select } from '@chakra-ui/react';
+import { Button, Checkbox, Select } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
 import TabLayout from '../tab-layout';
 import LoaderComponent from '@/components/ui/loader';
@@ -7,32 +7,61 @@ import { ReactElement, useEffect, useMemo, useState } from 'react';
 import DisplayTable from '@/components/ui/display-table';
 import { DialogButton } from '@/components/ui/alert-dialog';
 import { useCases } from '@/hooks/useCasesHook';
-import { useLoading } from '@/context/loading/loadingContext';
-import { truncate } from 'fs';
-import { useAuth } from '@/context/user/userContext';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { today } from '@/lib/utils/todayDate';
-
+import { useAuth } from '@/context/user/userContext';
+import { useDisclosure } from '@chakra-ui/react';
+import InvalidEmailModal from '@/components/ui/invalid-email-modal';
+import { sendUpdateEmailToClientForNextHearings } from '@/lib/utils/emailInvoiceToClient';
+import { useToast } from '@chakra-ui/react';
+import InvalidHearingDateModal from '@/components/ui/invalid-hearing-date-modal';
+import UpdateNextDateButton from '@/components/ui/update-next-date';
 const CaseTab = () => {
   const router = useRouter();
-  const { authUser } = useAuth();
   const {
-    allCasesLawyer,
+    allCases,
+    getAllCases,
+    fetchCasesByPriority,
+    deleteCase,
     fetchCasesByLawyerId,
-    fetchCasesByPriorityAndLawyerId,
   } = useCases();
   const [selectPriority, setSelectedPriority] = useState('');
   // const { loading, setLoading } = useLoading();
   const [loading, setLoading] = useState<boolean>(true);
+  const [isChecked, setIsChecked] = useState(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const { authUser, role } = useAuth();
+  const [selectedCase, setSelectedCase] = useState<any>(null);
+  const {
+    isOpen: isEmailModalOpen,
+    onOpen: onEmailModalOpen,
+    onClose: onEmailModalClose,
+  } = useDisclosure();
+  const {
+    isOpen: isDateModalOpen,
+    onOpen: onDateModalOpen,
+    onClose: onDateModalClose,
+  } = useDisclosure();
+  const toast = useToast();
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsChecked(e.target.checked);
+  };
+
+  useEffect(() => {
+    if (isChecked) {
+      fetchCasesByLawyerId(authUser?.uid as string);
+    } else {
+      getAllCases();
+    }
+  }, [isChecked]);
 
   const handleFetch = async () => {
-    if (selectPriority === '') {
-      await fetchCasesByLawyerId(authUser?.uid as string);
-    } else {
-      await fetchCasesByPriorityAndLawyerId(
-        selectPriority as 'HIGH' | 'MEDIUM' | 'LOW',
-        authUser?.uid as string,
-      );
+    if (selectPriority !== '') {
+      await fetchCasesByPriority(selectPriority as 'HIGH' | 'MEDIUM' | 'LOW');
+    }
+    if (selectPriority === 'all') {
+      await getAllCases();
     }
   };
 
@@ -47,17 +76,18 @@ const CaseTab = () => {
     { key: 'allotedLaywer', label: 'Lawyer', sortable: true },
     {
       key: 'petitionVsRespondent',
-      label: 'Pet vs Resp',
+      label: 'Petitioner vs Respondent',
       sortable: false,
     },
     { key: 'nextDate', label: 'Next Date', sortable: true },
-    { key: 'clientName', label: 'Client', sortable: true },
     // { key: 'status', label: 'Status', sortable: true },
+    { key: 'clientName', label: 'Client', sortable: true },
+
     { key: 'priority', label: 'Priority', sortable: true },
   ];
 
   const transformedData = useMemo(() => {
-    return allCasesLawyer.map((caseData, index) => {
+    return allCases.map((caseData, index) => {
       const _nextHearing: any = caseData?.nextHearing;
       const endDate = caseData?.nextHearing
         ? parseISO(caseData?.nextHearing)
@@ -68,14 +98,13 @@ const CaseTab = () => {
         ? differenceInCalendarDays(endDate, today)
         : null;
 
-      // Determine the color based on how near the end date is or if the end date is missing
-      let rowColor = ''; // Default color
+      let rowColor = '';
       if (
-        daysUntilEnd === null ||
-        daysUntilEnd <= 2 ||
-        _nextHearing === 'Unknown'
+        caseData?.caseStatus !== 'DECIDED' && // Ensure case is not "Decided"
+        ((daysUntilEnd !== null && daysUntilEnd <= 2) ||
+          _nextHearing === 'Unknown')
       ) {
-        rowColor = 'bg-red-300'; // If the end date is within 2 days or missing
+        rowColor = 'bg-red-300';
       }
 
       return {
@@ -90,49 +119,164 @@ const CaseTab = () => {
         priority: caseData?.priority,
         allotedLaywer: caseData?.lawyer?.name || 'NA',
         rowColor,
+        deleteName: caseData?.caseNo,
       };
     });
-  }, [allCasesLawyer]);
+  }, [allCases]);
 
   // Only stop loading after both data fetching and transformation are complete
   useEffect(() => {
+    setLoading(true);
     if (transformedData) {
-      setLoading(false); // Hide loader only after data transformation
+      const timeoutId = setTimeout(() => {
+        setLoading(false);
+      }, 300); // 3 seconds timeout
+
+      // Cleanup timeout on component unmount
+      return () => clearTimeout(timeoutId);
     }
   }, [transformedData]);
 
-  const actionButtons = (id: string): ReactElement[] => [
-    // <DialogButton
-    //   title={'Delete'}
-    //   message={'Do you want to delete the case?'}
-    //   onConfirm={async () => deleteCase(id)}
-    //   children={'Delete'}
-    //   confirmButtonColorScheme="red"
-    //   confirmButtonText="Delete"
-    // />,
-    <Button
-      colorScheme="purple"
-      className="w-full"
-      onClick={() => window.open(`/dashboard/lawyer/edit-case/${id}`, '_blank')}
-    >
-      Edit
-    </Button>,
-    <Button
-      colorScheme="purple"
-      mt={2}
-      className="w-full"
-      onClick={() => window.open(`/case/${id}`, '_blank')}
-    >
-      View
-    </Button>,
-  ];
+  // Function to validate email
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Function to validate date
+  const isValidDate = (dateString: string) => {
+    if (!dateString) return false;
+
+    const date = new Date(dateString);
+    return !isNaN(date.getTime());
+  };
+
+  // Function to handle sending update email
+  const handleSendUpdateEmail = async (caseData: any) => {
+    // First check if client email is valid
+    if (
+      !caseData.clientDetails?.email ||
+      !isValidEmail(caseData.clientDetails.email)
+    ) {
+      setSelectedCase(caseData);
+      onEmailModalOpen();
+      return;
+    }
+
+    // Then check if next hearing date is valid
+    if (!caseData.nextHearing || !isValidDate(caseData.nextHearing)) {
+      setSelectedCase(caseData);
+      onDateModalOpen();
+      return;
+    }
+
+    // If both are valid, send the email
+    await sendEmailNotification(caseData);
+  };
+
+  // Function to send the email notification
+  const sendEmailNotification = async (caseData: any) => {
+    try {
+      await sendUpdateEmailToClientForNextHearings(caseData);
+      toast({
+        title: 'Email Sent',
+        description: `Notification sent to ${caseData.clientDetails.name} successfully.`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send notification email.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  // Find the case data by ID
+  const getCaseDataById = (id: string) => {
+    return allCases.find((caseItem) => caseItem.caseId === id);
+  };
+
+  const actionButtons = (
+    id: string,
+    deleteName: string,
+    data: any,
+  ): ReactElement[] => {
+    const caseData = getCaseDataById(data.id);
+
+    if (!caseData) return [];
+
+    if (caseData?.lawyer?.id === authUser?.uid) {
+      return [
+        <Button
+          key="edit"
+          colorScheme="purple"
+          className="w-full"
+          onClick={() =>
+            window.open(`/dashboard/admin/edit-case/${id}`, '_blank')
+          }
+        >
+          Edit
+        </Button>,
+        <Button
+          colorScheme="purple"
+          mt={2}
+          className="w-full"
+          onClick={() => window.open(`/case/${id}`, '_blank')}
+        >
+          View
+        </Button>,
+        <UpdateNextDateButton caseDetails={caseData} />,
+        <Button
+          colorScheme="blue"
+          mt={2}
+          className="w-full"
+          onClick={() => handleSendUpdateEmail(getCaseDataById(id))}
+        >
+          Notify Next Hearing
+        </Button>,
+      ];
+    } else
+      return [
+        <Button
+          colorScheme="purple"
+          mt={2}
+          className="w-full"
+          onClick={() => window.open(`/case/${id}`, '_blank')}
+        >
+          View
+        </Button>,
+
+        <Button
+          colorScheme="blue"
+          mt={2}
+          className="w-full"
+          onClick={() => handleSendUpdateEmail(getCaseDataById(id))}
+        >
+          Notify Next Hearing
+        </Button>,
+      ];
+  };
+
   return (
     <TabLayout>
       <section className="flex items-center justify-between">
-        <h1 className="heading-primary mb-6">Cases</h1>
+        <div className="mb-6 flex flex-col items-start justify-start gap-3">
+          <h1 className="heading-primary">Cases</h1>
+          {role === 'LAWYER' && (
+            <Checkbox isChecked={isChecked} onChange={handleCheckboxChange}>
+              My Cases
+            </Checkbox>
+          )}
+        </div>
         {/* <Button
           colorScheme="purple"
-          onClick={() => router.push('/dashboard/lawyer/add-case')}
+          onClick={() => router.push('/dashboard/admin/add-case')}
         >
           Add Case
         </Button> */}
@@ -144,7 +288,7 @@ const CaseTab = () => {
           value={selectPriority}
           onChange={(e) => setSelectedPriority(e.target.value)}
         >
-          <option value={''}>All</option>
+          <option value={'all'}>All</option>
           <option value={'HIGH'}>High</option>
           <option value={'MEDIUM'}>Medium</option>
           <option value={'LOW'}>Low</option>
@@ -153,7 +297,7 @@ const CaseTab = () => {
       {loading ? (
         <LoaderComponent />
       ) : (
-        allCasesLawyer && (
+        allCases && (
           <DisplayTable
             data={transformedData}
             columns={columns}
@@ -161,6 +305,30 @@ const CaseTab = () => {
             actionButton={actionButtons}
           />
         )
+      )}
+
+      {/* Invalid Email Modal */}
+      {selectedCase && (
+        <InvalidEmailModal
+          isOpen={isEmailModalOpen}
+          onClose={onEmailModalClose}
+          clientName={selectedCase.clientDetails?.name || 'Unknown Client'}
+          caseId={selectedCase.caseId}
+        />
+      )}
+
+      {/* Invalid Hearing Date Modal */}
+      {selectedCase && (
+        <InvalidHearingDateModal
+          isOpen={isDateModalOpen}
+          onClose={onDateModalClose}
+          caseNo={selectedCase.caseNo || 'Unknown Case'}
+          caseId={selectedCase.caseId}
+          sendAnyway={() => {
+            onDateModalClose();
+            sendEmailNotification(selectedCase);
+          }}
+        />
       )}
     </TabLayout>
   );

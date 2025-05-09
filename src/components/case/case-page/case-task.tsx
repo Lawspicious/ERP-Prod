@@ -4,6 +4,7 @@ import DisplayTable from '@/components/ui/display-table';
 import LoaderComponent from '@/components/ui/loader';
 import { useLoading } from '@/context/loading/loadingContext';
 import { useTask } from '@/hooks/useTaskHooks';
+import { ICase } from '@/types/case';
 import { ITask } from '@/types/task';
 import { Button, useDisclosure } from '@chakra-ui/react';
 import React, { ReactElement, useEffect, useMemo, useState } from 'react';
@@ -45,12 +46,13 @@ const CaseTask = ({ caseId }: { caseId: string }) => {
         No: `${index + 1}`, // No as index
         id: taskData.id,
         taskName: taskData.taskName, // Task Name
-        relatedTo: taskData.caseDetails.caseId
+        relatedTo: taskData?.caseDetails?.caseId
           ? `CaseNo:${taskData.caseDetails.caseNo}`
           : 'Other',
-        petitionVsRespondent: taskData.caseDetails?.caseId
-          ? `${taskData.caseDetails.petition.petitioner}\nvs\n${taskData.caseDetails.respondent.respondentee}`
-          : 'N/A',
+        petitionVsRespondent:
+          taskData.caseDetails && 'caseId' in taskData.caseDetails
+            ? `${(taskData.caseDetails as unknown as ICase).petition.petitioner}\nvs\n${(taskData.caseDetails as unknown as ICase).respondent.respondentee}`
+            : 'N/A',
         startDate: taskData.startDate || 'TBD', // Start Date
         endDate: taskData.endDate || 'TBD', // End Date
         member:

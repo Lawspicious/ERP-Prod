@@ -11,6 +11,7 @@ import {
   Input,
 } from '@chakra-ui/react';
 import React from 'react';
+import SelectSearch from 'react-select';
 
 interface ADDREFormProps {
   allClients: (IClient | IClientProspect)[];
@@ -70,22 +71,26 @@ const AddREForm = ({
       });
     }
   };
+
+  const clientOptions = allClients.map((client: IClient | IClientProspect) => ({
+    value: client.id,
+    label: client.name,
+  }));
+
   return (
     <>
       <FormControl isRequired={billTo === 'client'}>
         <FormLabel>Client Name</FormLabel>
-        <Select
-          name="client Id"
-          placeholder="Add Client"
-          value={selectedClientId}
-          onChange={(e) => setSelectedClientId(e.target.value)}
-        >
-          {allClients.map((client) => (
-            <option key={client.id} value={client.id}>
-              {client.name}
-            </option>
-          ))}
-        </Select>
+
+        <SelectSearch
+          name="clientId"
+          placeholder="Enter Client details"
+          options={clientOptions}
+          value={clientOptions.find(
+            (option) => option.value === selectedClientId,
+          )}
+          onChange={(option) => setSelectedClientId(option?.value || '')}
+        />
       </FormControl>
       <div className="space-y-4">
         <FormControl>

@@ -7,6 +7,7 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  orderBy,
   query,
   setDoc,
   updateDoc,
@@ -33,8 +34,9 @@ export const useClient = () => {
   const { createLogEvent } = useLog();
 
   useEffect(() => {
+    const q = query(collection(db, collectionName), orderBy('name'));
     const unsubscribe = onSnapshot(
-      collection(db, collectionName),
+      q,
       (snapshot) => {
         const updatedClients: (IClient | IClientProspect)[] = snapshot.docs.map(
           (doc) => ({
@@ -61,8 +63,11 @@ export const useClient = () => {
 
   const getAllClients = useCallback(async () => {
     try {
-      const clientsCollection = collection(db, collectionName);
-      const clientSnapshot = await getDocs(clientsCollection);
+      const clientsQuery = query(
+        collection(db, collectionName),
+        orderBy('name'),
+      );
+      const clientSnapshot = await getDocs(clientsQuery);
       const clientList = clientSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...(doc.data() as IClient | IClientProspect),
@@ -83,6 +88,7 @@ export const useClient = () => {
         const q = query(
           clientCollectionRef,
           where('clientType', '==', clientType),
+          orderBy('name'),
         );
         const querySnapshot = await getDocs(q);
 
@@ -113,6 +119,7 @@ export const useClient = () => {
       query(
         collection(db, collectionName),
         where('clientType', '==', 'normal'),
+        orderBy('name'),
       ),
       (snapshot) => {
         const normalClients: IClient[] = snapshot.docs.map((doc) => ({

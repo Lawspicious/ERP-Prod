@@ -1,18 +1,5 @@
 'use client';
-import { useLoading } from '@/context/loading/loadingContext';
-import { useAuth } from '@/context/user/userContext';
-import { useCases } from '@/hooks/useCasesHook';
-import { useClient } from '@/hooks/useClientHook';
-import { useInvoice } from '@/hooks/useInvoiceHook';
-import { useTask } from '@/hooks/useTaskHooks';
-import { useTeam } from '@/hooks/useTeamHook';
-import { today } from '@/lib/utils/todayDate';
-import { dayAfterTomorrow } from '@/lib/utils/dayAfterTomorrowDate';
-import { ICase } from '@/types/case';
-import { IClient, IClientProspect } from '@/types/client';
-import { IRE, IService } from '@/types/invoice';
-import { ITask } from '@/types/task';
-import { IUser } from '@/types/user';
+
 import {
   Modal,
   ModalOverlay,
@@ -28,17 +15,38 @@ import {
   Textarea,
   Select,
   VStack,
-  Grid,
-  GridItem,
-  Spinner,
   Tag,
   TagCloseButton,
   TagLabel,
-  Checkbox,
-  FormHelperText,
+  IconButton,
+  Spinner,
 } from '@chakra-ui/react';
-import React from 'react';
-import { useEffect, useState } from 'react';
+import { AddIcon, CloseIcon } from '@chakra-ui/icons';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/context/user/userContext';
+import { useTeam } from '@/hooks/useTeamHook';
+import { useCases } from '@/hooks/useCasesHook';
+import { useClient } from '@/hooks/useClientHook';
+import { useTask } from '@/hooks/useTaskHooks';
+import { useLoading } from '@/context/loading/loadingContext';
+import { today } from '@/lib/utils/todayDate';
+import { dayAfterTomorrow } from '@/lib/utils/dayAfterTomorrowDate';
+import { ITask } from '@/types/task';
+import { IUser } from '@/types/user';
+import { IClient, IClientProspect } from '@/types/client';
+import SelectSearch from 'react-select';
+
+const initialRowData = {
+  taskName: '',
+  startDate: today,
+  endDate: dayAfterTomorrow,
+  taskStatus: 'PENDING',
+  priority: 'LOW',
+  lawyerIds: [] as string[],
+  selectedLawyers: [] as IUser[],
+  clientId: '',
+  taskDescription: '',
+};
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -46,414 +54,312 @@ interface TaskModalProps {
   onOpen: () => void;
 }
 
-const initialData = {
-  taskName: '',
-  startDate: today,
-  endDate: dayAfterTomorrow,
-  taskStatus: 'PENDING',
-  priority: 'LOW',
-  lawyerIds: [] as string[], // Array for multiple lawyer IDs
-  caseId: '',
-  taskDescription: '',
-  otherRelatedTo: '',
-  timeLimit: '48 hours',
-  payable: false,
-};
-
 const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
-  const [formInputs, setFormInputs] = useState(initialData);
-  const [useCaseId, setUseCaseId] = useState(true);
+  const [taskRows, setTaskRows] = useState([initialRowData]);
   const { allTeam, getAllTeam } = useTeam();
-  const { createTask } = useTask();
-  const { loading, setLoading } = useLoading();
-  const { getCaseById } = useCases();
-  const [selectedLawyers, setSelectedLawyers] = useState<IUser[]>([]);
-  const { allCases, fetchCasesByStatus } = useCases();
+  const { fetchCasesByStatus } = useCases();
   const { allClients } = useClient();
-  const [selectedClientId, setSelectedClientId] = useState('');
   const { authUser } = useAuth();
+  const { loading, setLoading } = useLoading();
+  const { createTask } = useTask();
+  const [btnLoading, setBtnLoading] = useState(false);
+
   useEffect(() => {
-    const handleFetch = async () => {
+    const fetch = async () => {
       setLoading(true);
       await getAllTeam();
       await fetchCasesByStatus('RUNNING');
       setLoading(false);
     };
-
-    handleFetch();
+    fetch();
   }, []);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
+  const updateRow = (
+    index: number,
+    updated: Partial<typeof initialRowData>,
   ) => {
-    const { name, value } = e.target;
-    setFormInputs((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const newRows = [...taskRows];
+    newRows[index] = { ...newRows[index], ...updated };
+    setTaskRows(newRows);
   };
 
-  const handleLawyerSelection = (lawyerId: string) => {
+  const addRow = () => {
+    if (taskRows.length < 20) {
+      setTaskRows([...taskRows, initialRowData]);
+    }
+  };
+
+  const removeRow = (index: number) => {
+    if (taskRows.length > 1) {
+      setTaskRows(taskRows.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleLawyerSelection = (index: number, lawyerId: string) => {
     const lawyer = allTeam.find((member) => member.id === lawyerId);
-    if (lawyer && !formInputs.lawyerIds.includes(lawyerId)) {
-      setFormInputs((prev) => ({
-        ...prev,
-        lawyerIds: [...prev.lawyerIds, lawyerId],
-      }));
-      setSelectedLawyers((prev) => [...prev, lawyer]);
+    if (lawyer && !taskRows[index].lawyerIds.includes(lawyerId)) {
+      const newLawyerIds = [...taskRows[index].lawyerIds, lawyerId];
+      const newSelected = [...taskRows[index].selectedLawyers, lawyer];
+      updateRow(index, {
+        lawyerIds: newLawyerIds,
+        selectedLawyers: newSelected,
+      });
     }
   };
 
-  const removeSelectedLawyer = (lawyerId: string) => {
-    setFormInputs((prev) => ({
-      ...prev,
-      lawyerIds: prev.lawyerIds.filter((id) => id !== lawyerId),
-    }));
-    setSelectedLawyers((prev) =>
-      prev.filter((lawyer) => lawyer.id !== lawyerId),
+  const removeSelectedLawyer = (index: number, lawyerId: string) => {
+    const filteredIds = taskRows[index].lawyerIds.filter(
+      (id) => id !== lawyerId,
     );
+    const filteredLawyers = taskRows[index].selectedLawyers.filter(
+      (l) => l.id !== lawyerId,
+    );
+    updateRow(index, {
+      lawyerIds: filteredIds,
+      selectedLawyers: filteredLawyers,
+    });
   };
 
-  const toggleRelatedField = () => {
-    setUseCaseId((prev) => !prev);
-    setFormInputs((prev) => ({
-      ...prev,
-      caseId: '',
-      otherRelatedTo: '',
-    }));
-  };
-
-  const generateTaskCreateData = async () => {
-    var caseDetails: any = {};
-    if (useCaseId && formInputs.caseId !== '') {
-      const fetchedCase = (await getCaseById(
-        formInputs.caseId as string,
-      )) as ICase;
-      if (fetchedCase) {
-        caseDetails.caseId = fetchedCase.caseId;
-        caseDetails.caseType = fetchedCase.caseType;
-        caseDetails.petition = fetchedCase.petition;
-        caseDetails.respondent = fetchedCase.respondent;
-        caseDetails.courtName = fetchedCase.courtName;
-        caseDetails.caseNo = fetchedCase.caseNo;
-      }
-    }
-
-    const lawyerDetails = selectedLawyers.map((lawyer) => ({
-      id: lawyer?.id?.toString() || '',
-      email: lawyer?.email || '',
-      phoneNumber: lawyer?.phoneNumber || '',
-      name: lawyer?.name || '',
-    }));
-
-    let clientDetails = null;
-
-    if (selectedClientId !== '') {
-      const selectedClient = allClients.find(
-        (client) => (client.id = selectedClientId),
-      );
-      clientDetails = {
-        id: selectedClient?.id as string,
-        name: selectedClient?.name as string,
-        email: selectedClient?.email as string,
-        mobile: selectedClient?.mobile as string,
-      };
-    }
-
-    const createTaskData: ITask = {
-      payable: formInputs.payable,
-      amount: 0,
-      taskName: formInputs.taskName,
-      startDate: formInputs.startDate,
-      endDate: formInputs.endDate,
-      taskStatus: formInputs.taskStatus as 'PENDING' | 'COMPLETED',
-      priority: formInputs.priority as 'LOW' | 'MEDIUM' | 'HIGH',
-      lawyerDetails: lawyerDetails, // Array of lawyer details
-      caseDetails: caseDetails,
-      clientDetails: clientDetails ? clientDetails : null,
-      taskDescription: formInputs.taskDescription,
-      timeLimit: formInputs.timeLimit,
-      createdBy: {
-        id: authUser?.uid as string,
-        name: authUser?.displayName as string,
-      },
-      taskType:
-        formInputs.otherRelatedTo?.length !== 0
-          ? formInputs.otherRelatedTo
-          : caseDetails.caseType,
-    };
-
-    return createTaskData;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleCreateTasks = async () => {
+    setBtnLoading(true);
     try {
-      const data = await generateTaskCreateData();
-      await createTask(data);
-      setFormInputs(initialData);
-      setSelectedLawyers([]);
-    } catch (error) {
-      console.log(error);
+      for (const row of taskRows) {
+        const lawyerDetails = row.selectedLawyers.map((lawyer) => ({
+          id: lawyer?.id?.toString() || '',
+          email: lawyer?.email || '',
+          phoneNumber: lawyer?.phoneNumber || '',
+          name: lawyer?.name || '',
+        }));
+
+        let clientDetails = null;
+
+        if (row.clientId !== '') {
+          const selectedClient = allClients.find(
+            (client) => client.id === row.clientId,
+          );
+          clientDetails = {
+            id: selectedClient?.id as string,
+            name: selectedClient?.name as string,
+            email: selectedClient?.email as string,
+            mobile: selectedClient?.mobile as string,
+          };
+        }
+
+        const newTask: ITask = {
+          payable: false,
+          amount: 0,
+          taskName: row.taskName,
+          startDate: row.startDate,
+          endDate: row.endDate,
+          taskStatus: row.taskStatus as 'PENDING' | 'COMPLETED',
+          priority: row.priority as 'LOW' | 'MEDIUM' | 'HIGH',
+          lawyerDetails,
+          clientDetails: clientDetails ? clientDetails : null,
+          taskDescription: row.taskDescription,
+          timeLimit: '48 hours',
+          createdBy: {
+            id: authUser?.uid ?? '',
+            name: authUser?.displayName ?? '',
+          },
+          taskType: null,
+          caseDetails: null,
+        };
+
+        await createTask(newTask);
+      }
+
+      setTaskRows([initialRowData]);
+      onClose();
+    } catch (err) {
+      console.error(err);
     }
-    setLoading(false);
-    onClose();
+    setBtnLoading(false);
   };
+
+  const clientOptions = allClients.map((client: IClient | IClientProspect) => ({
+    value: client.id,
+    label: client.name,
+  }));
+
+  const groupedTeamOptions = [
+    {
+      label: 'Lawyers',
+      options: allTeam
+        .filter((user) => user.role === 'LAWYER')
+        .map((lawyer) => ({
+          value: lawyer.id,
+          label: lawyer.name,
+        })),
+    },
+    {
+      label: 'Admins',
+      options: allTeam
+        .filter((user) => user.role === 'ADMIN')
+        .map((admin) => ({
+          value: admin.id,
+          label: admin.name,
+        })),
+    },
+  ];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} size="6xl" scrollBehavior="inside">
       <ModalOverlay />
-      <ModalContent mx={'auto'} my={'auto'} minWidth="fit-content">
-        {loading ? (
-          <div className="flex h-full min-h-[20rem] w-full items-center justify-center">
-            <Spinner colorScheme="purple" />
-          </div>
-        ) : (
-          <>
-            <ModalHeader className="heading-secondary">
-              Create New Task
-            </ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <form
-                onSubmit={handleSubmit}
-                className="grid grid-cols-1 gap-6 md:w-[60vw] md:grid-cols-2 lg:w-[40vw]"
-              >
-                {/* Task Name (spans 2 columns on larger screens) */}
-                <FormControl isRequired>
-                  <FormLabel>Task Name</FormLabel>
-                  <Input
-                    name="taskName"
-                    placeholder="Enter task name"
-                    value={formInputs.taskName}
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
+      <ModalContent>
+        <ModalHeader>Create Multiple Tasks</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          {loading ? (
+            <div className="flex h-40 items-center justify-center">
+              <Spinner />
+            </div>
+          ) : (
+            <>
+              {taskRows.map((row, index) => (
+                <div
+                  key={index}
+                  className="relative z-20 mb-4 flex gap-3 rounded-lg border border-gray-200 p-4"
+                >
+                  <div className="flex flex-col">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 font-bold">
+                      {index + 1}
+                    </div>
 
-                {/* Lawyer Details - Multiple Lawyers */}
-
-                <FormControl>
-                  <FormLabel>Select Members</FormLabel>
-                  <Select
-                    placeholder="Select team member"
-                    onChange={(e) => handleLawyerSelection(e.target.value)}
-                  >
-                    {/* Group for Lawyers */}
-                    <optgroup label="Lawyers">
-                      {allTeam
-                        .filter((team: IUser) => team.role === 'LAWYER')
-                        .map((lawyer: IUser) => (
-                          <option key={lawyer.id} value={lawyer.id}>
-                            {lawyer.name}
-                          </option>
-                        ))}
-                    </optgroup>
-
-                    {/* Group for Admins */}
-                    <optgroup label="Admins">
-                      {allTeam
-                        .filter((team: IUser) => team.role === 'ADMIN')
-                        .map((admin: IUser) => (
-                          <option key={admin.id} value={admin.id}>
-                            {admin.name}
-                          </option>
-                        ))}
-                    </optgroup>
-                  </Select>
-
-                  {/* Display selected lawyers */}
-                  <VStack align="start" mt={2}>
-                    {selectedLawyers.map((lawyer) => (
-                      <Tag
-                        size="md"
-                        key={lawyer.id}
-                        borderRadius="full"
-                        variant="solid"
-                        colorScheme="purple"
-                      >
-                        <TagLabel>{lawyer.name}</TagLabel>
-                        <TagCloseButton
-                          onClick={() =>
-                            removeSelectedLawyer(lawyer.id as string)
-                          }
-                        />
-                      </Tag>
-                    ))}
-                  </VStack>
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel>Select Client</FormLabel>
-                  <Select
-                    placeholder="Select Client"
-                    onChange={(e) => setSelectedClientId(e.target.value)}
-                  >
-                    {allClients.map((client: IClient | IClientProspect) => (
-                      <option key={client.id} value={client.id}>
-                        {client.name}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                {/* Task Status */}
-
-                {/* <FormControl isRequired>
-                  <FormLabel>Task Status</FormLabel>
-                  <Select
-                    name="taskStatus"
-                    placeholder="Enter task status"
-                    value={formInputs.taskStatus}
-                    onChange={handleInputChange}
-                  >
-                    <option value="PENDING">Pending</option>
-                    <option value="COMPLETED">Completed</option>
-                  </Select>
-                </FormControl> */}
-
-                {/* Priority */}
-
-                {/* <FormControl isRequired>
-                  <FormLabel>Priority</FormLabel>
-                  <Select
-                    name="priority"
-                    placeholder="Enter task priority"
-                    value={formInputs.priority}
-                    onChange={handleInputChange}
-                  >
-                    <option value="LOW">LOW</option>
-                    <option value="MEDIUM">MEDIUM</option>
-                    <option value="HIGH">HIGH</option>
-                  </Select>
-                </FormControl> */}
-
-                {/* Start Date and End Date (side by side) */}
-
-                {/* <FormControl isRequired>
-                  <FormLabel>Start Date</FormLabel>
-                  <Input
-                    type="date"
-                    name="startDate"
-                    value={formInputs.startDate}
-                    onChange={handleInputChange}
-                  />
-                </FormControl> */}
-
-                {/* <FormControl isRequired>
-                  <FormLabel>End Date</FormLabel>
-                  <Input
-                    type="date"
-                    name="endDate"
-                    value={formInputs.endDate}
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Time Limit</FormLabel>
-                  <Input
-                    type="time"
-                    name="timeLimit"
-                    value={formInputs.timeLimit}
-                    onChange={handleInputChange}
-                  />
-                </FormControl> */}
-                {/* <div /> */}
-
-                {/* Toggle between Case ID and Other Related To */}
-                <div>
-                  {/* Conditionally show either Case ID or Other Related To */}
-                  {useCaseId ? (
-                    <>
-                      <FormControl>
-                        <FormLabel>Case ID</FormLabel>
-                        <Select
-                          name="caseId"
-                          placeholder="Enter case ID"
-                          value={formInputs.caseId}
-                          onChange={handleInputChange}
-                        >
-                          {allCases.map((individualCase) => (
-                            <option
-                              key={individualCase.caseId}
-                              value={individualCase.caseId}
-                            >
-                              {individualCase.caseNo}-{' '}
-                              {individualCase.petition.petitioner} vs{' '}
-                              {individualCase.respondent.respondentee}
-                            </option>
-                          ))}
-                        </Select>
-                      </FormControl>
-                      <Checkbox
-                        isChecked={useCaseId}
-                        mt={3}
-                        onChange={toggleRelatedField}
-                      >
-                        Use Case ID
-                      </Checkbox>
-                    </>
-                  ) : (
-                    <FormControl>
-                      <FormLabel>Other Related To</FormLabel>
-                      <Input
-                        name="otherRelatedTo"
-                        placeholder="Enter related details"
-                        value={formInputs.otherRelatedTo}
-                        onChange={handleInputChange}
+                    {taskRows.length > 1 && (
+                      <IconButton
+                        aria-label="Remove"
+                        size="sm"
+                        icon={<CloseIcon />}
+                        colorScheme="red"
+                        onClick={() => removeRow(index)}
+                        className="mt-2"
                       />
-                    </FormControl>
-                  )}
-                </div>
-                <div>
-                  {/* <FormControl mb={3}>
-                    <Checkbox
-                      isChecked={formInputs.payable}
-                      name="payable"
-                      mb={2}
+                    )}
+                  </div>
+                  <FormControl isRequired>
+                    <FormLabel>Task Name</FormLabel>
+                    <Input
+                      value={row.taskName}
                       onChange={(e) =>
-                        setFormInputs((prev) => ({
-                          ...prev,
-                          payable: e.target.checked,
-                        }))
+                        updateRow(index, { taskName: e.target.value })
+                      }
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel>Assign Team Member</FormLabel>
+                    {/* <Select
+                      placeholder="Select"
+                      onChange={(e) =>
+                        handleLawyerSelection(index, e.target.value)
                       }
                     >
-                      Payable
-                    </Checkbox>
-                    <FormHelperText>
-                      Select if the task is payable
-                    </FormHelperText>
-                  </FormControl> */}
+                      <optgroup label="Lawyers">
+                        {allTeam
+                          .filter((t) => t.role === 'LAWYER')
+                          .map((lawyer) => (
+                            <option key={lawyer.id} value={lawyer.id}>
+                              {lawyer.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                      <optgroup label="Admins">
+                        {allTeam
+                          .filter((t) => t.role === 'ADMIN')
+                          .map((admin) => (
+                            <option key={admin.id} value={admin.id}>
+                              {admin.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                    </Select> */}
 
-                  {/* Conditionally show either Case ID or Other Related To */}
+                    <SelectSearch
+                      placeholder="Select"
+                      options={groupedTeamOptions}
+                      onChange={(option) => {
+                        // This assumes your function accepts (index, id)
+                        handleLawyerSelection(
+                          index,
+                          (option as unknown as { value: string })?.value || '',
+                        );
+                      }}
+                    />
+
+                    <VStack align="start" mt={2}>
+                      {row.selectedLawyers.map((lawyer) => (
+                        <Tag
+                          size="md"
+                          key={lawyer.id}
+                          borderRadius="full"
+                          variant="solid"
+                          colorScheme="purple"
+                        >
+                          <TagLabel>{lawyer.name}</TagLabel>
+                          <TagCloseButton
+                            onClick={() =>
+                              removeSelectedLawyer(index, lawyer.id as string)
+                            }
+                          />
+                        </Tag>
+                      ))}
+                    </VStack>
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel>Select Client</FormLabel>
+
+                    <SelectSearch
+                      name="clientId"
+                      placeholder="Enter Client details"
+                      options={clientOptions}
+                      value={clientOptions.find(
+                        (option) => option.value === row.clientId,
+                      )}
+                      onChange={(option) =>
+                        updateRow(index, { clientId: option?.value || '' })
+                      }
+                      isClearable
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel>Description</FormLabel>
+                    <Textarea
+                      value={row.taskDescription}
+                      onChange={(e) =>
+                        updateRow(index, { taskDescription: e.target.value })
+                      }
+                    />
+                  </FormControl>
                 </div>
+              ))}
 
-                {/* Task Description */}
-
-                {/* <FormControl>
-                  <FormLabel>Description</FormLabel>
-                  <Textarea
-                    name="taskDescription"
-                    placeholder="Enter task description"
-                    value={formInputs.taskDescription}
-                    onChange={handleInputChange}
-                  />
-                </FormControl> */}
-              </form>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button mr={3} onClick={onClose}>
-                Close
+              <Button
+                onClick={addRow}
+                leftIcon={<AddIcon />}
+                colorScheme="blue"
+                variant="outline"
+                mb={4}
+              >
+                Add Task
               </Button>
-              <Button colorScheme="purple" onClick={handleSubmit}>
-                Create Task
-              </Button>
-            </ModalFooter>
-          </>
-        )}
+            </>
+          )}
+        </ModalBody>
+
+        <ModalFooter>
+          <Button disabled={btnLoading} onClick={onClose} mr={3}>
+            Cancel
+          </Button>
+          <Button
+            disabled={btnLoading}
+            colorScheme="purple"
+            onClick={handleCreateTasks}
+          >
+            {btnLoading ? 'Creating...' : 'Create Tasks'}
+          </Button>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );

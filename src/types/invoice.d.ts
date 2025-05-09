@@ -13,6 +13,10 @@ export interface IInvoice {
   gstNote?: string;
   panNo?: string;
   paymentDate?: string;
+  tasks?: {
+    name: string;
+    id: string;
+  }[];
 }
 
 export interface IService {

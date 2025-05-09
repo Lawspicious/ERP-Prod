@@ -67,7 +67,7 @@ export const useTask = () => {
     try {
       const tasksCollectionRef = query(
         collection(db, collectionName),
-        orderBy('startDate', 'desc'), // Order by 'date' field in descending order
+        orderBy('createdAt', 'desc'), // Order by 'date' field in descending order
       );
       const querySnapshot = await getDocs(tasksCollectionRef);
 
@@ -89,7 +89,7 @@ export const useTask = () => {
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
-      query(collection(db, collectionName), orderBy('startDate', 'desc')), // Order by 'date' in useEffect as well
+      query(collection(db, collectionName), orderBy('createdAt', 'desc')), // Order by 'date' in useEffect as well
       (snapshot) => {
         const updatedTasks: ITask[] = snapshot.docs.map((doc) => ({
           ...(doc.data() as ITask),
@@ -223,7 +223,7 @@ export const useTask = () => {
   const getTasksByLawyerId = useCallback(
     (id: string) => {
       const unsubscribe = onSnapshot(
-        query(collection(db, collectionName), orderBy('startDate', 'desc')),
+        query(collection(db, collectionName), orderBy('createdAt', 'desc')),
         (snapshot) => {
           const allTaskData: ITask[] = snapshot.docs.map((doc) => ({
             ...(doc.data() as ITask),

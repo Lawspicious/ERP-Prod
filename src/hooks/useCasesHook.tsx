@@ -19,6 +19,7 @@ import { app, db } from '@/lib/config/firebase.config';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useLoading } from '@/context/loading/loadingContext';
 import { useLog, ILogEventInterface } from './shared/useLog';
+import toast from 'react-hot-toast';
 
 const collectionName = 'cases';
 
@@ -45,10 +46,21 @@ export const useCases = () => {
       const casesCollectionRef = collection(db, collectionName);
       const querySnapshot = await getDocs(casesCollectionRef);
 
-      const caseList: ICase[] = querySnapshot.docs.map((doc) => ({
-        caseId: doc.id,
-        ...(doc.data() as ICase),
-      }));
+      const caseList: ICase[] = querySnapshot.docs
+        .map((doc) => ({
+          caseId: doc.id,
+          ...(doc.data() as ICase),
+        }))
+        .sort((a, b) =>
+          a.clientDetails.name
+            .toLowerCase()
+            .localeCompare(b.clientDetails.name.toLowerCase()),
+        );
+
+      // const caseList: ICase[] = querySnapshot.docs.map((doc) => ({
+      //   caseId: doc.id,
+      //   ...(doc.data() as ICase),
+      // }));
       setAllCases(caseList);
     } catch (error) {
       console.error('Error fetching cases: ', error);
@@ -71,11 +83,21 @@ export const useCases = () => {
     const unsubscribe = onSnapshot(
       collection(db, collectionName),
       (snapshot) => {
-        const caseList: ICase[] = snapshot.docs.map((doc) => ({
-          caseId: doc.id,
-          ...(doc.data() as ICase),
-        }));
+        // const caseList: ICase[] = snapshot.docs.map((doc) => ({
+        //   caseId: doc.id,
+        //   ...(doc.data() as ICase),
+        // }));
 
+        const caseList: ICase[] = snapshot.docs
+          .map((doc) => ({
+            caseId: doc.id,
+            ...(doc.data() as ICase),
+          }))
+          .sort((a, b) =>
+            a.clientDetails.name
+              .toLowerCase()
+              .localeCompare(b.clientDetails.name.toLowerCase()),
+          );
         // Update state only if data has changed
         setAllCases((prevCases) => {
           const isSameData =
@@ -201,11 +223,14 @@ export const useCases = () => {
   ) => {
     try {
       const caseDocRef = doc(db, collectionName, id);
-      await updateDoc(caseDocRef, { ...data });
-      newToast({
-        message: 'Case Updated Successfully',
-        status: 'success',
-      });
+      await updateDoc(caseDocRef, data);
+      // newToast({
+      //   message: 'Case Updated Successfully',
+      //   status: 'success',
+      // });
+
+      toast.success('Case Updated Successfully.');
+      // alert('Case Updated Successfully')
       if (authUser) {
         await createLogEvent({
           userId: authUser?.uid,
@@ -226,31 +251,6 @@ export const useCases = () => {
       });
     }
   };
-
-  // const fetchCasesByLawyerId = useCallback (async (lawyerId: string) => {
-  //   try {
-  //     const casesCollectionRef = collection(db, collectionName);
-  //     const casesQuery = query(
-  //       casesCollectionRef,
-  //       where('lawyer.id', '==', lawyerId),
-  //     );
-  //     const querySnapshot = await getDocs(casesQuery);
-
-  //     const casesList: ICase[] = querySnapshot.docs.map((doc) => {
-  //       const caseData = doc.data() as ICase;
-  //       return { ...caseData, caseId: doc.id };
-  //     });
-  //     setAllCasesLawyer(casesList);
-  //     setAllCases(casesList);
-  //     return casesList;
-  //   } catch (error) {
-  //     console.error('Error fetching cases by lawyerId: ', error);
-  //     newToast({
-  //       message: 'Could not fetch case',
-  //       status: 'error',
-  //     });
-  //   }
-  // },[allCasesLawyer]);
 
   const fetchCasesByLawyerId = useCallback(
     (lawyerId: string) => {

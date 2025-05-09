@@ -22,6 +22,7 @@ import {
 import { ArrowLeft } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { initialFormData } from '../add-case/add-case-form';
+import SelectSearch from 'react-select';
 
 const EditCaseForm = ({
   caseData,
@@ -91,12 +92,22 @@ const EditCaseForm = ({
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+    const { nextHearing, ...filteredInputs } = formInputs;
     await updateCase(
       caseData.caseId as string,
-      formInputs as Partial<ICase>,
+      filteredInputs as Partial<ICase>,
       caseData.caseNo,
     );
   };
+
+  const clientOptions = allClients.map((client: IClient | IClientProspect) => ({
+    value: client.id,
+    label: client.name,
+  }));
+  const caseTypeOptions = caseTypes.map((caseType) => ({
+    value: caseType,
+    label: caseType,
+  }));
 
   return loading ? (
     <LoaderComponent />
@@ -150,18 +161,35 @@ const EditCaseForm = ({
                   onChange={handleInputChange}
                 />
               ) : (
-                <Select
+                // <Select
+                //   name="caseType"
+                //   value={formInputs.caseType}
+                //   onChange={handleInputChange}
+                //   placeholder="Select Case Type"
+                // >
+                //   {caseTypes.map((caseType: string, i) => (
+                //     <option key={i} value={caseType}>
+                //       {caseType}
+                //     </option>
+                //   ))}
+                // </Select>
+
+                <SelectSearch
                   name="caseType"
-                  value={formInputs.caseType}
-                  onChange={handleInputChange}
                   placeholder="Select Case Type"
-                >
-                  {caseTypes.map((caseType: string, i) => (
-                    <option key={i} value={caseType}>
-                      {caseType}
-                    </option>
-                  ))}
-                </Select>
+                  options={caseTypeOptions}
+                  value={caseTypeOptions.find(
+                    (option) => option.value === formInputs.caseType,
+                  )}
+                  onChange={(option) =>
+                    handleInputChange({
+                      target: {
+                        name: 'caseType',
+                        value: option?.value || '',
+                      },
+                    })
+                  }
+                />
               )}
             </FormControl>
 
@@ -194,6 +222,7 @@ const EditCaseForm = ({
             <FormControl>
               <FormLabel>Next Hearing Date</FormLabel>
               <Input
+                disabled
                 type="date"
                 name="nextHearing"
                 value={formInputs.nextHearing}
@@ -365,7 +394,7 @@ const EditCaseForm = ({
           <h3 className="mb-4 text-lg font-semibold md:text-xl">Add Client</h3>
           <FormControl>
             <FormLabel>Client</FormLabel>
-            <Select
+            {/* <Select
               name="clientId"
               placeholder="Enter Client details"
               value={selectedClientId}
@@ -376,7 +405,16 @@ const EditCaseForm = ({
                   {client.name}
                 </option>
               ))}
-            </Select>
+            </Select> */}
+            <SelectSearch
+              name="clientId"
+              placeholder="Enter Client details"
+              options={clientOptions}
+              value={clientOptions.find(
+                (option) => option.value === selectedClientId,
+              )}
+              onChange={(option) => setSelectedClientId(option?.value || '')}
+            />
           </FormControl>
         </div>
 

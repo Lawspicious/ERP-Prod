@@ -44,7 +44,11 @@ interface DisplayTableProps {
   columns: Column[];
   tabField: string;
   otherField?: string;
-  actionButton: (id: string, deletename: string) => ReactElement[];
+  actionButton: (
+    id: string,
+    deletename: string,
+    data?: TableData,
+  ) => ReactElement[];
   tableStyle?: {
     colKey: string;
     style: string;
@@ -187,11 +191,13 @@ const DisplayTable: React.FC<DisplayTableProps> = ({
                     variant="outline"
                   />
                   <MenuList zIndex={50} maxWidth={100}>
-                    {actionButton(row.id, row.deleteName).map((action, i) => (
-                      <MenuItem as="div" key={i}>
-                        {action}
-                      </MenuItem>
-                    ))}
+                    {actionButton(row.id, row.deleteName, row).map(
+                      (action, i) => (
+                        <MenuItem as="div" key={i}>
+                          {action}
+                        </MenuItem>
+                      ),
+                    )}
                   </MenuList>
                 </Menu>
               </Td>

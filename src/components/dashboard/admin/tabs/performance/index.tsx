@@ -25,8 +25,9 @@ import Pagination from '@/components/dashboard/shared/Pagination';
 import TabLayout from '../tab-layout';
 import * as XLSX from 'xlsx';
 import { DownloadIcon } from 'lucide-react';
+import withAuth from '@/components/shared/hoc-middlware';
 
-export default function PerformanceOverview() {
+function PerformanceOverview() {
   const { getUsersWithTasksAndCases, getAllUsersWithTasksAndCases } =
     usePerformanceHook();
   const [users, setUsers] = useState<UserWithDetails[]>([]);
@@ -216,3 +217,7 @@ export default function PerformanceOverview() {
     </TabLayout>
   );
 }
+
+const allowedRoles = ['SUPERADMIN'];
+
+export default withAuth(PerformanceOverview, allowedRoles);

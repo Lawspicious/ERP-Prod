@@ -35,8 +35,13 @@ export const useInvoice = () => {
   const prefix = `LAWSP-${new Date().getFullYear()}-`;
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
+    const invoicesQuery = query(
       collection(db, 'invoices'),
+      orderBy('createdAt', 'desc'),
+    );
+
+    const unsubscribe = onSnapshot(
+      invoicesQuery,
       (snapshot) => {
         const updatedInvoices: IInvoice[] = snapshot.docs.map((doc) => ({
           id: doc.id,
@@ -308,7 +313,6 @@ export const useInvoice = () => {
   const getInvoiceByCaseId = useCallback(async (id: string) => {
     try {
       const allInvoiceFetched = await getAllInvoices();
-      console.log(allInvoiceFetched);
       if (allInvoiceFetched) {
         const invoiceList = allInvoiceFetched.filter((invoice) =>
           invoice.RE.find((REData) => REData.caseId === id),
@@ -341,7 +345,6 @@ export const useInvoice = () => {
       });
 
       setAllPendingInvoice(invoiceList);
-      console.log(invoiceList);
 
       return invoiceList;
     } catch (error) {

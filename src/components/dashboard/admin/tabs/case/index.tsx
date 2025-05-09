@@ -15,7 +15,7 @@ import InvalidEmailModal from '@/components/ui/invalid-email-modal';
 import { sendUpdateEmailToClientForNextHearings } from '@/lib/utils/emailInvoiceToClient';
 import { useToast } from '@chakra-ui/react';
 import InvalidHearingDateModal from '@/components/ui/invalid-hearing-date-modal';
-
+import UpdateNextDateButton from '@/components/ui/update-next-date';
 const CaseTab = () => {
   const router = useRouter();
   const {
@@ -26,6 +26,7 @@ const CaseTab = () => {
     fetchCasesByLawyerId,
   } = useCases();
   const [selectPriority, setSelectedPriority] = useState('');
+
   // const { loading, setLoading } = useLoading();
   const [loading, setLoading] = useState<boolean>(true);
   const [isChecked, setIsChecked] = useState(false);
@@ -202,39 +203,52 @@ const CaseTab = () => {
     return allCases.find((caseItem) => caseItem.caseId === id);
   };
 
-  const actionButtons = (id: string, deleteName: string): ReactElement[] => [
-    <DialogButton
-      title={'Delete'}
-      message={'Do you want to delete the case?'}
-      onConfirm={async () => deleteCase(id, deleteName)}
-      children={'Delete'}
-      confirmButtonColorScheme="red"
-      confirmButtonText="Delete"
-    />,
-    <Button
-      colorScheme="purple"
-      className="w-full"
-      onClick={() => window.open(`/dashboard/admin/edit-case/${id}`, '_blank')}
-    >
-      Edit
-    </Button>,
-    <Button
-      colorScheme="purple"
-      mt={2}
-      className="w-full"
-      onClick={() => window.open(`/case/${id}`, '_blank')}
-    >
-      View
-    </Button>,
-    <Button
-      colorScheme="blue"
-      mt={2}
-      className="w-full"
-      onClick={() => handleSendUpdateEmail(getCaseDataById(id))}
-    >
-      Notify Next Hearing
-    </Button>,
-  ];
+  const actionButtons = (
+    id: string,
+    deleteName: string,
+    data: any,
+  ): ReactElement[] => {
+    const caseData = getCaseDataById(data.id);
+
+    if (!caseData) return [];
+    return [
+      <DialogButton
+        title={'Delete'}
+        message={'Do you want to delete the case?'}
+        onConfirm={async () => deleteCase(id, deleteName)}
+        children={'Delete'}
+        confirmButtonColorScheme="red"
+        confirmButtonText="Delete"
+      />,
+      <Button
+        colorScheme="purple"
+        className="w-full"
+        onClick={() =>
+          window.open(`/dashboard/admin/edit-case/${id}`, '_blank')
+        }
+      >
+        Edit
+      </Button>,
+      <Button
+        colorScheme="purple"
+        mt={2}
+        className="w-full"
+        onClick={() => window.open(`/case/${id}`, '_blank')}
+      >
+        View
+      </Button>,
+      <UpdateNextDateButton caseDetails={caseData} />,
+      <Button
+        colorScheme="blue"
+        mt={2}
+        className="w-full"
+        onClick={() => handleSendUpdateEmail(getCaseDataById(id))}
+      >
+        Notify Next Hearing
+      </Button>,
+    ];
+  };
+
   return (
     <TabLayout>
       <section className="flex items-center justify-between">

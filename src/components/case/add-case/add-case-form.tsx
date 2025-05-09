@@ -19,6 +19,7 @@ import { ArrowLeft, MoveLeft, MoveRight } from 'lucide-react';
 import { useLoading } from '@/context/loading/loadingContext';
 import { today } from '@/lib/utils/todayDate';
 import { caseTypes } from '@/db/caseTypes';
+import SelectSearch from 'react-select';
 
 export const initialFormData = {
   caseNo: '',
@@ -149,6 +150,36 @@ const AddCaseForm = ({
     setLoading(false);
   };
 
+  const clientOptions = allClients.map((client: IClient | IClientProspect) => ({
+    value: client.id,
+    label: client.name,
+  }));
+  const caseTypeOptions = caseTypes.map((caseType) => ({
+    value: caseType,
+    label: caseType,
+  }));
+
+  const groupedLawyerOptions = [
+    {
+      label: 'Lawyers',
+      options: lawyers
+        .filter((user) => user.role === 'LAWYER')
+        .map((lawyer) => ({
+          value: lawyer.id,
+          label: lawyer.name,
+        })),
+    },
+    {
+      label: 'Admins',
+      options: lawyers
+        .filter((user) => user.role === 'ADMIN')
+        .map((admin) => ({
+          value: admin.id,
+          label: admin.name,
+        })),
+    },
+  ];
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between gap-6">
@@ -204,18 +235,35 @@ const AddCaseForm = ({
                   onChange={handleInputChange}
                 />
               ) : (
-                <Select
+                // <Select
+                //   name="caseType"
+                //   value={formInputs.caseType}
+                //   onChange={handleInputChange}
+                //   placeholder="Select Case Type"
+                // >
+                //   {caseTypes.map((caseType: string, i) => (
+                //     <option key={i} value={caseType}>
+                //       {caseType}
+                //     </option>
+                //   ))}
+                // </Select>
+
+                <SelectSearch
                   name="caseType"
-                  value={formInputs.caseType}
-                  onChange={handleInputChange}
                   placeholder="Select Case Type"
-                >
-                  {caseTypes.map((caseType: string, i) => (
-                    <option key={i} value={caseType}>
-                      {caseType}
-                    </option>
-                  ))}
-                </Select>
+                  options={caseTypeOptions}
+                  value={caseTypeOptions.find(
+                    (option) => option.value === formInputs.caseType,
+                  )}
+                  onChange={(option) =>
+                    handleInputChange({
+                      target: {
+                        name: 'caseType',
+                        value: option?.value || '',
+                      },
+                    })
+                  }
+                />
               )}
             </FormControl>
 
@@ -385,13 +433,13 @@ const AddCaseForm = ({
           </h3>
           <FormControl>
             <FormLabel>Team Member</FormLabel>
-            <Select
+            {/* <Select
               name="lawyerId"
               placeholder="Add team Member"
               value={selectedLawyerId}
               onChange={(e) => setSelectedLawyerId(e.target.value)}
             >
-              {/* Group for Lawyers */}
+            
               <optgroup label="Lawyers">
                 {lawyers
                   .filter((team: IUser) => team.role === 'LAWYER')
@@ -402,7 +450,6 @@ const AddCaseForm = ({
                   ))}
               </optgroup>
 
-              {/* Group for Admins */}
               <optgroup label="Admins">
                 {lawyers
                   .filter((team: IUser) => team.role === 'ADMIN')
@@ -412,25 +459,33 @@ const AddCaseForm = ({
                     </option>
                   ))}
               </optgroup>
-            </Select>
+            </Select> */}
+
+            <SelectSearch
+              name="lawyerId"
+              placeholder="Add team member"
+              options={groupedLawyerOptions}
+              value={groupedLawyerOptions
+                .flatMap((group) => group.options)
+                .find((opt) => opt.value === selectedLawyerId)}
+              onChange={(option) => setSelectedLawyerId(option?.value || '')}
+            />
           </FormControl>
         </div>
         <div className="mb-4">
           <h3 className="mb-4 text-lg font-semibold md:text-xl">Add Client</h3>
           <FormControl>
             <FormLabel>Client</FormLabel>
-            <Select
+
+            <SelectSearch
               name="clientId"
               placeholder="Enter Client details"
-              value={selectedClientId}
-              onChange={(e) => setSelectedClientId(e.target.value)}
-            >
-              {allClients.map((client: IClient | IClientProspect) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </Select>
+              options={clientOptions}
+              value={clientOptions.find(
+                (option) => option.value === selectedClientId,
+              )}
+              onChange={(option) => setSelectedClientId(option?.value || '')}
+            />
           </FormControl>
         </div>
 

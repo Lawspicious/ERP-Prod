@@ -88,17 +88,20 @@ const IndividualTask = ({ task }: { task: ITask }) => {
 
           <Divider />
           <SectionHeading icon={Scale} title="Case Details">
-            <Link href={`/case/${task.caseDetails.caseId}`} target="_blank">
+            <Link href={`/case/${task?.caseDetails?.caseId}`} target="_blank">
               <TextDisplay
                 label="Case ID:"
                 link
-                value={task.caseDetails.caseId}
+                value={task?.caseDetails?.caseId}
               />
             </Link>
-            <TextDisplay label="Case Type:" value={task.caseDetails.caseType} />
+            <TextDisplay
+              label="Case Type:"
+              value={task?.caseDetails?.caseType}
+            />
             <TextDisplay
               label="Court Name:"
-              value={task.caseDetails.courtName}
+              value={task?.caseDetails?.courtName}
             />
             <TextDisplay
               label="Petitioner:"

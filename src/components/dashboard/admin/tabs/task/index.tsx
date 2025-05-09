@@ -76,7 +76,7 @@ const TaskTab = () => {
         No: `${index + 1}`,
         id: taskData.id,
         taskName: taskData.taskName,
-        relatedTo: taskData.caseDetails.caseId
+        relatedTo: taskData?.caseDetails?.caseId
           ? `CaseNo:${taskData.caseDetails.caseNo}`
           : 'Other',
         petitionVsRespondent: taskData.caseDetails?.caseId
@@ -129,6 +129,8 @@ const TaskTab = () => {
       View
     </Button>,
   ];
+
+  console.log(loading);
 
   // Bulk Update Handlers
   const handleBulkUpdate = async (

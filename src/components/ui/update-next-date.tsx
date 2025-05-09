@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -29,13 +29,19 @@ const UpdateNextDateButton = ({ caseDetails }: ITransferProps) => {
   const [selectedDate, setSelectedDate] = useState<string>(
     caseDetails.nextHearing,
   );
+
+  useEffect(() => {
+    if (caseDetails?.nextHearing) {
+      setSelectedDate(caseDetails.nextHearing);
+    }
+  }, [caseDetails?.nextHearing]);
+
   const [remark, setRemark] = useState('');
   const { updateCase } = useCases();
 
   const handleUpdate = async () => {
-    // Handle the update logic (e.g., API call)
     const updatedHearings = [
-      ...(caseDetails.hearings || []), // Keep existing hearings, or initialize if undefined
+      ...(caseDetails.hearings || []),
       {
         date: selectedDate,
         remarks: remark,

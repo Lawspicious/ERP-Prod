@@ -6,6 +6,7 @@ import { ChakraProvider } from '@chakra-ui/react';
 import { UserProvider } from '@/context/user/userContext';
 import { LoadingProvider } from '@/context/loading/loadingContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { Toaster } from 'react-hot-toast';
 
 const robo = Roboto({
   weight: ['100', '300', '400', '500', '700'],
@@ -31,6 +32,7 @@ export default function RootLayout({
         <GoogleOAuthProvider clientId={googleClientId}>
           <LoadingProvider>
             <UserProvider>
+              <Toaster />
               <ChakraProvider>{children}</ChakraProvider>
             </UserProvider>
           </LoadingProvider>

@@ -52,8 +52,9 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { UserAttendanceData, AttendanceOverride } from '@/types/attendance';
+import withAuth from '@/components/shared/hoc-middlware';
 
-export default function AttendanceTab() {
+function AttendanceTab() {
   const router = useRouter();
   const toast = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -973,3 +974,7 @@ export default function AttendanceTab() {
     </Box>
   );
 }
+
+const allowedRoles = ['SUPERADMIN'];
+
+export default withAuth(AttendanceTab, allowedRoles);

@@ -54,7 +54,11 @@ const InvoiceTab = ({ type }: { type: string }) => {
           </Button>
           <Button
             colorScheme="purple"
-            onClick={() => router.push('/dashboard/admin/add-invoice')}
+            onClick={() =>
+              router.push(
+                `/dashboard/admin/add-invoice${type === 'client-invoices' ? '#client' : ''}`,
+              )
+            }
           >
             Add Invoice
           </Button>

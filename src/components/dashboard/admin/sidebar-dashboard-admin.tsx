@@ -141,16 +141,19 @@ const Sidebar = () => {
           <ListChecks size={20} />
           <span>Task</span>
         </li>
-        <li
-          className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${
-            activeTab === 'attendance' ? 'bg-bgSecondary' : ''
-          }`}
-          onClick={() => handleNavigation('attendance')}
-        >
-          <Clock size={20} />
-          <span>Attendance</span>
-        </li>
-        {(role === 'SUPERADMIN' || role === 'ADMIN') && (
+        {role === 'SUPERADMIN' && (
+          <li
+            className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${
+              activeTab === 'attendance' ? 'bg-bgSecondary' : ''
+            }`}
+            onClick={() => handleNavigation('attendance')}
+          >
+            <Clock size={20} />
+            <span>Attendance</span>
+          </li>
+        )}
+
+        {role === 'SUPERADMIN' && (
           <li
             className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${
               activeTab === 'performance-report' ? 'bg-bgSecondary' : ''
