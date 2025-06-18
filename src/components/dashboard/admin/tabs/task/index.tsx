@@ -75,10 +75,8 @@ const TaskTab = () => {
           : 'bg-red-200';
       }
 
-      // Only include tasks where createdBy.id === authUser?.uid AND lawyerDetails includes the same id
-      const isCreatedByMe = taskData?.createdBy?.id === authUser?.uid;
-      const isAssignedToMe = taskData?.lawyerDetails?.some(
-        (lawyer) => lawyer.id === authUser?.uid,
+      const isCreatedByInLawyerDetails = taskData?.lawyerDetails?.some(
+        (lawyer) => lawyer.id === taskData?.createdBy?.id,
       );
 
       return {
@@ -100,7 +98,7 @@ const TaskTab = () => {
         priority: taskData.priority,
         rowColor,
         deleteName: taskData.taskName,
-        isMyTask: isCreatedByMe && isAssignedToMe,
+        isMyTask: isCreatedByInLawyerDetails,
         selected: false,
         lastFollowUpAt: taskData.lastFollowUpAt,
       };

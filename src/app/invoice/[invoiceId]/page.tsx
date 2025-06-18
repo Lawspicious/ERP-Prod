@@ -295,9 +295,7 @@ const InvoiceViewPage = ({
         <Button
           leftIcon={<ArrowLeft />}
           colorScheme="purple"
-          onClick={() =>
-            (window.location.href = `/dashboard/admin/workspace-admin#organization-invoices`)
-          }
+          onClick={() => window.history.back()}
         >
           Back
         </Button>

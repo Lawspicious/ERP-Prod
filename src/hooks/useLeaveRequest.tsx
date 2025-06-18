@@ -40,10 +40,13 @@ export const useLeaveRequest = () => {
   const [myLeaveHistory, setMyLeaveHistory] = useState<ILeaveRequest[]>([]);
   const [pendingLeaves, setPendingLeaves] = useState<ILeaveRequest[]>([]);
   const [loading, setLocalLoading] = useState<boolean>(true);
-  const { createNewEvent } = useCalendarEvents();
+  const { createNewEvent, deleteEvent } = useCalendarEvents();
 
   const { authUser, role } = useAuth();
   const { setLoading } = useLoading();
+
+  // Function to get all leave requests (one-time fetch, not realtime)
+
   const [state, newToast] = useToastHook();
 
   // Realtime listener
@@ -205,11 +208,44 @@ export const useLeaveRequest = () => {
       newToast({ message: 'Failed to update leave status', status: 'error' });
     }
   };
-
-  const deleteLeaveRequest = async (id: string) => {
+  const deleteLeaveRequest = async (
+    id: string,
+    status?: 'pending' | 'approved' | 'rejected',
+    leaveData?: { userId: string; fromDate: string; toDate: string },
+  ) => {
     setLocalLoading(true);
     setLoading(true);
     try {
+      if (status === 'approved' && leaveData) {
+        // 1. Delete attendance overrides for the leave period
+        const { userId, fromDate, toDate } = leaveData;
+        const from = new Date(fromDate);
+        const to = new Date(toDate);
+        const days = differenceInCalendarDays(to, from) + 1;
+        const overrideRef = collection(db, 'attendance_overrides');
+        for (let i = 0; i < days; i++) {
+          const dateToOverride = format(addDays(from, i), 'yyyy-MM-dd');
+          const existingQuery = query(
+            overrideRef,
+            where('userId', '==', userId),
+            where('date', '==', dateToOverride),
+          );
+          const existingSnapshot = await getDocs(existingQuery);
+          for (const docSnap of existingSnapshot.docs) {
+            await deleteDoc(doc(db, 'attendance_overrides', docSnap.id));
+          }
+
+          const dateToDelete = format(addDays(from, i), 'yyyy-MM-dd');
+          const eventId = `${userId}_${dateToDelete}`;
+          await deleteEvent(eventId);
+        }
+        // 2. Delete calendar events for the leave period
+        // Delete calendar events for the leave period
+        // Assuming event IDs are in the format `${userId}_${date}`
+
+        // Example: await deleteCalendarEvents(userId, fromDate, toDate);
+      }
+      // Delete the leave request itself
       await deleteDoc(doc(db, collectionName, id));
       newToast({ message: 'Leave request deleted', status: 'success' });
     } catch (err) {

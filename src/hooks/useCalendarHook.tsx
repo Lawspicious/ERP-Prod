@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  deleteDoc,
+} from 'firebase/firestore';
 import { auth, db } from '@/lib/config/firebase.config'; // Ensure you import your initialized Firestore instance
 import { useAuth } from '@/context/user/userContext';
 import { useToast } from '@chakra-ui/react'; // To show notifications
@@ -221,11 +228,62 @@ const useCalendarEvents = () => {
     }
   }, [userId]);
 
+  const deleteEvent = useCallback(
+    async (eventId: string) => {
+      if (!userId) return;
+      try {
+        const eventRef = collection(db, `users/${userId}/events`);
+        const eventsSnapshot = await getDocs(eventRef);
+        const docToDelete = eventsSnapshot.docs.find(
+          (doc) => doc.id === eventId,
+        );
+        if (docToDelete) {
+          await deleteDoc(docToDelete.ref);
+          toast({
+            title: 'Event Deleted',
+            description: 'The event has been successfully deleted.',
+            status: 'success',
+            duration: 4000,
+            isClosable: true,
+          });
+          // Optionally refresh events
+          if (role === 'LAWYER') {
+            fetchLawyerCalendarEvents();
+          } else if (
+            role === 'ADMIN' ||
+            role === 'SUPERADMIN' ||
+            role === 'HR'
+          ) {
+            fetchAdminCalendarEvents();
+          }
+        } else {
+          toast({
+            title: 'Not Found',
+            description: 'Event not found.',
+            status: 'warning',
+            duration: 4000,
+            isClosable: true,
+          });
+        }
+      } catch (error) {
+        console.error('Error deleting event:', error);
+        toast({
+          title: 'Error',
+          description: 'Error deleting the event.',
+          status: 'error',
+          duration: 4000,
+          isClosable: true,
+        });
+      }
+    },
+    [userId, toast, role, fetchLawyerCalendarEvents, fetchAdminCalendarEvents],
+  );
+
   useEffect(() => {
     fetchAdminCalendarEvents();
   }, [fetchAdminCalendarEvents, createNewEvent]);
 
-  return { calendarEvents, adminCalendarEvents, createNewEvent };
+  return { calendarEvents, adminCalendarEvents, createNewEvent, deleteEvent };
 };
 
 export default useCalendarEvents;

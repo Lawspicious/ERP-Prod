@@ -397,16 +397,21 @@ const OrganizationInvoiceTable = ({
                                       </>
                                     ) : null}
 
-                                    <MenuItem>
-                                      <PrintLawyerInvoiceButton
-                                        invoiceData={invoice}
-                                      />
-                                    </MenuItem>
-                                    <MenuItem>
-                                      <PrintLawspiciousInvoiceButton
-                                        invoiceData={invoice}
-                                      />
-                                    </MenuItem>
+                                    {invoice.paymentStatus !== 'rejected' && (
+                                      <>
+                                        {' '}
+                                        <MenuItem>
+                                          <PrintLawyerInvoiceButton
+                                            invoiceData={invoice}
+                                          />
+                                        </MenuItem>
+                                        <MenuItem>
+                                          <PrintLawspiciousInvoiceButton
+                                            invoiceData={invoice}
+                                          />
+                                        </MenuItem>
+                                      </>
+                                    )}
                                   </MenuList>
                                 </Menu>
                               </Td>

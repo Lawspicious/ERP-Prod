@@ -158,7 +158,6 @@ const TasksTable = ({
   };
 
   const getRowColor = (status: string, isMyTask: boolean) => {
-    console.log(status, isMyTask);
     if (isMyTask) return 'bg-blue-200';
     switch (status.toLowerCase()) {
       case 'pending':

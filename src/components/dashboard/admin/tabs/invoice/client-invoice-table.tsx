@@ -415,15 +415,16 @@ const TableInvoiceMenu = ({ invoice }: { invoice: IInvoice }) => {
             confirmButtonColorScheme="red"
           />
         </MenuItem>
-        {invoice.invoiceType === 'lawspicious' ? (
-          <MenuItem as="div">
-            <PrintLawspiciousInvoiceButton invoiceData={invoice} />
-          </MenuItem>
-        ) : (
-          <MenuItem as="div">
-            <PrintLawyerInvoiceButton invoiceData={invoice} />
-          </MenuItem>
-        )}
+        {invoice.paymentStatus !== 'rejected' &&
+          (invoice.invoiceType === 'lawspicious' ? (
+            <MenuItem as="div">
+              <PrintLawspiciousInvoiceButton invoiceData={invoice} />
+            </MenuItem>
+          ) : (
+            <MenuItem as="div">
+              <PrintLawyerInvoiceButton invoiceData={invoice} />
+            </MenuItem>
+          ))}
       </MenuList>
     </Menu>
   );
