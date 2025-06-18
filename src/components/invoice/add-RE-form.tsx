@@ -113,6 +113,7 @@ const AddREForm = ({
             <section className="flex justify-between">
               <h1 className="text-xl font-semibold">#{i + 1}</h1>
               <button
+                type="button"
                 className="btn-primary bg-red-500 px-3 py-2 text-sm hover:bg-red-600"
                 onClick={() => handleDeleteRE(i)}
               >
@@ -145,7 +146,7 @@ const AddREForm = ({
             </div>
           </div>
         ))}
-        <Button onClick={handleAddMoreRE} colorScheme="purple">
+        <Button type="button" onClick={handleAddMoreRE} colorScheme="purple">
           Add More
         </Button>
       </div>

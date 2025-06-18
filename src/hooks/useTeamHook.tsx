@@ -23,7 +23,7 @@ export const useTeam = () => {
   const getAllTeam = useCallback(async () => {
     try {
       const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('role', 'in', ['LAWYER', 'ADMIN']));
+      const q = query(usersRef, where('role', 'in', ['LAWYER', 'ADMIN', 'HR']));
       const querySnapshot = await getDocs(q);
 
       const teamMembers = querySnapshot.docs.map((doc) => ({

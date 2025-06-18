@@ -16,9 +16,11 @@ import {
   increment,
   DocumentData,
   getDoc,
+  arrayUnion,
 } from 'firebase/firestore';
-import { useToastHook } from './shared/useToastHook';
 import { db } from '@/lib/config/firebase.config';
+import { useAuth } from '@/context/user/userContext';
+import { useToastHook } from './shared/useToastHook';
 
 interface User {
   id: string;
@@ -28,10 +30,21 @@ interface User {
   unseenCount: number;
 }
 
+interface Group {
+  id: string;
+  name: string;
+  photoURL?: string;
+  createdBy: string;
+  members: string[];
+  createdAt: Timestamp;
+}
+
 interface Message {
+  seenBy: any;
   id: string;
   senderId: string;
-  receiverId: string;
+  receiverId?: string;
+  groupId?: string;
   content: string;
   timestamp: Timestamp;
   isDeleted: boolean;
@@ -42,6 +55,7 @@ interface Message {
 
 export const useMessageHook = () => {
   const [state, newToast] = useToastHook();
+  const { role } = useAuth();
 
   const getAllUsersForMessage = async (
     currentUserId: string,
@@ -66,6 +80,7 @@ export const useMessageHook = () => {
           collection(db, 'messages'),
           where('participants', 'array-contains', currentUserId),
           where('senderId', '==', user.id),
+          where('type', '==', 'one-to-one'),
           where('isSeen', '==', false), // Fetch only unseen messages
         );
 
@@ -77,6 +92,7 @@ export const useMessageHook = () => {
           collection(db, 'messages'),
           where('participants', 'array-contains', currentUserId),
           where('senderId', '==', user.id),
+          where('type', '==', 'one-to-one'),
           orderBy('timestamp', 'desc'),
           limit(1),
         );
@@ -85,6 +101,7 @@ export const useMessageHook = () => {
           collection(db, 'messages'),
           where('participants', 'array-contains', user.id),
           where('senderId', '==', currentUserId),
+          where('type', '==', 'one-to-one'),
           orderBy('timestamp', 'desc'),
           limit(1),
         );
@@ -178,6 +195,7 @@ export const useMessageHook = () => {
         isEdited: false,
         isSeen: false,
         participants: [senderId, receiverId],
+        type: 'one-to-one',
       });
     } catch (error) {
       newToast({
@@ -214,6 +232,99 @@ export const useMessageHook = () => {
     }
   };
 
+  const createGroup = async (
+    name: string,
+    memberIds: string[],
+    createdBy: string,
+    photoURL?: string,
+  ) => {
+    if (role !== 'HR' && role !== 'SUPERADMIN') {
+      newToast({ status: 'error', message: 'Permission denied' });
+      return;
+    }
+
+    const docRef = await addDoc(collection(db, 'groups'), {
+      name,
+      createdBy,
+      members: memberIds,
+      photoURL: photoURL || '',
+      createdAt: serverTimestamp(),
+    });
+
+    return docRef.id;
+  };
+
+  const editGroup = async (
+    groupId: string,
+    updateData: Partial<Omit<Group, 'id' | 'createdAt'>>,
+  ) => {
+    if (role !== 'HR' && role !== 'SUPERADMIN') {
+      newToast({ status: 'error', message: 'Permission denied' });
+      return;
+    }
+
+    const groupRef = doc(db, 'groups', groupId);
+    await updateDoc(groupRef, updateData);
+  };
+
+  const sendGroupMessage = async (
+    senderId: string,
+    groupId: string,
+    messageContent: {
+      content: string;
+      fileURL?: string;
+      fileName?: string;
+      fileType?: string;
+    },
+  ) => {
+    try {
+      const groupDoc = await getDoc(doc(db, 'groups', groupId));
+      const groupData = groupDoc.data() as Group;
+
+      await addDoc(collection(db, 'messages'), {
+        senderId,
+        groupId,
+        ...messageContent,
+        timestamp: serverTimestamp(),
+        isDeleted: false,
+        isEdited: false,
+        isSeen: false,
+        participants: groupData.members,
+        seenBy: [senderId],
+        type: 'group',
+      });
+    } catch (error) {
+      newToast({ status: 'error', message: 'Failed to send group message' });
+    }
+  };
+
+  const subscribeToGroupMessages = (
+    groupId: string,
+    callback: (messages: Message[]) => void,
+  ) => {
+    const q = query(
+      collection(db, 'messages'),
+      where('groupId', '==', groupId),
+      orderBy('timestamp', 'asc'),
+    );
+
+    return onSnapshot(q, (querySnapshot) => {
+      const messages = querySnapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() }) as Message,
+      );
+      callback(messages);
+    });
+  };
+
+  const getGroupsForUser = async (userId: string): Promise<Group[]> => {
+    const groupsQuery = query(
+      collection(db, 'groups'),
+      where('members', 'array-contains', userId),
+    );
+    const snapshot = await getDocs(groupsQuery);
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Group);
+  };
+
   const markMessagesAsSeen = async (
     senderId: string,
     receiverId: string,
@@ -223,6 +334,7 @@ export const useMessageHook = () => {
         collection(db, 'messages'),
         where('senderId', '==', senderId),
         where('receiverId', '==', receiverId),
+        where('type', '==', 'one-to-one'),
         where('isSeen', '==', false),
       );
       const querySnapshot = await getDocs(q);
@@ -277,6 +389,7 @@ export const useMessageHook = () => {
     const q = query(
       collection(db, 'messages'),
       where('participants', 'array-contains', currentUserId),
+      where('type', '==', 'one-to-one'),
       orderBy('timestamp', 'desc'),
     );
 
@@ -293,6 +406,7 @@ export const useMessageHook = () => {
       const q = query(
         collection(db, 'messages'),
         where('receiverId', '==', currentUserId),
+        where('type', '==', 'one-to-one'),
         where('isSeen', '==', false),
         orderBy('timestamp', 'desc'),
       );
@@ -334,6 +448,7 @@ export const useMessageHook = () => {
       collection(db, 'messages'),
       where('receiverId', '==', currentUserId),
       where('isSeen', '==', false),
+      where('type', '==', 'one-to-one'),
       orderBy('timestamp', 'desc'),
     );
 
@@ -359,6 +474,106 @@ export const useMessageHook = () => {
     });
   };
 
+  const subscribeToGroupUnseenMessages = (
+    groupId: string,
+    currentUserId: string,
+    callback: (messages: Message[]) => void,
+  ) => {
+    console.log(currentUserId);
+    const q = query(
+      collection(db, 'messages'),
+      where('groupId', '==', groupId),
+      where('seenBy', 'not-in', [currentUserId]),
+      orderBy('timestamp', 'desc'),
+    );
+
+    return onSnapshot(q, (querySnapshot) => {
+      const unseenMessages = querySnapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }) as Message)
+        .filter((msg) => !msg.seenBy?.includes(currentUserId));
+      callback(unseenMessages);
+    });
+  };
+
+  const deleteGroup = async (groupId: string): Promise<void> => {
+    if (role !== 'HR' && role !== 'SUPERADMIN' && role !== 'ADMIN') {
+      newToast({ status: 'error', message: 'Permission denied' });
+      return;
+    }
+    try {
+      const groupRef = doc(db, 'groups', groupId);
+      await deleteDoc(groupRef);
+      newToast({ status: 'success', message: 'Group deleted successfully' });
+    } catch (error) {
+      newToast({ status: 'error', message: 'Failed to delete group' });
+    }
+  };
+
+  // const markGroupMessagesAsSeen = async (groupId: string, userId: string): Promise<void> => {
+  //   try {
+  //     const q = query(
+  //       collection(db, 'messages'),
+  //       where('groupId', '==', groupId),
+  //       where('participants', 'array-contains', userId),
+  //       where('seenBy', 'not-in', [userId])
+  //     );
+  //     const querySnapshot = await getDocs(q);
+  //     const batch = writeBatch(db);
+  //     querySnapshot.forEach((doc) => {
+  //       batch.update(doc.ref, { seenBy: increment(1) });
+  //     });
+  //     await batch.commit();
+  //   } catch (error) {
+  //     console.log(error)
+  //     newToast({ status: 'error', message: 'Failed to mark group messages as seen' });
+  //   }
+  // };
+
+  const markGroupMessagesAsSeen = async (
+    groupId: string,
+    userId: string,
+  ): Promise<void> => {
+    try {
+      const q = query(
+        collection(db, 'messages'),
+        where('groupId', '==', groupId),
+        where('seenBy', 'not-in', [userId]), // Only get messages not seen by the user
+      );
+
+      console.log(groupId);
+      const querySnapshot = await getDocs(q);
+      const batch = writeBatch(db);
+
+      querySnapshot.forEach((doc) => {
+        batch.update(doc.ref, {
+          seenBy: arrayUnion(userId), // Add the userId to the seenBy array
+        });
+      });
+
+      await batch.commit();
+    } catch (error) {
+      console.error(error);
+      newToast({
+        status: 'error',
+        message: 'Failed to mark group messages as seen',
+      });
+    }
+  };
+
+  // Count unseen messages in a group for a user
+  const countUnseenMessagesForGroup = async (
+    groupId: string,
+    currentUserId: string,
+  ): Promise<number> => {
+    const q = query(
+      collection(db, 'messages'),
+      where('groupId', '==', groupId),
+      where('seenBy', 'not-in', [currentUserId]),
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.size;
+  };
+
   return {
     getAllUsersForMessage,
     sendMessage,
@@ -369,5 +584,16 @@ export const useMessageHook = () => {
     subscribeToUserUpdates,
     getUnseenMessages,
     subscribeToUnseenMessages,
+
+    createGroup,
+    editGroup,
+    getGroupsForUser,
+    sendGroupMessage,
+    subscribeToGroupMessages,
+    deleteGroup,
+
+    markGroupMessagesAsSeen,
+    countUnseenMessagesForGroup,
+    subscribeToGroupUnseenMessages,
   };
 };

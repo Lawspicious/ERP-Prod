@@ -9,6 +9,6 @@ export interface ICreateUser {
   country: string;
   state: string;
   city: string;
-  role: 'ADMIN' | 'LAWYER' | 'SUPERADMIN';
+  role: 'ADMIN' | 'HR' | 'LAWYER' | 'SUPERADMIN';
   typeOfLawyer?: string;
 }

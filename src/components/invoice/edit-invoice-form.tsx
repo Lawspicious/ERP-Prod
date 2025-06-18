@@ -53,10 +53,12 @@ export const serviceList2 = [
   { label: 'Retainership Charges', value: 'retainership_charges' },
 ];
 
-const AddInvoiceForm = ({
+const EditInvoiceForm = ({
   allClients,
+  invoice,
 }: {
   allClients: (IClient | IClientProspect)[];
+  invoice: IInvoice;
 }) => {
   const [invoiceType, setInvoiceType] = useState<
     'abhradip' | 'lawspicious' | null
@@ -80,7 +82,7 @@ const AddInvoiceForm = ({
     },
   ]);
   const [toggleOtherInput, setToggleOtherInput] = useState<boolean>(false);
-  const { createInvoice } = useInvoice();
+  const { updateInvoice } = useInvoice();
   const { loading, setLoading } = useLoading();
   const {
     fetchCasesByClientId,
@@ -122,22 +124,37 @@ const AddInvoiceForm = ({
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const sendInvoiceEmail = async (invoice: IInvoice) => {
-    const message = {
-      heading: 'Invoice Notification',
-      body: 'You have received a new invoice for the services provided. Please find the details below and process the payment as soon as possible.',
-    };
-    try {
-      const response = await sendInvoiceEmailToLawyerNodeMailer(
-        invoice,
-        message,
+  useEffect(() => {
+    if (invoice) {
+      setInvoiceType(
+        invoice.invoiceType !== undefined ? invoice.invoiceType : null,
       );
-      console.log('Email sent successfully:', response);
-    } catch (error) {
-      console.error('Failed to send email:', error);
+      setSelectedClientId(invoice.clientDetails?.id || '');
+      setSelectedTeamMemberId(invoice.teamMember?.[0]?.id || '');
+      setInvoiceDueDate(invoice.dueDate || '');
+      setServices(
+        invoice.services || [
+          {
+            description: '',
+            name: '',
+            amount: 0,
+          },
+        ],
+      );
+      setREData(
+        invoice.RE || [
+          {
+            caseId: '',
+          },
+        ],
+      );
+      setBillTo(invoice.billTo || 'organization');
+      setGstNote(invoice.gstNote || '');
+      setPanNo(invoice.panNo || '');
+      setPaymentDate(invoice.paymentDate || '');
+      setSelectedTasks(invoice.tasks || []);
     }
-  };
-
+  }, [invoice]);
   const handleCreateInvoice = async (e: any) => {
     e.preventDefault();
     setLoading(true);
@@ -205,25 +222,25 @@ const AddInvoiceForm = ({
       };
 
       // Only create and send invoice if clientDetails or selectedClientId is not null
-      createInvoice(invoiceData);
+      updateInvoice(invoice.id as string, invoiceData);
       // sendInvoiceEmail(invoiceData);
-      setServices([
-        {
-          description: '',
-          name: '',
-          amount: 0,
-        },
-      ]);
-      setREData([
-        {
-          caseId: '',
-        },
-      ]);
-      setSelectedTeamMemberId('');
-      setSelectedClientId('');
-      setGstNote('');
-      setPanNo('');
-      setPaymentStatus('unpaid');
+      // setServices([
+      //   {
+      //     description: '',
+      //     name: '',
+      //     amount: 0,
+      //   },
+      // ]);
+      // setREData([
+      //   {
+      //     caseId: '',
+      //   },
+      // ]);
+      // setSelectedTeamMemberId('');
+      // setSelectedClientId('');
+      // setGstNote('');
+      // setPanNo('');
+      // setPaymentStatus('unpaid');
     } catch (error) {
       console.log(error);
     }
@@ -506,7 +523,7 @@ const AddInvoiceForm = ({
             onClick={handleCreateInvoice}
             className="col-span-2 w-fit"
           >
-            Generate Invoice
+            Update invoice
           </Button>
         </div>
       </form>
@@ -514,4 +531,4 @@ const AddInvoiceForm = ({
   );
 };
 
-export default AddInvoiceForm;
+export default EditInvoiceForm;

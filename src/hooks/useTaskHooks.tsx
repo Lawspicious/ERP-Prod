@@ -142,7 +142,12 @@ export const useTask = () => {
   ) => {
     try {
       const taskDocRef = doc(db, collectionName, id);
-      await updateDoc(taskDocRef, { ...data });
+      // If status is 'COMPLETED', add completedAt timestamp
+      const updateData = {
+        ...data,
+        ...(data.taskStatus === 'COMPLETED' && { completedAt: new Date() }),
+      };
+      await updateDoc(taskDocRef, updateData);
       toast({
         title: 'Task Updated Successfully',
         status: 'success',
@@ -234,6 +239,7 @@ export const useTask = () => {
           );
           setAllTask(lawyerTasks);
           setAllTaskLawyer(lawyerTasks);
+          setLoading(false);
         },
         (error) => {
           console.error(
@@ -244,10 +250,12 @@ export const useTask = () => {
             message: 'Could not fetch tasks in real-time.',
             status: 'error',
           });
+
+          setLoading(false);
         },
       );
 
-      return () => unsubscribe(); // Return cleanup function to stop listening
+      return () => unsubscribe();
     },
     [allTaskLawyer],
   );

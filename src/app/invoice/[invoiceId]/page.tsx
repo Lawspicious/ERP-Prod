@@ -105,6 +105,26 @@ const InvoiceViewPage = ({
               )}
             </Box>
 
+            {invoice.paymentStatus === 'rejected' && (
+              <Box mb={10}>
+                <Text fontSize="2xl" fontWeight="bold" color="gray.700" mb={4}>
+                  Remarks
+                </Text>
+
+                <Box className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <Text fontWeight="bold" fontSize="lg" color="gray.800">
+                    {invoice.remark}
+                  </Text>
+
+                  <Text color="gray.500" mt={2}>
+                    Please adhere to the remarks, take necessary steps & raise a
+                    new invoice. For any other issues please escalate to the
+                    accounts team.
+                  </Text>
+                </Box>
+              </Box>
+            )}
+
             {/* Invoice Dates */}
             <Stack direction={['column', 'row']} spacing={8} mb={10}>
               <Box>
@@ -130,6 +150,16 @@ const InvoiceViewPage = ({
                   </Text>
                   <Text color="gray.500">
                     {invoice.paymentDate || 'Not provided'}
+                  </Text>
+                </Box>
+              )}
+              {invoice.rejectionDate && (
+                <Box>
+                  <Text fontWeight="bold" color="gray.700">
+                    Rejected At:
+                  </Text>
+                  <Text color="gray.500">
+                    {invoice.rejectionDate || 'Not provided'}
                   </Text>
                 </Box>
               )}

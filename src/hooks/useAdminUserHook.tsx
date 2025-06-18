@@ -22,7 +22,11 @@ export const useAdminUser = () => {
 
   const fetchAdminUsers = useCallback(async () => {
     const currentUserRole = role;
-    if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
+    if (
+      currentUserRole === 'ADMIN' ||
+      currentUserRole === 'SUPERADMIN' ||
+      currentUserRole === 'HR'
+    ) {
       try {
         const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
         onSnapshot(q, (querySnapshot) => {
@@ -50,7 +54,11 @@ export const useAdminUser = () => {
 
   const createAdminUser = useCallback(async (data: IUser) => {
     const currentUserRole = role;
-    if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
+    if (
+      currentUserRole === 'ADMIN' ||
+      currentUserRole === 'SUPERADMIN' ||
+      currentUserRole === 'HR'
+    ) {
       try {
         const response = await createUser(data);
 
@@ -98,7 +106,11 @@ export const useAdminUser = () => {
       name: string;
     }) => {
       const currentUserRole = role;
-      if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
+      if (
+        currentUserRole === 'ADMIN' ||
+        currentUserRole === 'SUPERADMIN' ||
+        currentUserRole === 'HR'
+      ) {
         try {
           const docRef = doc(db, 'users', id?.toString() as string);
           await updateDoc(docRef, {
@@ -131,7 +143,11 @@ export const useAdminUser = () => {
 
   const deleteAdminUser = useCallback(async (userID: string) => {
     const currentUserRole = role;
-    if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
+    if (
+      currentUserRole === 'ADMIN' ||
+      currentUserRole === 'SUPERADMIN' ||
+      currentUserRole === 'HR'
+    ) {
       try {
         await deleteDoc(doc(db, 'users', userID));
         toast({
@@ -156,7 +172,11 @@ export const useAdminUser = () => {
   const resetPassword = useCallback(
     async (email: string, name: string, message: string) => {
       const currentUserRole = role;
-      if (currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') {
+      if (
+        currentUserRole === 'ADMIN' ||
+        currentUserRole === 'SUPERADMIN' ||
+        currentUserRole === 'HR'
+      ) {
         try {
           // setIsResetPasswordOpen(true);
           const response = await resetUserPassword(email, name, message);

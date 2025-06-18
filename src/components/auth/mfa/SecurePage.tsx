@@ -25,7 +25,8 @@ const SecurePage = ({ children }: { children: React.ReactNode }) => {
       }
       if (user) {
         user.getIdTokenResult().then((token) => {
-          if (token.claims['role'] !== 'ADMIN' && path !== '/no-permission') {
+          const role = token.claims['role'];
+          if (role !== 'ADMIN' && role !== 'HR' && path !== '/no-permission') {
             router.push('/no-permission');
           }
           setLoader(false);

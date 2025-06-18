@@ -35,6 +35,7 @@ import PrintLawspiciousInvoiceButton from './action-button/print-lawspicious-inv
 import { useInvoice } from '@/hooks/useInvoiceHook';
 import withAuth from '@/components/shared/hoc-middlware';
 import * as XLSX from 'xlsx';
+import { useAuth } from '@/context/user/userContext';
 
 const ClientInvoiceTable = ({
   clientInvoices,
@@ -51,16 +52,56 @@ const ClientInvoiceTable = ({
   );
   const { deleteInvoice, updateInvoice } = useInvoice();
 
+  // const handleExportToExcel = () => {
+  //   const wb = XLSX.utils.book_new();
+  //   const ws = XLSX.utils.json_to_sheet(
+  //     filteredData.map((invoice) => ({
+  //       'Invoice No': invoice.id,
+  //       Date: invoice.createdAt,
+  //       'Payment Date': invoice.paymentDate || 'NA',
+  //       'Client Name': invoice.clientDetails?.name || 'NA',
+  //       Total: invoice.totalAmount,
+  //       Status: invoice.paymentStatus,
+  //     })),
+  //   );
+
+  //   XLSX.utils.book_append_sheet(wb, ws, 'Invoices');
+  //   XLSX.writeFile(wb, 'client_invoices.xlsx');
+  // };
   const handleExportToExcel = () => {
     const wb = XLSX.utils.book_new();
+
     const ws = XLSX.utils.json_to_sheet(
       filteredData.map((invoice) => ({
         'Invoice No': invoice.id,
-        Date: invoice.createdAt,
+        'Invoice Type': invoice.invoiceType || 'NA',
+        'Created At': invoice.createdAt || 'NA',
+        'Due Date': invoice.dueDate || 'NA',
         'Payment Date': invoice.paymentDate || 'NA',
+        'Payment Status': invoice.paymentStatus || 'NA',
+        'Total Amount': invoice.totalAmount || 0,
+        'PAN No': invoice.panNo || 'NA',
+        'GST Note': invoice.gstNote || 'NA',
+        'Bill To': invoice.billTo || 'NA',
+
+        // Client details
         'Client Name': invoice.clientDetails?.name || 'NA',
-        Total: invoice.totalAmount,
-        Status: invoice.paymentStatus,
+        'Client Email': invoice.clientDetails?.email || 'NA',
+        'Client Mobile': invoice.clientDetails?.mobile || 'NA',
+        'Client Location': invoice.clientDetails?.location || 'NA',
+
+        // Services
+        Services:
+          invoice.services
+            ?.map((s) => `${s.name} (${s.amount}) - ${s.description}`)
+            .join(' | ') || 'NA',
+
+        // RE Case IDs
+        'Case IDs': invoice.RE?.map((r) => r.caseId || 'NA').join(', ') || 'NA',
+
+        // Optional: Add more fields as needed
+        'Team Member': invoice.teamMember || 'NA',
+        'Rejection Remark': invoice.remark || 'NA',
       })),
     );
 
@@ -174,7 +215,14 @@ const ClientInvoiceTable = ({
           <Tabs
             onChange={(index) =>
               setSelectedStatus(
-                ['ALL', 'paid', 'unpaid', 'Abhradip Jha', 'Lawspicious'][index],
+                [
+                  'ALL',
+                  'paid',
+                  'unpaid',
+                  'rejected',
+                  'Abhradip Jha',
+                  'Lawspicious',
+                ][index],
               )
             }
           >
@@ -182,6 +230,7 @@ const ClientInvoiceTable = ({
               <Tab>ALL</Tab>
               <Tab>Paid</Tab>
               <Tab>Unpaid</Tab>
+              <Tab>Rejected</Tab>
               <Tab>Abhradip Jha</Tab>
               <Tab>Lawspicious</Tab>
             </TabList>
@@ -311,6 +360,7 @@ const ClientInvoiceTable = ({
 const TableInvoiceMenu = ({ invoice }: { invoice: IInvoice }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { deleteInvoice } = useInvoice();
+  const { role } = useAuth();
 
   return (
     <Menu isOpen={isOpen} onClose={onClose}>
@@ -331,9 +381,27 @@ const TableInvoiceMenu = ({ invoice }: { invoice: IInvoice }) => {
             Go to Invoice
           </Button>
         </MenuItem>
-        <MenuItem as="div">
-          <EditInvoiceModal invoiceData={invoice} />
-        </MenuItem>
+
+        {invoice.paymentStatus === 'unpaid' && role === 'SUPERADMIN' && (
+          <MenuItem>
+            <Button
+              w="100%"
+              colorScheme="purple"
+              onClick={() =>
+                (window.location.href = `/dashboard/admin/edit-invoice/${invoice.id}`)
+              }
+            >
+              Edit Invoice
+            </Button>
+          </MenuItem>
+        )}
+
+        {invoice.paymentStatus !== 'rejected' && (
+          <MenuItem as="div">
+            <EditInvoiceModal invoiceData={invoice} />
+          </MenuItem>
+        )}
+
         <MenuItem as="div">
           <DialogButton
             title={'Delete'}

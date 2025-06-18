@@ -215,6 +215,16 @@ const CreateAppointmentModal = () => {
                           </option>
                         ))}
                     </optgroup>
+
+                    <optgroup label="HRs">
+                      {allTeam
+                        .filter((team: IUser) => team.role === 'HR')
+                        .map((admin: IUser) => (
+                          <option key={admin.id} value={admin.id}>
+                            {admin.name}
+                          </option>
+                        ))}
+                    </optgroup>
                   </Select>
                 </FormControl>
                 <FormControl mt={4}>

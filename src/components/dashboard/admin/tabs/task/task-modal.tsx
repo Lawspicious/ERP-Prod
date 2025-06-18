@@ -200,6 +200,15 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
           label: admin.name,
         })),
     },
+    {
+      label: 'HRs',
+      options: allTeam
+        .filter((user) => user.role === 'HR')
+        .map((admin) => ({
+          value: admin.id,
+          label: admin.name,
+        })),
+    },
   ];
 
   return (

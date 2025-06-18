@@ -64,40 +64,82 @@ export const useLog = () => {
     }
   };
 
+  // const getLogsByUserandDate = useCallback(
+  //   async (userId: string, date: string) => {
+  //     console.log(userId)
+  //     console.log(date)
+  //     try {
+  //       setLoading(true);
+  //       const conditions = [];
+
+  //       if (userId !== '') {
+  //         conditions.push(where('userId', '==', userId));
+  //       }
+  //       if (date !== '') {
+  //         conditions.push(where('date', '==', date));
+  //       }
+
+  //       // Create query with pagination and sorting by date and time
+  //       let logQuery;
+
+  //       if (currentPage === 0) {
+  //         logQuery = query(
+  //           logCollectionRef,
+  //           orderBy('date', 'desc'),
+  //           orderBy('time', 'desc'), // Add time sorting
+  //           ...conditions,
+  //           limit(pageSize),
+  //         );
+  //       } else {
+  //         logQuery = query(
+  //           logCollectionRef,
+  //           orderBy('date', 'desc'),
+  //           orderBy('time', 'desc'), // Add time sorting
+  //           ...conditions,
+  //           startAfter(lastVisible), // Start after the last visible document
+  //           limit(pageSize),
+  //         );
+  //       }
+
+  //       const logSnap = await getDocs(logQuery);
+  //       const logList: ILogEventInterface[] = logSnap.docs.map((doc) => ({
+  //         id: doc.id,
+  //         ...doc.data(),
+  //       })) as unknown as ILogEventInterface[];
+
+  //       setAllLogs(logList);
+  //       setLastVisible(logSnap.docs[logSnap.docs.length - 1]);
+  //       setFirstVisible(logSnap.docs[0]);
+  //     } catch (error) {
+  //       console.error('Error fetching logs:', error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   },
+  //   [currentPage, pageSize],
+  // );
+
   const getLogsByUserandDate = useCallback(
     async (userId: string, date: string) => {
       try {
         setLoading(true);
         const conditions = [];
 
-        if (userId !== '') {
-          conditions.push(where('userId', '==', userId));
+        if (userId.trim()) {
+          conditions.push(where('userId', '==', userId.trim()));
         }
-        if (date !== '') {
-          conditions.push(where('date', '==', date));
+        if (date.trim()) {
+          conditions.push(where('date', '==', date.trim()));
         }
 
-        // Create query with pagination and sorting by date and time
-        let logQuery;
-
-        if (currentPage === 0) {
-          logQuery = query(
-            logCollectionRef,
-            orderBy('date', 'desc'),
-            orderBy('time', 'desc'), // Add time sorting
-            ...conditions,
-            limit(pageSize),
-          );
-        } else {
-          logQuery = query(
-            logCollectionRef,
-            orderBy('date', 'desc'),
-            orderBy('time', 'desc'), // Add time sorting
-            ...conditions,
-            startAfter(lastVisible), // Start after the last visible document
-            limit(pageSize),
-          );
-        }
+        const logQuery = query(
+          logCollectionRef,
+          orderBy('date', 'desc'),
+          orderBy('time', 'desc'),
+          ...conditions,
+          ...(currentPage !== 0 ? [startAfter(lastVisible)] : []),
+          limit(pageSize),
+        );
 
         const logSnap = await getDocs(logQuery);
         const logList: ILogEventInterface[] = logSnap.docs.map((doc) => ({

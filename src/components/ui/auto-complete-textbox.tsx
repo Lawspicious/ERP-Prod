@@ -16,8 +16,10 @@ interface AutocompleteProps {
     e: React.ChangeEvent<HTMLInputElement>,
     index: number,
   ) => void;
+  handleSelect: (value: string) => void;
   index?: number;
   className?: string;
+  value?: string;
 }
 
 const AutocompleteTextbox: React.FC<AutocompleteProps> = ({
@@ -27,17 +29,27 @@ const AutocompleteTextbox: React.FC<AutocompleteProps> = ({
   handleChange,
   index = 0,
   className = '',
+  handleSelect,
+  value,
 }) => {
-  const [inputValue, setInputValue] = useState<string>('');
+  const [inputValue, setInputValue] = useState<string>(value || '');
   const [selectedOption, setSelectedOption] = useState<Option | null>(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [filteredOptions, setFilteredOptions] = useState<Option[]>(options);
+
+  useEffect(() => {
+    if (value) {
+      setInputValue(value);
+    }
+  }, [value]);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLUListElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    console.log(e);
+    console.log(value);
     setInputValue(value);
     setSelectedOption(null);
     onChange?.(value);
@@ -57,6 +69,7 @@ const AutocompleteTextbox: React.FC<AutocompleteProps> = ({
     setInputValue(option.label);
     setSelectedOption(option);
     onChange?.(option.label);
+    handleSelect(option.label);
     setIsOpen(false);
   };
 

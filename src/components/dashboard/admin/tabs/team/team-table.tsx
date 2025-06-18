@@ -30,6 +30,7 @@ import { useAuth } from '@/context/user/userContext';
 import { useUser } from '@/hooks/useUserHook';
 import { IUser } from '@/types/user';
 import Pagination from '@/components/dashboard/shared/Pagination';
+import { useRouter } from 'next/navigation';
 
 const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
   const [tabIndex, setTabIndex] = useState(0);
@@ -41,8 +42,9 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
   const { deleteUser, updateUser } = useUser();
   const { role } = useAuth();
   const { loading, setLoading } = useLoading();
+  const router = useRouter();
 
-  const roles = ['SUPERADMIN', 'ADMIN', 'LAWYER'];
+  const roles = ['SUPERADMIN', 'ADMIN', 'HR', 'LAWYER'];
 
   const filteredData = useMemo(() => {
     const currentRole = roles[tabIndex];
@@ -159,6 +161,12 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                           Change to Admin
                         </Button>
                         <Button
+                          colorScheme="blue"
+                          onClick={() => handleBulkRoleChange('HR')}
+                        >
+                          Change to HR
+                        </Button>
+                        <Button
                           colorScheme="yellow"
                           onClick={() => handleBulkRoleChange('LAWYER')}
                         >
@@ -227,7 +235,7 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                                 {role === 'SUPERADMIN' && (
                                   <>
                                     <MenuItem>
-                                      <Button
+                                      {/* <Button
                                         colorScheme="purple"
                                         className="w-full"
                                         onClick={async () => {
@@ -242,6 +250,18 @@ const TeamMemberTable = ({ allTeam }: { allTeam: IUser[] }) => {
                                         }}
                                       >
                                         Change Role
+                                      </Button> */}
+
+                                      <Button
+                                        className="w-full"
+                                        colorScheme="purple"
+                                        onClick={() =>
+                                          router.push(
+                                            `/dashboard/admin/edit-member/${member.id}`,
+                                          )
+                                        }
+                                      >
+                                        Edit Member
                                       </Button>
                                     </MenuItem>
                                     <MenuItem as="div">

@@ -48,7 +48,7 @@ const RouteProtection = ({ children }: Props) => {
       }
       // Route protection for admin and lawyer dashboard pages
       if (restrictedPaths.includes(currentPath)) {
-        if (role === 'ADMIN' || role === 'SUPERADMIN') {
+        if (role === 'ADMIN' || role === 'SUPERADMIN' || role === 'HR') {
           return; // Admin can access any route except lawyer-specific routes
         } else if (role === 'lawyer' && currentPath !== '/dashboard/admin') {
           return; // Lawyer can access any route except admin-specific routes {
@@ -59,7 +59,7 @@ const RouteProtection = ({ children }: Props) => {
 
       // Redirect authenticated users on auth-related pages
       if (authPaths.includes(currentPath)) {
-        if (role === 'ADMIN' || role === 'SUPERADMIN') {
+        if (role === 'ADMIN' || role === 'SUPERADMIN' || role === 'HR') {
           await redirectTo('/dashboard/admin');
         } else if (role === 'lawyer') {
           await redirectTo('/dashboard/lawyer');

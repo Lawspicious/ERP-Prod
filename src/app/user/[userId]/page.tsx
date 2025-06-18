@@ -48,6 +48,6 @@ const IndividualUserPage = ({ params }: { params: { userId: string } }) => {
 };
 
 // Specify allowed roles for this page
-const allowedRoles = ['ADMIN', 'LAWYER', 'SUPERADMIN']; // Add roles that should have access
+const allowedRoles = ['ADMIN', 'HR', 'LAWYER', 'SUPERADMIN']; // Add roles that should have access
 
 export default withAuth(IndividualUserPage, allowedRoles);

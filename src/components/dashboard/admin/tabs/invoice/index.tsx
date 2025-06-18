@@ -6,7 +6,6 @@ import { useInvoice } from '@/hooks/useInvoiceHook';
 import ClientInvoiceTable from './client-invoice-table';
 import OrganizationInvoiceTable from './organization-invoice-table';
 import { useEffect, useState } from 'react';
-import { today } from '@/lib/utils/todayDate';
 import { IInvoice } from '@/types/invoice';
 
 const InvoiceTab = ({ type }: { type: string }) => {

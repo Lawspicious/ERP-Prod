@@ -74,7 +74,11 @@ const LawyerNavbar = () => {
   const [unseenMessages, setUnseenMessages] = useState<DocumentData[]>([]);
   const [isMessageDrawerOpen, setIsMessageDrawerOpen] =
     useState<boolean>(false);
-  const { subscribeToUnseenMessages } = useMessageHook();
+  const {
+    subscribeToUnseenMessages,
+    subscribeToGroupUnseenMessages,
+    getGroupsForUser,
+  } = useMessageHook();
 
   const { listenToAnnouncements } = useRealTimeAnnouncements(
     (newAnnouncement) => {
@@ -269,6 +273,42 @@ const LawyerNavbar = () => {
     }
   }, [authUser]);
 
+  // Fetch user's groups and subscribe to unseen group messages for each group
+  useEffect(() => {
+    let unsubscribes: (() => void)[] = [];
+
+    async function fetchAndSubscribeGroups() {
+      if (!authUser?.uid) return;
+
+      // Fetch groups for the user (replace with your actual group fetching logic)
+      // Example: const groups = await getUserGroups(authUser.uid);
+      // For demonstration, let's assume getUserGroups returns [{ id: 'group1' }, ...]
+      const groups = await getGroupsForUser(authUser.uid);
+
+      unsubscribes = groups.map((group: { id: string }) =>
+        subscribeToGroupUnseenMessages(
+          group.id,
+          authUser.uid,
+          (groupMessages) => {
+            setUnseenMessages((prev) => {
+              const ids = new Set(prev.map((msg) => msg.id));
+              const newMessages = groupMessages.filter(
+                (msg) => !ids.has(msg.id),
+              );
+              return [...prev, ...newMessages];
+            });
+          },
+        ),
+      );
+    }
+
+    fetchAndSubscribeGroups();
+
+    return () => {
+      unsubscribes.forEach((unsub) => unsub());
+    };
+  }, [authUser]);
+
   useEffect(() => {
     async function seeAll() {
       await seeAllAnnouncementsForUser(authUser);
@@ -297,6 +337,7 @@ const LawyerNavbar = () => {
     };
   }, []);
 
+  console.log(unseenMessages);
   useEffect(() => {
     setActiveTab(window.location.hash.replace('#', ''));
   }, []);

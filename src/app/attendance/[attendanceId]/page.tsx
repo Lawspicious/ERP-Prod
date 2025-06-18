@@ -77,6 +77,7 @@ export default function AttendanceDetailPage() {
   const presentColor = useColorModeValue('green.100', 'green.800');
   const absentColor = useColorModeValue('yellow.100', 'yellow.800');
   const overrideIndicatorColor = useColorModeValue('blue.500', 'blue.300');
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   // Set isClient to true when component mounts (client-side only)
   useEffect(() => {
@@ -203,14 +204,21 @@ export default function AttendanceDetailPage() {
   // Month navigation functions
   const goToPreviousMonth = () => {
     setCurrentMonth((prevMonth) => subMonths(prevMonth, 1));
+    setCurrentDate(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
+    );
   };
 
   const goToNextMonth = () => {
     setCurrentMonth((prevMonth) => addMonths(prevMonth, 1));
+    setCurrentDate(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
+    );
   };
 
   const goToCurrentMonth = () => {
     setCurrentMonth(new Date());
+    setCurrentDate(new Date());
   };
 
   const handleRefresh = () => {
@@ -320,6 +328,40 @@ export default function AttendanceDetailPage() {
   const navigateBack = () => {
     router.push('/dashboard/admin/workspace-admin#attendance');
   };
+
+  function getCalendarDays(currentDate: Date): (Date | null)[] {
+    const startOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1,
+    );
+    const endOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + 1,
+      0,
+    );
+
+    const days: (Date | null)[] = [];
+
+    const startDay = startOfMonth.getDay(); // 0 (Sun) to 6 (Sat)
+
+    // Push null placeholders before the first date
+    for (let i = 0; i < startDay; i++) {
+      days.push(null);
+    }
+
+    // Push each day of the month
+    for (let d = 1; d <= endOfMonth.getDate(); d++) {
+      days.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), d));
+    }
+
+    return days;
+  }
+
+  const calendarDays2 = useMemo(
+    () => getCalendarDays(currentDate),
+    [currentDate],
+  );
 
   return (
     <Box p={6} maxW="1200px" mx="auto">
@@ -480,7 +522,11 @@ export default function AttendanceDetailPage() {
 
               {isClient && (
                 <SimpleGrid columns={7} spacing={2}>
-                  {calendarDays.map((day, i) => {
+                  {calendarDays2.map((day, i) => {
+                    if (day === null) {
+                      return <Box minH="40px" key={i} />; // render empty space
+                    }
+
                     const isPresent = wasUserPresent(day);
                     const isToday = isSameDay(day, new Date());
 

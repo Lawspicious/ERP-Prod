@@ -1,7 +1,15 @@
+// Full updated component with group chat support added
+
 'use client';
 
 import { useMessageHook } from '@/hooks/useMessageHook';
-import { useEffect, useState, useRef, SetStateAction } from 'react';
+import {
+  useEffect,
+  useState,
+  useRef,
+  SetStateAction,
+  useCallback,
+} from 'react';
 import { DocumentData } from 'firebase/firestore';
 import { useAuth } from '@/context/user/userContext';
 import {
@@ -23,15 +31,22 @@ import {
   DrawerContent,
   DrawerCloseButton,
   useBreakpointValue,
+  HStack,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from '@chakra-ui/react';
 import {
   Send,
   Edit2,
   Trash2,
-  Check,
-  CopyCheck,
   MessageCircle,
   Paperclip,
+  Users,
+  Plus,
+  MoreVertical,
+  Pen,
 } from 'lucide-react';
 import AdminNavbar from '../../admin/tabs/navbar';
 import LawyerNavbar from '../../lawyer/tabs/navbar';
@@ -41,17 +56,18 @@ import { storage } from '@/lib/config/firebase.config';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { FilePreview } from './FilePreview';
 import Image from 'next/image';
+import CreateGroup from './CreateGroup';
+import { DialogButton } from '@/components/ui/alert-dialog';
 
-interface MessagesTabProps {
-  user: 'admin' | 'lawyer';
-}
-
-const MessagesTab = ({ user }: MessagesTabProps) => {
+const MessagesTab = ({ user }: { user: 'admin' | 'lawyer' }) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [users, setUsers] = useState<DocumentData[] | undefined>([]);
+  const [users, setUsers] = useState<DocumentData[]>([]);
+  const [groups, setGroups] = useState<DocumentData[]>([]);
   const [selectedUser, setSelectedUser] = useState<DocumentData | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<DocumentData | null>(null);
+  const [chatType, setChatType] = useState<'user' | 'group'>('user');
   const [messages, setMessages] = useState<DocumentData[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -59,83 +75,72 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const { authUser } = useAuth();
+  const { authUser, role } = useAuth();
   const {
     sendMessage,
+    sendGroupMessage,
     deleteMessage,
     editMessage,
     markMessagesAsSeen,
     subscribeToMessages,
+    subscribeToGroupMessages,
     subscribeToUserUpdates,
+    getGroupsForUser,
+    createGroup,
+    deleteGroup,
+    editGroup: editGroupHooks,
+    markGroupMessagesAsSeen,
+    countUnseenMessagesForGroup,
   } = useMessageHook();
   const toast = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const groupModal = useDisclosure();
   const isMobile = useBreakpointValue({ base: true, md: false });
-
   const storageRef = ref(storage, 'chatFiles');
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [searchQuery]);
+  const [groupName, setGroupName] = useState('');
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
 
   useEffect(() => {
-    if (authUser) {
-      const userId = searchParams.get('userId');
-      if (userId) {
-        const user = users?.find((u) => u.id === userId);
-        if (user) {
-          setSelectedUser(user);
-        } else {
-          setSelectedUser(null);
-        }
-      }
-      if (selectedUser) {
-        markMessagesAsSeen(selectedUser.id, authUser.uid);
-      }
-    }
-  }, [searchParams, authUser, users]);
+    if (!authUser) return;
 
-  useEffect(() => {
-    if (authUser) {
-      const unsubscribe = subscribeToUserUpdates(
-        authUser.uid,
-        (updatedUsers: SetStateAction<DocumentData[] | undefined>) => {
-          setUsers(updatedUsers);
-        },
-      );
+    const unsubscribe = subscribeToUserUpdates(authUser.uid, setUsers);
 
-      return () => unsubscribe();
-    }
+    getGroupsForUser(authUser.uid).then(setGroups);
+
+    return () => unsubscribe();
   }, [authUser]);
 
   useEffect(() => {
-    if (authUser && selectedUser) {
+    if (authUser && chatType === 'user' && selectedUser) {
       const unsubscribe = subscribeToMessages(
         authUser.uid,
         selectedUser.id,
-        (fetchedMessages: SetStateAction<DocumentData[]>) => {
-          setMessages(fetchedMessages);
-        },
+        setMessages,
       );
-
       markMessagesAsSeen(selectedUser.id, authUser.uid);
-
       return () => unsubscribe();
     }
-  }, [authUser, selectedUser]);
+    if (authUser && chatType === 'group' && selectedGroup) {
+      const unsubscribe = subscribeToGroupMessages(
+        selectedGroup.id,
+        setMessages,
+      );
+
+      markGroupMessagesAsSeen(selectedGroup.id, authUser.uid);
+      return () => unsubscribe();
+    }
+  }, [authUser, chatType, selectedUser, selectedGroup]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -147,15 +152,8 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
     }
   };
 
-  const handleRemoveFile = () => {
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
   const handleSendMessage = async () => {
-    if ((newMessage.trim() || selectedFile) && authUser && selectedUser) {
+    if ((newMessage.trim() || selectedFile) && authUser) {
       setLoading(true);
       try {
         let fileMessage = {};
@@ -166,42 +164,255 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
           );
           await uploadBytes(fileRef, selectedFile);
           const downloadURL = await getDownloadURL(fileRef);
-
           fileMessage = {
             fileName: selectedFile.name,
             fileURL: downloadURL,
             fileType: selectedFile.type,
           };
         }
+        const content = newMessage.trim() || selectedFile?.name || '';
 
-        if (newMessage.trim() || selectedFile) {
+        if (chatType === 'user' && selectedUser) {
           await sendMessage(authUser.uid, selectedUser.id, {
             ...fileMessage,
-            content: newMessage.trim()
-              ? newMessage
-              : selectedFile
-                ? selectedFile.name
-                : '',
+            content,
+          });
+        } else if (chatType === 'group' && selectedGroup) {
+          await sendGroupMessage(authUser.uid, selectedGroup.id, {
+            content: newMessage.trim() || selectedFile?.name || '',
+            ...fileMessage,
           });
         }
 
         setNewMessage('');
         setSelectedFile(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+        if (fileInputRef.current) fileInputRef.current.value = '';
       } catch (error) {
-        toast({
-          title: 'Failed to send message',
-          status: 'error',
-          duration: 2000,
-          isClosable: true,
-        });
+        toast({ title: 'Failed to send message', status: 'error' });
       } finally {
         setLoading(false);
       }
     }
   };
+
+  const handleSelectUser = (user: DocumentData) => {
+    setSelectedUser(user);
+    setSelectedGroup(null);
+    setChatType('user');
+  };
+
+  const handleSelectGroup = (group: DocumentData) => {
+    setSelectedGroup(group);
+    setSelectedUser(null);
+    setChatType('group');
+  };
+
+  const handleCreateGroup = async () => {
+    if (!groupName.trim() || selectedMembers.length === 0 || !authUser) return;
+    try {
+      await createGroup(groupName.trim(), selectedMembers, authUser.uid);
+      setGroupName('');
+      setSelectedMembers([]);
+      groupModal.onClose();
+      toast({ title: 'Group created successfully', status: 'success' });
+      const updatedGroups = await getGroupsForUser(authUser.uid);
+      setGroups(updatedGroups);
+    } catch (err) {
+      toast({ title: 'Failed to create group', status: 'error' });
+    }
+  };
+  const handleEditGroup = async () => {
+    if (!groupName.trim() || selectedMembers.length === 0 || !authUser) return;
+    try {
+      await editGroupHooks(editGroup?.id as string, {
+        name: groupName,
+        members: selectedMembers,
+      });
+      setGroupName('');
+      setSelectedMembers([]);
+      groupModal.onClose();
+      toast({ title: 'Group edited successfully', status: 'success' });
+      const updatedGroups = await getGroupsForUser(authUser.uid);
+      setGroups(updatedGroups);
+    } catch (err) {
+      toast({ title: 'Failed to create group', status: 'error' });
+    }
+  };
+
+  const [editGroup, setEditGroup] = useState<{
+    name: string;
+    members: string[];
+    id: string;
+  }>();
+  const [mode, setMode] = useState<'create' | 'edit'>('create');
+
+  const filteredUsers = users?.filter((user) =>
+    user.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+  const filteredGroups = groups?.filter((group) =>
+    group.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  const SidebarContent = () => (
+    <>
+      <Box p={4} borderBottom="1px" borderColor="gray.200">
+        <Input
+          ref={inputRef}
+          placeholder={`Search ${chatType === 'user' ? 'users' : 'groups'}...`}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <HStack mt={2} spacing={2}>
+          <Button
+            size="sm"
+            onClick={() => setChatType('user')}
+            colorScheme={chatType === 'user' ? 'blue' : 'gray'}
+          >
+            Users
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setChatType('group')}
+            colorScheme={chatType === 'group' ? 'blue' : 'gray'}
+          >
+            Groups
+          </Button>
+        </HStack>
+      </Box>
+      <VStack spacing={2} align="stretch" p={4} flex={1} overflowY="auto">
+        {(chatType === 'user' ? filteredUsers : filteredGroups)?.map((item) => {
+          // let groupUnseen = 0
+          // if(chatType === groupName) {
+          //  groupUnseen =    await countUnseenMessagesForGroup(item.id, authUser?.uid as string)
+          // }
+
+          return (
+            <Box
+              key={item.id}
+              p={2}
+              cursor="pointer"
+              bg={
+                chatType === 'user'
+                  ? selectedUser?.id === item.id
+                    ? 'gray.100'
+                    : 'white'
+                  : selectedGroup?.id === item.id
+                    ? 'gray.100'
+                    : 'white'
+              }
+              onClick={() =>
+                chatType === 'user'
+                  ? handleSelectUser(item)
+                  : handleSelectGroup(item)
+              }
+              borderRadius="md"
+              _hover={{ bg: 'gray.50' }}
+            >
+              <Flex align="center" justify="space-between">
+                <Flex align="center">
+                  <Avatar
+                    size="sm"
+                    name={item.name}
+                    src={item.photoURL || ''}
+                    icon={chatType === 'group' ? <Users /> : undefined}
+                    mr={2}
+                  />
+                  <Box>
+                    <Text fontWeight="bold">{item.name}</Text>
+                    {chatType === 'user' && item.lastMessage && (
+                      <Text fontSize="sm" color="gray.500" noOfLines={1}>
+                        {!item.lastMessage.isDeleted
+                          ? item.lastMessage.content
+                          : `Message deleted`}
+                      </Text>
+                    )}
+                  </Box>
+                </Flex>
+                {chatType === 'group' &&
+                  (role === 'SUPERADMIN' ||
+                    role === 'ADMIN' ||
+                    role === 'HR') && (
+                    <Box>
+                      <Menu>
+                        <MenuButton
+                          as={IconButton}
+                          aria-label="Options"
+                          icon={<MoreVertical />}
+                          variant="outline"
+                        />
+
+                        <MenuList zIndex={50} maxWidth={100}>
+                          <MenuItem>
+                            <Button
+                              onClick={() => {
+                                groupModal.onOpen();
+                                setMode('edit');
+                                setEditGroup({
+                                  members: item.members,
+                                  name: item.name,
+                                  id: item.id,
+                                });
+                              }}
+                              w="100%"
+                            >
+                              <Pen /> Edit
+                            </Button>
+                          </MenuItem>
+
+                          <MenuItem>
+                            <DialogButton
+                              title="Delete"
+                              message="Do you want to Delete?"
+                              onConfirm={async () => {
+                                await deleteGroup(item.id);
+                                setGroups((prev) =>
+                                  prev.filter((g) => g.id !== item.id),
+                                );
+                              }}
+                              confirmButtonColorScheme="red"
+                            >
+                              <Trash2 /> Delete
+                            </DialogButton>
+                          </MenuItem>
+                        </MenuList>
+                      </Menu>
+                    </Box>
+                  )}
+                {chatType === 'user' && item.unseenCount > 0 && (
+                  <Badge colorScheme="red" borderRadius="full" px="2">
+                    {item.unseenCount}
+                  </Badge>
+                )}
+
+                {/* {
+                chatType === 'group' && groupUnseen > 0 && (
+                <Badge colorScheme="red" borderRadius="full" px="2">
+                  {groupUnseen}
+                </Badge>)
+              } */}
+              </Flex>
+            </Box>
+          );
+        })}
+
+        {(role === 'HR' || role === 'SUPERADMIN' || role === 'ADMIN') &&
+          chatType === 'group' && (
+            <IconButton
+              size="sm"
+              aria-label="Create Group"
+              icon={<Plus size={18} />}
+              onClick={() => {
+                groupModal.onOpen();
+                setMode('create');
+              }}
+            />
+          )}
+      </VStack>
+    </>
+  );
+
+  // Renders message list + input UI exactly the same
+  // You can reuse your message rendering component logic from your original file
 
   const handleDeleteMessage = async (messageId: string) => {
     await deleteMessage(messageId);
@@ -233,92 +444,28 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
     }
   };
 
-  const handleSelectUser = (user: DocumentData) => {
-    setSelectedUser(user);
-    const params = new URLSearchParams(searchParams);
-    params.set('userId', user.id);
-    router.push(`${pathname}?${params.toString()}#messages`);
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
-
-  const filteredUsers = users?.filter((user) =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  if (users && users.length === 0) {
-    return (
-      <div className="h-[80vh]">
-        {user === 'admin' ? <AdminNavbar /> : <LawyerNavbar />}
-        <Flex justify="center" align="center" h="100%">
-          <LoaderComponent />
-        </Flex>
-      </div>
-    );
-  }
-
-  const SidebarContent = () => (
-    <>
-      <Box p={4} borderBottom="1px" borderColor="gray.200">
-        <Input
-          ref={inputRef}
-          placeholder="Search users..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          autoComplete="off"
-        />
-      </Box>
-      <VStack spacing={2} align="stretch" p={4} flex={1} overflowY="auto">
-        {filteredUsers?.map((user) => (
-          <Box
-            key={user.id}
-            p={2}
-            style={{ cursor: 'pointer' }}
-            bg={selectedUser?.id === user.id ? 'gray.100' : 'white'}
-            onClick={() => {
-              handleSelectUser(user);
-              if (authUser?.uid) {
-                markMessagesAsSeen(user.id, authUser.uid);
-              }
-              if (isMobile) {
-                onClose();
-              }
-            }}
-            borderRadius="md"
-            _hover={{ bg: 'gray.50' }}
-          >
-            <Flex align="center" justify="space-between">
-              <Flex align="center">
-                <Avatar size="sm" name={user.name} src={user.photoURL} mr={2} />
-                <Box>
-                  <Text fontWeight="bold">
-                    {user.name} - {user.role || 'User'} {/* Display role */}
-                  </Text>
-                  {user.lastMessage && (
-                    <Text fontSize="sm" color="gray.500" noOfLines={1}>
-                      {!user.lastMessage.isDeleted
-                        ? user.lastMessage.content
-                        : `Message deleted by ${
-                            user.lastMessage.senderId === authUser?.uid
-                              ? 'you'
-                              : user.name
-                          }`}
-                    </Text>
-                  )}
-                </Box>
-              </Flex>
-              {user.unseenCount > 0 && (
-                <Badge colorScheme="red" borderRadius="full" px="2">
-                  {user.unseenCount}
-                </Badge>
-              )}
-            </Flex>
-          </Box>
-        ))}
-      </VStack>
-    </>
-  );
 
   return (
     <div>
+      <CreateGroup
+        handleCreateOrEditGroup={
+          mode === 'create' ? handleCreateGroup : handleEditGroup
+        }
+        groupModal={groupModal}
+        groupName={groupName}
+        setGroupName={setGroupName}
+        selectedMembers={selectedMembers}
+        setSelectedMembers={setSelectedMembers}
+        mode={mode}
+        groupData={editGroup}
+      />
+
       {user === 'admin' ? <AdminNavbar /> : <LawyerNavbar />}
       <Flex h="calc(100vh - 64px)" overflow="hidden">
         {!isMobile ? (
@@ -336,13 +483,14 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
             <DrawerOverlay />
             <DrawerContent>
               <DrawerCloseButton />
-              <DrawerHeader borderBottomWidth="1px">Users</DrawerHeader>
+              <DrawerHeader borderBottomWidth="1px">Chats</DrawerHeader>
               <DrawerBody p={0}>
                 <SidebarContent />
               </DrawerBody>
             </DrawerContent>
           </Drawer>
         )}
+
         <Box
           w={{ base: '100%', md: '70%' }}
           p={4}
@@ -369,23 +517,24 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
               <MessageCircle size={20} />
             </Button>
           )}
-          {selectedUser ? (
+          {selectedUser || selectedGroup ? (
             <>
               <Box flex="1" overflowY="auto" mb={4}>
                 <VStack spacing={4} align="stretch">
                   {messages.map((message) => {
                     const messageTime = message.timestamp
                       ? new Date(message.timestamp.toMillis()).toLocaleString()
-                      : ''; // Fallback for messages without a timestamp
+                      : '';
 
-                    const currentTime = new Date();
-                    const messageTimestamp = message.timestamp
-                      ? new Date(message.timestamp.toMillis())
-                      : null;
-                    const isEditableOrDeletable =
-                      messageTimestamp &&
-                      currentTime.getTime() - messageTimestamp.getTime() <=
-                        15 * 60 * 1000; // 15 minutes in milliseconds
+                    const isEditable =
+                      message.senderId === authUser?.uid &&
+                      new Date().getTime() -
+                        new Date(message.timestamp?.toMillis()).getTime() <=
+                        15 * 60 * 1000;
+
+                    const senderName =
+                      users.find((u) => u.id === message.senderId)?.name ||
+                      'Unknown';
 
                     return (
                       <Box
@@ -405,101 +554,83 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
                         maxW="70%"
                       >
                         {message.isDeleted ? (
-                          <>
-                            <Text fontStyle="italic">
-                              {message.senderId === authUser?.uid
-                                ? 'You'
-                                : selectedUser.name}{' '}
-                              deleted this message
-                            </Text>
-                            <Text fontSize="xs" color="gray.500" mt={1}>
-                              {messageTime}
-                            </Text>
-                          </>
+                          <Text fontStyle="italic">
+                            {message.senderId === authUser?.uid
+                              ? 'You'
+                              : senderName}{' '}
+                            deleted this message
+                          </Text>
+                        ) : editingMessage === message.id ? (
+                          <Input
+                            value={message.content}
+                            onChange={(e) => {
+                              // Update the message content locally
+                              const updatedMessages = messages.map((m) =>
+                                m.id === message.id
+                                  ? { ...m, content: e.target.value }
+                                  : m,
+                              );
+                              setMessages(updatedMessages);
+                            }}
+                            onBlur={() =>
+                              handleEditMessage(message.id, message.content)
+                            }
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleEditMessage(message.id, message.content);
+                              }
+                            }}
+                            autoFocus
+                          />
                         ) : (
                           <>
-                            {editingMessage === message.id ? (
-                              <Input
-                                value={message.content}
-                                onChange={(e) => {
-                                  // Update the message content locally
-                                  const updatedMessages = messages.map((m) =>
-                                    m.id === message.id
-                                      ? { ...m, content: e.target.value }
-                                      : m,
-                                  );
-                                  setMessages(updatedMessages);
-                                }}
-                                onBlur={() =>
-                                  handleEditMessage(message.id, message.content)
-                                }
-                                onKeyPress={(e) => {
-                                  if (e.key === 'Enter') {
-                                    handleEditMessage(
-                                      message.id,
-                                      message.content,
-                                    );
-                                  }
-                                }}
-                                autoFocus
-                              />
-                            ) : (
-                              <>
-                                {message.fileURL && (
-                                  <>
-                                    {message.fileType.startsWith('image/') ? (
-                                      <Image
-                                        src={message.fileURL}
-                                        alt={message.fileName}
-                                        style={{
-                                          cursor: 'pointer',
-                                          width: '200px',
-                                        }}
-                                        height={200}
-                                        width={200}
-                                        onClick={() =>
-                                          window.open(
-                                            message.fileURL,
-                                            '_blank',
-                                            'noopener,noreferrer',
-                                          )
-                                        }
-                                        priority
-                                      />
-                                    ) : message.fileType ===
-                                      'application/pdf' ? (
-                                      <Button
-                                        variant="link"
-                                        colorScheme="blue"
-                                        onClick={() =>
-                                          window.open(
-                                            message.fileURL,
-                                            '_blank',
-                                            'noopener,noreferrer',
-                                          )
-                                        }
-                                      >
-                                        View PDF: {message.fileName}
-                                      </Button>
-                                    ) : (
-                                      <Button
-                                        variant="link"
-                                        colorScheme="blue"
-                                        as="a"
-                                        href={message.fileURL}
-                                        download={message.fileName}
-                                      >
-                                        Download: {message.fileName}
-                                      </Button>
-                                    )}
-                                  </>
-                                )}
-                                <Text>{message.content}</Text>
-                                <Text fontSize="xs" color="gray.500" mt={1}>
-                                  {messageTime}
+                            {selectedGroup &&
+                              message.senderId !== authUser?.uid && (
+                                <Text fontWeight="bold" fontSize="sm" mb={1}>
+                                  {senderName}
                                 </Text>
-                              </>
+                              )}
+                            {message.fileURL && (
+                              <Box mb={2}>
+                                {message.fileType.startsWith('image/') ? (
+                                  <Image
+                                    src={message.fileURL}
+                                    alt={message.fileName}
+                                    width={200}
+                                    height={200}
+                                    style={{
+                                      borderRadius: '8px',
+                                      cursor: 'pointer',
+                                    }}
+                                    onClick={() =>
+                                      window.open(message.fileURL, '_blank')
+                                    }
+                                  />
+                                ) : message.fileType === 'application/pdf' ? (
+                                  <Button
+                                    variant="link"
+                                    onClick={() =>
+                                      window.open(message.fileURL, '_blank')
+                                    }
+                                  >
+                                    View PDF: {message.fileName}
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="link"
+                                    as="a"
+                                    href={message.fileURL}
+                                    download
+                                  >
+                                    Download: {message.fileName}
+                                  </Button>
+                                )}
+                              </Box>
                             )}
+                            <Text>{message.content}</Text>
+                            <Text fontSize="xs" color="gray.500">
+                              {messageTime}
+                            </Text>
                             {message.isEdited && (
                               <Text fontSize="xs" color="gray.400" mt={1}>
                                 Edited
@@ -507,7 +638,7 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
                             )}
                             <Flex justify="flex-end" align="center" mt={1}>
                               {message.senderId === authUser?.uid &&
-                                isEditableOrDeletable && (
+                                isEditable && (
                                   <>
                                     {editingMessage === message.id ? (
                                       <Button
@@ -540,7 +671,7 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
                                   </>
                                 )}
                               {message.senderId === authUser?.uid &&
-                                !isEditableOrDeletable && (
+                                !isEditable && (
                                   <Text fontSize="xs" color="gray.400"></Text>
                                 )}
                             </Flex>
@@ -549,60 +680,55 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
                       </Box>
                     );
                   })}
-
                   <div ref={messagesEndRef} />
                 </VStack>
               </Box>
-              <Box>
-                <Box position="relative">
-                  {selectedFile && (
-                    <FilePreview
-                      file={selectedFile}
-                      onRemove={handleRemoveFile}
-                    />
-                  )}
-                  <Flex>
-                    <Input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={handleFileChange}
-                      ref={fileInputRef}
-                      display="none"
-                    />
-                    <IconButton
-                      aria-label="Attach file"
-                      icon={<Paperclip size={20} />}
-                      onClick={() => fileInputRef.current?.click()}
-                      mr={2}
-                      isDisabled={loading} // Disable during loading
-                    />
-                    <Input
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Type a message..."
-                      mr={2}
-                      isDisabled={loading} // Disable during loading
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          handleSendMessage();
-                        }
-                      }}
-                    />
-                    <Button
-                      onClick={handleSendMessage}
-                      leftIcon={loading ? undefined : <Send size={16} />}
-                      isLoading={loading} // Show loading spinner
-                      loadingText="Sending" // Text during loading
-                      isDisabled={loading} // Disable during loading
-                    >
-                      {loading ? 'Sending' : 'Send'}
-                    </Button>
-                  </Flex>
-                </Box>
+
+              <Box position="relative">
+                {selectedFile && (
+                  <FilePreview
+                    file={selectedFile}
+                    onRemove={() => setSelectedFile(null)}
+                  />
+                )}
+                <Flex>
+                  <Input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={handleFileChange}
+                    ref={fileInputRef}
+                    display="none"
+                  />
+                  <IconButton
+                    aria-label="Attach file"
+                    icon={<Paperclip size={20} />}
+                    onClick={() => fileInputRef.current?.click()}
+                    mr={2}
+                    isDisabled={loading}
+                  />
+                  <Input
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type a message..."
+                    mr={2}
+                    isDisabled={loading}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSendMessage();
+                    }}
+                  />
+                  <Button
+                    onClick={handleSendMessage}
+                    leftIcon={<Send size={16} />}
+                    isLoading={loading}
+                    isDisabled={loading}
+                  >
+                    Send
+                  </Button>
+                </Flex>
               </Box>
             </>
           ) : (
-            <Flex direction="column" justify="center" align="center" h="100%">
+            <Flex direction="column" align="center" justify="center" h="100%">
               <Avatar
                 size="xl"
                 icon={<Send size={32} />}
@@ -613,7 +739,7 @@ const MessagesTab = ({ user }: MessagesTabProps) => {
                 Welcome to Your Messages
               </Text>
               <Text color="gray.500" textAlign="center" mt={2}>
-                Select a conversation or start a new one
+                Select a user or group to start chatting.
               </Text>
             </Flex>
           )}

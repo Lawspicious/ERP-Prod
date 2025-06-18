@@ -46,6 +46,6 @@ const EditCasePage = ({ params }: { params: { caseId: string } }) => {
 };
 
 // Specify allowed roles for this page
-const allowedRoles = ['ADMIN', 'LAWYER']; // Add roles that should have access
+const allowedRoles = ['ADMIN', 'HR', 'LAWYER']; // Add roles that should have access
 
 export default withAuth(EditCasePage, allowedRoles);

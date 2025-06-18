@@ -491,5 +491,5 @@ const UserPerformance = ({ params }: { params: { userId: string } }) => {
   );
 };
 
-const allowedRoles = ['ADMIN', 'SUPERADMIN'];
+const allowedRoles = ['ADMIN', 'HR', 'SUPERADMIN'];
 export default withAuth(UserPerformance, allowedRoles);

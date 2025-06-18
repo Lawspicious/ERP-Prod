@@ -48,7 +48,7 @@ const IndividualCase = ({ caseData }: { caseData: ICase }) => {
               <MenuItem as={'div'}>
                 <UpdateNextDateButton caseDetails={caseData} />
               </MenuItem>
-              {(role === 'ADMIN' || role === 'SUPERADMIN') && (
+              {(role === 'ADMIN' || role === 'SUPERADMIN' || role === 'HR') && (
                 <MenuItem as={'div'}>
                   <TransferCaseButton caseDetails={caseData} />
                 </MenuItem>
@@ -73,7 +73,7 @@ const IndividualCase = ({ caseData }: { caseData: ICase }) => {
         <div className="hidden md:block">
           <div className="flex items-center justify-end gap-4">
             <UpdateNextDateButton caseDetails={caseData} />
-            {(role === 'ADMIN' || role === 'SUPERADMIN') && (
+            {(role === 'ADMIN' || role === 'SUPERADMIN' || role === 'HR') && (
               <TransferCaseButton caseDetails={caseData} />
             )}
             <Button

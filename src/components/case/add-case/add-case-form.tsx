@@ -178,6 +178,15 @@ const AddCaseForm = ({
           label: admin.name,
         })),
     },
+    {
+      label: 'HRs',
+      options: lawyers
+        .filter((user) => user.role === 'HR')
+        .map((admin) => ({
+          value: admin.id,
+          label: admin.name,
+        })),
+    },
   ];
 
   return (

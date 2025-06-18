@@ -133,7 +133,8 @@ const useCalendarEvents = () => {
   }, [fetchLawyerCalendarEvents]);
 
   const fetchAdminCalendarEvents = useCallback(async () => {
-    if (!userId || (role !== 'ADMIN' && role !== 'SUPERADMIN')) return;
+    if (!userId || (role !== 'ADMIN' && role !== 'SUPERADMIN' && role !== 'HR'))
+      return;
 
     const tasksQuery = query(
       collection(db, 'tasks'),

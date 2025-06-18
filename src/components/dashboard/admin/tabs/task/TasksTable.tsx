@@ -47,7 +47,7 @@ interface TasksTableProps {
   data: TableData[];
   columns: Column[];
   tabField: string;
-  actionButton: (id: string, deleteName: string) => ReactElement[];
+  actionButton: (id: string, deleteName: string, data?: any) => ReactElement[];
   onBulkUpdate: (selectedTasks: Set<string>, field: string, value: any) => void;
   onDeleteTasks: (ids: string[]) => void;
 }
@@ -157,13 +157,13 @@ const TasksTable = ({
     });
   };
 
-  const getRowColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case 'high':
-        return 'bg-red-100';
-      case 'medium':
+  const getRowColor = (status: string, isMyTask: boolean) => {
+    console.log(status, isMyTask);
+    if (isMyTask) return 'bg-blue-200';
+    switch (status.toLowerCase()) {
+      case 'pending':
         return 'bg-yellow-100';
-      case 'low':
+      case 'completed':
         return 'bg-green-100';
       default:
         return '';
@@ -329,7 +329,7 @@ const TasksTable = ({
         </Thead>
         <Tbody>
           {tableData.map((row, index) => (
-            <Tr key={index} className={getRowColor(row.priority)}>
+            <Tr key={index} className={getRowColor(row.status, row.isMyTask)}>
               <Td>
                 <Checkbox
                   className="cursor-pointer border-black"
@@ -359,11 +359,13 @@ const TasksTable = ({
                     variant="outline"
                   />
                   <MenuList zIndex={50} maxWidth={100}>
-                    {actionButton(row.id, row.deleteName).map((action, i) => (
-                      <MenuItem as="div" key={i}>
-                        {action}
-                      </MenuItem>
-                    ))}
+                    {actionButton(row.id, row.deleteName, row).map(
+                      (action, i) => (
+                        <MenuItem as="div" key={i}>
+                          {action}
+                        </MenuItem>
+                      ),
+                    )}
                   </MenuList>
                 </Menu>
               </Td>

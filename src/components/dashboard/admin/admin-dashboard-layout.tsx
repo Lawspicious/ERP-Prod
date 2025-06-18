@@ -26,6 +26,9 @@ const MessagesTab = dynamic(() => import('../shared/messages/index'), {
 const AttendanceTab = dynamic(() => import('./tabs/attendance/index'), {
   ssr: false,
 });
+const LeaveTab = dynamic(() => import('./tabs/leave/index'), {
+  ssr: false,
+});
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<string>('home');
@@ -80,6 +83,8 @@ const Dashboard = () => {
         return <MessagesTab user="admin" />;
       case 'attendance':
         return <AttendanceTab />;
+      case 'leave':
+        return <LeaveTab />;
       default:
         return <HomeTab />;
     }

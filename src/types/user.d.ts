@@ -8,7 +8,7 @@ export interface IUser {
   country: string;
   state: string;
   city: string;
-  role: 'ADMIN' | 'LAWYER' | 'SUPERADMIN';
+  role: 'ADMIN' | 'LAWYER' | 'SUPERADMIN' | 'HR';
   typeOfLawyer?: string | null;
   createdAt?: Date;
   updatedAt?: Date;

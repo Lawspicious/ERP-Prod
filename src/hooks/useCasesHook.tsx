@@ -181,7 +181,10 @@ export const useCases = () => {
   };
 
   const deleteCase = async (id: string, caseNo: string) => {
-    if (!authUser || (role !== 'ADMIN' && role !== 'SUPERADMIN')) {
+    if (
+      !authUser ||
+      (role !== 'ADMIN' && role !== 'SUPERADMIN' && role !== 'HR')
+    ) {
       newToast({
         message: 'Permission Denied',
         status: 'error',

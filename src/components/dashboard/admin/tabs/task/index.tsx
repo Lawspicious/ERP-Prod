@@ -10,8 +10,8 @@ import TaskModal from './task-modal';
 import TasksTable from './TasksTable'; // Import the new TasksTable
 import { differenceInCalendarDays, isBefore, parseISO } from 'date-fns';
 import { useAuth } from '@/context/user/userContext';
-import { DownloadIcon } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { useFollowUp } from '@/hooks/useFollowUp';
 
 const TaskTab = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -23,9 +23,12 @@ const TaskTab = () => {
     getAllTask,
     updateTask,
     setLoading,
+    getTaskById,
   } = useTask();
   const [isChecked, setIsChecked] = useState(false);
   const { authUser, role } = useAuth();
+
+  const { createFollowUp } = useFollowUp();
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIsChecked(e.target.checked);
@@ -72,6 +75,12 @@ const TaskTab = () => {
           : 'bg-red-200';
       }
 
+      // Only include tasks where createdBy.id === authUser?.uid AND lawyerDetails includes the same id
+      const isCreatedByMe = taskData?.createdBy?.id === authUser?.uid;
+      const isAssignedToMe = taskData?.lawyerDetails?.some(
+        (lawyer) => lawyer.id === authUser?.uid,
+      );
+
       return {
         No: `${index + 1}`,
         id: taskData.id,
@@ -91,7 +100,9 @@ const TaskTab = () => {
         priority: taskData.priority,
         rowColor,
         deleteName: taskData.taskName,
-        selected: false, // Add this line
+        isMyTask: isCreatedByMe && isAssignedToMe,
+        selected: false,
+        lastFollowUpAt: taskData.lastFollowUpAt,
       };
     });
   }, [allTask]);
@@ -111,24 +122,63 @@ const TaskTab = () => {
   const taskActionButtons = (
     id: string,
     deleteName: string,
-  ): ReactElement[] => [
-    <DialogButton
-      title={'Delete'}
-      message={'Do you want to delete the task?'}
-      onConfirm={async () => deleteTasks(id, deleteName)}
-      children={'Delete'}
-      confirmButtonColorScheme="red"
-      confirmButtonText="Delete"
-    />,
-    <TaskEditModal taskId={id} />,
-    <Button
-      colorScheme="purple"
-      className="w-full"
-      onClick={() => window.open(`/task/${id}`, '_blank')}
-    >
-      View
-    </Button>,
-  ];
+    data: { lastFollowUpAt?: any; status: string },
+  ): ReactElement[] => {
+    const canFollowUp = (() => {
+      if (!data.lastFollowUpAt) return true;
+      const last = new Date(data.lastFollowUpAt);
+      const now = new Date();
+      const diffHours = (now.getTime() - last.getTime()) / (1000 * 60 * 60);
+      return diffHours > 3;
+    })();
+    const buttons: ReactElement[] = [
+      <DialogButton
+        key="delete"
+        title={'Delete'}
+        message={'Do you want to delete the task?'}
+        onConfirm={async () => deleteTasks(id, deleteName)}
+        confirmButtonColorScheme="red"
+        confirmButtonText="Delete"
+      >
+        Delete
+      </DialogButton>,
+
+      <TaskEditModal key="edit" taskId={id} />,
+
+      <Button
+        key="view"
+        colorScheme="purple"
+        className="w-full"
+        onClick={() => window.open(`/task/${id}`, '_blank')}
+      >
+        View
+      </Button>,
+    ];
+
+    if (data.status === 'PENDING') {
+      buttons.splice(
+        2,
+        0,
+        <Button
+          key="follow-up"
+          disabled={!canFollowUp}
+          colorScheme="purple"
+          className="w-full"
+          onClick={() =>
+            createFollowUp({
+              taskId: id,
+              userId: authUser?.uid as string,
+              userName: authUser?.displayName as string,
+            })
+          }
+        >
+          Follow Up
+        </Button>,
+      );
+    }
+
+    return buttons;
+  };
 
   // Bulk Update Handlers
   const handleBulkUpdate = async (
@@ -145,23 +195,16 @@ const TaskTab = () => {
         console.log('Processing combined update:', value);
 
         try {
-          // Parse the combined update values
           const updateValues = JSON.parse(value);
 
-          // Apply each update in a single batch
           for (const taskId of selectedTasks) {
             const task = allTask.find((t) => t.id === taskId);
             if (task && taskId) {
-              // Create updated task with all the fields from the combined update
               const updatedTask = { ...task } as Record<string, any>;
 
-              // Apply each property from the combined update
               Object.keys(updateValues).forEach((key) => {
                 updatedTask[key] = updateValues[key];
               });
-
-              // Update the task with all changes at once
-              console.log('Combined update for task:', taskId, updatedTask);
               await updateTask(taskId, updatedTask, task.taskName);
             }
           }
@@ -169,7 +212,7 @@ const TaskTab = () => {
           console.error('Error parsing combined update:', parseError);
         }
 
-        return; // Exit early since we've handled the combined update
+        return;
       }
 
       // Regular single field update
@@ -235,7 +278,7 @@ const TaskTab = () => {
       <section className="flex items-center justify-between">
         <div className="mb-6 flex flex-col items-start justify-start gap-3">
           <h1 className="heading-primary">Task</h1>
-          {(role === 'ADMIN' || role === 'SUPERADMIN') && (
+          {(role === 'ADMIN' || role === 'SUPERADMIN' || role === 'HR') && (
             <Checkbox
               isChecked={isChecked}
               onChange={handleCheckboxChange}

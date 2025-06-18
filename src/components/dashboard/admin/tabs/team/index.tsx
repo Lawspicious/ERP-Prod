@@ -7,7 +7,6 @@ import LoaderComponent from '@/components/ui/loader';
 import { useTeam } from '@/hooks/useTeamHook';
 import { Button } from '@chakra-ui/react';
 import { useLoading } from '@/context/loading/loadingContext';
-import { DownloadIcon } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const TeamsTab = () => {

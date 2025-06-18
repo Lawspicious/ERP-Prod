@@ -56,16 +56,57 @@ const OrganizationInvoiceTable = ({
 
   const { role } = useAuth();
 
+  // const handleExportToExcel = () => {
+  //   const wb = XLSX.utils.book_new();
+  //   const ws = XLSX.utils.json_to_sheet(
+  //     filteredData.map((invoice) => ({
+  //       'Invoice No': invoice.id,
+  //       Date: invoice.createdAt,
+  //       'Payment Date': invoice.paymentDate || 'NA',
+  //       'Client Name': invoice.clientDetails?.name || 'NA',
+  //       Total: invoice.totalAmount,
+  //       Status: invoice.paymentStatus,
+  //     })),
+  //   );
+
+  //   XLSX.utils.book_append_sheet(wb, ws, 'Invoices');
+  //   XLSX.writeFile(wb, 'org_invoices.xlsx');
+  // };
+
   const handleExportToExcel = () => {
     const wb = XLSX.utils.book_new();
+
     const ws = XLSX.utils.json_to_sheet(
       filteredData.map((invoice) => ({
         'Invoice No': invoice.id,
-        Date: invoice.createdAt,
+        'Created At': invoice.createdAt,
         'Payment Date': invoice.paymentDate || 'NA',
+        'Due Date': invoice.dueDate || 'NA',
         'Client Name': invoice.clientDetails?.name || 'NA',
-        Total: invoice.totalAmount,
-        Status: invoice.paymentStatus,
+        'Client Email': invoice.clientDetails?.email || 'NA',
+        'Client Mobile': invoice.clientDetails?.mobile || 'NA',
+        'Client Location': invoice.clientDetails?.location || 'NA',
+        'Total Amount': invoice.totalAmount,
+        'Payment Status': invoice.paymentStatus,
+        'Invoice Type': invoice.invoiceType,
+        'PAN No': invoice.panNo || 'NA',
+        'GST Note': invoice.gstNote || 'NA',
+        Remark: invoice.remark || 'NA',
+        'Rejection Date': invoice.rejectionDate || 'NA',
+
+        // Flatten arrays (first element or joined string)
+        'RE Case IDs': invoice.RE?.map((r) => r.caseId).join(', ') || 'NA',
+        'Services Description':
+          invoice.services?.map((s) => s.description).join(', ') || 'NA',
+        'Services Amount':
+          invoice.services?.map((s) => s.amount).join(', ') || 'NA',
+        'Team Members':
+          invoice.teamMember?.map((m) => m.name).join(', ') || 'NA',
+        'Team Emails':
+          invoice.teamMember?.map((m) => m.email).join(', ') || 'NA',
+        'Team Phones':
+          invoice.teamMember?.map((m) => m.phoneNumber).join(', ') || 'NA',
+        Tasks: invoice.tasks?.map((t) => t.name).join(', ') || 'NA',
       })),
     );
 
@@ -184,6 +225,7 @@ const OrganizationInvoiceTable = ({
                 'ALL',
                 'paid',
                 'unpaid',
+                'rejected',
                 'Abhradip Jha',
                 'Lawspicious',
                 'Payable Task',
@@ -195,6 +237,7 @@ const OrganizationInvoiceTable = ({
             <Tab>ALL</Tab>
             <Tab>Paid</Tab>
             <Tab>Unpaid</Tab>
+            <Tab>Rejected</Tab>
             <Tab>Abhradip Jha</Tab>
             <Tab>Lawspicious</Tab>
             <Tab>Payable Task</Tab>
@@ -305,6 +348,7 @@ const OrganizationInvoiceTable = ({
                                   <MenuList zIndex={50} maxWidth={100}>
                                     <MenuItem>
                                       <Button
+                                        w="100%"
                                         colorScheme="purple"
                                         onClick={() =>
                                           (window.location.href = `/invoice/${invoice.id}`)
@@ -315,11 +359,28 @@ const OrganizationInvoiceTable = ({
                                     </MenuItem>
                                     {role === 'SUPERADMIN' ? (
                                       <>
-                                        <MenuItem>
-                                          <EditInvoiceModal
-                                            invoiceData={invoice}
-                                          />
-                                        </MenuItem>
+                                        {invoice.paymentStatus === 'unpaid' && (
+                                          <MenuItem>
+                                            <Button
+                                              w="100%"
+                                              colorScheme="purple"
+                                              onClick={() =>
+                                                (window.location.href = `/dashboard/admin/edit-invoice/${invoice.id}`)
+                                              }
+                                            >
+                                              Edit Invoice
+                                            </Button>
+                                          </MenuItem>
+                                        )}
+                                        {invoice.paymentStatus !==
+                                          'rejected' && (
+                                          <MenuItem>
+                                            <EditInvoiceModal
+                                              invoiceData={invoice}
+                                            />
+                                          </MenuItem>
+                                        )}
+
                                         <MenuItem>
                                           <DialogButton
                                             title="Delete"
@@ -452,6 +513,6 @@ const OrganizationInvoiceTable = ({
   );
 };
 
-const allowedRoles = ['SUPERADMIN', 'ADMIN'];
+const allowedRoles = ['SUPERADMIN', 'ADMIN', 'HR'];
 
 export default withAuth(OrganizationInvoiceTable, allowedRoles);

@@ -11,9 +11,11 @@ import { useAuth } from '@/context/user/userContext';
 
 const TaskTab = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { allTaskLawyer, getTasksByLawyerId } = useTask();
-  const { loading, setLoading } = useLoading();
+  const { allTaskLawyer, getTasksByLawyerId, loading } = useTask();
+  // const { loading, setLoading } = useLoading();
   const { authUser } = useAuth();
+
+  console.log(allTaskLawyer);
 
   const taskColumns = [
     // { key: 'No', label: 'No', sortable: false },
@@ -68,8 +70,6 @@ const TaskTab = () => {
       View
     </Button>,
   ];
-
-  console.log(loading);
 
   return (
     <TabLayout>

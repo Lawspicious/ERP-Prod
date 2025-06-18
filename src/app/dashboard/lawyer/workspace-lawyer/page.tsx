@@ -17,6 +17,6 @@ const LawyerDashboardPage = () => {
   );
 };
 
-const allowedRoles = ['ADMIN', 'LAWYER']; // Add roles that should have access
+const allowedRoles = ['ADMIN', 'HR', 'LAWYER']; // Add roles that should have access
 
 export default withAuth(LawyerDashboardPage, allowedRoles);

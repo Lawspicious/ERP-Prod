@@ -139,7 +139,7 @@ const AddCasepage = () => {
   );
 };
 
-export default withAuth(AddCasepage, ['ADMIN', 'SUPERADMIN']);
+export default withAuth(AddCasepage, ['ADMIN', 'HR', 'SUPERADMIN']);
 
 {
   /* <AddCaseForm lawyers={allTeam} /> */

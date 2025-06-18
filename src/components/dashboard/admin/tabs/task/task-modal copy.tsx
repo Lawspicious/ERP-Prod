@@ -256,6 +256,15 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose }) => {
                             </option>
                           ))}
                       </optgroup>
+                      <optgroup label="HRs">
+                        {allTeam
+                          .filter((team: IUser) => team.role === 'HR')
+                          .map((admin: IUser) => (
+                            <option key={admin.id} value={admin.id}>
+                              {admin.name}
+                            </option>
+                          ))}
+                      </optgroup>
                     </Select>
 
                     {/* Display selected lawyers */}

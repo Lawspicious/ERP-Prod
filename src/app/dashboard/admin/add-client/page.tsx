@@ -13,6 +13,6 @@ const AddClientPage = () => {
 };
 
 // Specify allowed roles for this page
-const allowedRoles = ['ADMIN', 'SUPERADMIN']; // Add roles that should have access
+const allowedRoles = ['ADMIN', 'HR', 'SUPERADMIN']; // Add roles that should have access
 
 export default withAuth(AddClientPage, allowedRoles);

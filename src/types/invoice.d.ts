@@ -5,7 +5,7 @@ export interface IInvoice {
   createdAt: string;
   dueDate: string;
   services: IService[];
-  paymentStatus: 'paid' | 'unpaid';
+  paymentStatus: 'paid' | 'unpaid' | 'rejected';
   totalAmount: number;
   invoiceType?: 'abhradip' | 'lawspicious' | null;
   RE: IRE[];
@@ -13,6 +13,8 @@ export interface IInvoice {
   gstNote?: string;
   panNo?: string;
   paymentDate?: string;
+  rejectionDate?: string;
+  remark?: string;
   tasks?: {
     name: string;
     id: string;

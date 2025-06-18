@@ -11,12 +11,31 @@ import {
   Icon,
   Stack,
   Button,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  Thead,
+  Tr,
+  Th,
+  Tbody,
+  Table,
+  Td,
 } from '@chakra-ui/react';
 import { ArrowLeft, Clipboard, Scale, User } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/user/userContext';
+import { FollowUp } from '@/hooks/useFollowUp';
+import { format, getDate } from 'date-fns';
 
-const IndividualTask = ({ task }: { task: ITask }) => {
+const IndividualTask = ({
+  task,
+  follow_ups,
+}: {
+  task: ITask;
+  follow_ups: FollowUp[] | [];
+}) => {
   const { role } = useAuth();
   const getBadgeColor = (status: 'PENDING' | 'COMPLETED') => {
     switch (status) {
@@ -66,70 +85,130 @@ const IndividualTask = ({ task }: { task: ITask }) => {
             </Badge>
           </Flex>
           <Divider />
-          <SectionHeading icon={Clipboard} title="Task Information">
-            <TextDisplay
-              label="Priority:"
-              value={
-                <Badge colorScheme={getPriorityColor(task.priority)}>
-                  {task.priority}
-                </Badge>
-              }
-            />
-            <TextDisplay label="Type:" value={task.taskType} />
-            <TextDisplay label="Start Date:" value={task.startDate} />
-            <TextDisplay label="End Date:" value={task.endDate} />
-            <TextDisplay label="End Time:" value={task.timeLimit || 'NA'} />
-            <TextDisplay label="Description:" value={task.taskDescription} />
-            <TextDisplay
-              label="Assigned By:"
-              value={task?.createdBy?.name || 'NA'}
-            />
-          </SectionHeading>
+          <Tabs w="100%" defaultIndex={0}>
+            <TabList>
+              <Tab>Details</Tab>
+              <Tab>Follow Ups</Tab>
+            </TabList>
+            <TabPanels>
+              <TabPanel>
+                <SectionHeading icon={Clipboard} title="Task Information">
+                  <TextDisplay
+                    label="Priority:"
+                    value={
+                      <Badge colorScheme={getPriorityColor(task.priority)}>
+                        {task.priority}
+                      </Badge>
+                    }
+                  />
+                  <TextDisplay label="Type:" value={task.taskType} />
+                  <TextDisplay label="Start Date:" value={task.startDate} />
+                  <TextDisplay label="End Date:" value={task.endDate} />
+                  <TextDisplay
+                    label="End Time:"
+                    value={task.timeLimit || 'NA'}
+                  />
+                  <TextDisplay
+                    label="Description:"
+                    value={task.taskDescription}
+                  />
+                  <TextDisplay
+                    label="Assigned By:"
+                    value={task?.createdBy?.name || 'NA'}
+                  />
+                </SectionHeading>
 
-          <Divider />
-          <SectionHeading icon={Scale} title="Case Details">
-            <Link href={`/case/${task?.caseDetails?.caseId}`} target="_blank">
-              <TextDisplay
-                label="Case ID:"
-                link
-                value={task?.caseDetails?.caseId}
-              />
-            </Link>
-            <TextDisplay
-              label="Case Type:"
-              value={task?.caseDetails?.caseType}
-            />
-            <TextDisplay
-              label="Court Name:"
-              value={task?.caseDetails?.courtName}
-            />
-            <TextDisplay
-              label="Petitioner:"
-              value={task.caseDetails?.petition?.petitioner || 'NA'}
-            />
-            <TextDisplay
-              label="Respondent:"
-              value={task.caseDetails?.respondent?.respondentee}
-            />
-          </SectionHeading>
-          <Divider />
-          <SectionHeading icon={User} title="Lawyer Information">
-            {task.lawyerDetails.map((lawyer) => (
-              <div key={lawyer.id} className="mb-4">
-                <TextDisplay label="Name:" value={lawyer.name} />
-                <TextDisplay label="Email:" value={lawyer.email} />
-                <TextDisplay label="Phone:" value={lawyer.phoneNumber} />
-              </div>
-            ))}
-          </SectionHeading>
-          {task.clientDetails && (
-            <SectionHeading icon={User} title="Client Information">
-              <div key={task.clientDetails.id} className="mb-4">
-                <TextDisplay label="Name:" value={task.clientDetails.name} />
-                <TextDisplay label="Email:" value={task.clientDetails.email} />
-              </div>
-            </SectionHeading>
-          )}
+                <Divider />
+                <SectionHeading icon={Scale} title="Case Details">
+                  <Link
+                    href={`/case/${task?.caseDetails?.caseId}`}
+                    target="_blank"
+                  >
+                    <TextDisplay
+                      label="Case ID:"
+                      link
+                      value={task?.caseDetails?.caseId}
+                    />
+                  </Link>
+                  <TextDisplay
+                    label="Case Type:"
+                    value={task?.caseDetails?.caseType}
+                  />
+                  <TextDisplay
+                    label="Court Name:"
+                    value={task?.caseDetails?.courtName}
+                  />
+                  <TextDisplay
+                    label="Petitioner:"
+                    value={task.caseDetails?.petition?.petitioner || 'NA'}
+                  />
+                  <TextDisplay
+                    label="Respondent:"
+                    value={task.caseDetails?.respondent?.respondentee}
+                  />
+                </SectionHeading>
+                <Divider />
+                <SectionHeading icon={User} title="Lawyer Information">
+                  {task.lawyerDetails.map((lawyer) => (
+                    <div key={lawyer.id} className="mb-4">
+                      <TextDisplay label="Name:" value={lawyer.name} />
+                      <TextDisplay label="Email:" value={lawyer.email} />
+                      <TextDisplay label="Phone:" value={lawyer.phoneNumber} />
+                    </div>
+                  ))}
+                </SectionHeading>
+                {task.clientDetails && (
+                  <SectionHeading icon={User} title="Client Information">
+                    <div key={task.clientDetails.id} className="mb-4">
+                      <TextDisplay
+                        label="Name:"
+                        value={task.clientDetails.name}
+                      />
+                      <TextDisplay
+                        label="Email:"
+                        value={task.clientDetails.email}
+                      />
+                    </div>
+                  </SectionHeading>
+                )}
+              </TabPanel>
+              <TabPanel>
+                {follow_ups?.length ? (
+                  <Table variant="striped" colorScheme="blackAlpha">
+                    <Thead>
+                      <Tr>
+                        <Th>Done By</Th>
+                        <Th>Raised At</Th>
+                        <Th>Completed At</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {follow_ups.map((follow_up, index) => (
+                        <Tr key={follow_up.id}>
+                          <Td>{follow_up.userName}</Td>
+                          <Td>
+                            {new Date(
+                              follow_up.timestamp.toDate(),
+                            ).toLocaleString()}
+                          </Td>
+                          <Td>
+                            {task?.completedAt
+                              ? format(
+                                  new Date(task.completedAt.toDate()),
+                                  'yyyy-MM-dd HH:mm',
+                                )
+                              : '---'}
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                ) : (
+                  <p>No Follow up yet</p>
+                )}
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
         </VStack>
       </Flex>
       <div className="mt-6 flex w-full items-center justify-center">

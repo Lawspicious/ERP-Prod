@@ -56,7 +56,7 @@ const AppointmentTab = () => {
       <section className="mb-6 flex items-center justify-between">
         <div className="mb-6 flex flex-col items-start justify-start gap-3">
           <h1 className="heading-primary">Appointment</h1>
-          {role === 'ADMIN' && (
+          {(role === 'ADMIN' || role === 'HR') && (
             <Checkbox isChecked={isChecked} onChange={handleCheckboxChange}>
               My Appointments
             </Checkbox>

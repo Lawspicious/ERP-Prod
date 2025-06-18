@@ -44,9 +44,9 @@ const DuplicateInvoiceForm = ({
   const [invoiceDueDate, setInvoiceDueDate] = useState(
     initialInvoiceData.dueDate || '',
   );
-  const [paymentStatus, setPaymentStatus] = useState<'paid' | 'unpaid'>(
-    initialInvoiceData.paymentStatus || 'unpaid',
-  );
+  const [paymentStatus, setPaymentStatus] = useState<
+    'paid' | 'unpaid' | 'rejected'
+  >(initialInvoiceData.paymentStatus || 'unpaid');
   const [services, setServices] = useState<IService[]>(
     initialInvoiceData.services || [
       {

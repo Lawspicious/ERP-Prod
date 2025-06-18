@@ -387,6 +387,15 @@ const EditCaseForm = ({
                     </option>
                   ))}
               </optgroup>
+              <optgroup label="HRs">
+                {lawyers
+                  .filter((team: IUser) => team.role === 'HR')
+                  .map((admin: IUser) => (
+                    <option key={admin.id} value={admin.id}>
+                      {admin.name}
+                    </option>
+                  ))}
+              </optgroup>
             </Select>
           </FormControl>
         </div>

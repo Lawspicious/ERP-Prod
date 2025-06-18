@@ -3,6 +3,7 @@ import withAuth from '@/components/shared/hoc-middlware';
 import PageLayout from '@/components/ui/page-layout';
 import { useAuth } from '@/context/user/userContext';
 import { typesOfLawyers } from '@/db/typesOfLawyer';
+import { useTeam } from '@/hooks/useTeamHook';
 import { useUser } from '@/hooks/useUserHook';
 import { IUser } from '@/types/user';
 
@@ -14,7 +15,7 @@ import {
   Input,
 } from '@chakra-ui/react';
 import { ArrowLeft } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const initialData: IUser = {
   name: '',
@@ -29,11 +30,26 @@ const initialData: IUser = {
   typeOfLawyer: '',
 };
 
-const AddMemberPage = () => {
+const EditMemberPage = ({ params }: { params: { memberId: string } }) => {
   const [formInputs, setFormInputs] = useState<IUser>({ ...initialData });
-  const { createUser } = useUser();
+  const { updateUser } = useUser();
   const { role } = useAuth();
   const [loading, setLoading] = useState(false);
+  const { getUserById, user } = useTeam();
+
+  useEffect(() => {
+    getUserById(params.memberId as string);
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      setFormInputs({
+        ...initialData,
+        ...user,
+        phoneNumber: user.phoneNumber?.replace(/^\+91/, '') || '',
+      });
+    }
+  }, [user]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -44,17 +60,19 @@ const AddMemberPage = () => {
       [name]: value,
     });
   };
-  const handleAddNewMember = async (e: any) => {
+  const handleEditMember = async (e: any) => {
     setLoading(true);
     e.preventDefault();
     try {
       let _createMemberData = formInputs;
       formInputs.phoneNumber = `+91${formInputs.phoneNumber}`;
-      const res = await createUser(_createMemberData);
+      const res = await updateUser({
+        ..._createMemberData,
+        id: params.memberId as string,
+      });
     } catch (error) {
       console.log(error);
     }
-    setFormInputs(initialData);
     setLoading(false);
   };
 
@@ -62,7 +80,7 @@ const AddMemberPage = () => {
     <PageLayout screen="margined">
       <div>
         <div className="flex items-center justify-between gap-6">
-          <h1 className="heading-primary mb-6">Add New Member</h1>
+          <h1 className="heading-primary mb-6">Edit Member</h1>
           <Button
             isLoading={loading}
             colorScheme="blue"
@@ -95,6 +113,7 @@ const AddMemberPage = () => {
                 name="email"
                 placeholder="Enter email"
                 value={formInputs.email}
+                readOnly={true}
                 onChange={handleInputChange}
               />
             </FormControl>
@@ -203,9 +222,9 @@ const AddMemberPage = () => {
             <Button
               colorScheme="purple"
               isLoading={loading}
-              onClick={handleAddNewMember}
+              onClick={handleEditMember}
             >
-              Add Member
+              Update Member
             </Button>
           </div>
         </form>
@@ -217,4 +236,4 @@ const AddMemberPage = () => {
 // Specify allowed roles for this page
 const allowedRoles = ['ADMIN', 'HR', 'SUPERADMIN']; // Add roles that should have access
 
-export default withAuth(AddMemberPage, allowedRoles);
+export default withAuth(EditMemberPage, allowedRoles);

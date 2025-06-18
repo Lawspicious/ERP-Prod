@@ -1,3 +1,4 @@
+import { Timestamp } from 'firebase/firestore';
 import { IClient, IClientProspect } from './client';
 
 export interface ITask {
@@ -17,6 +18,8 @@ export interface ITask {
   amount?: number;
   createdBy: ICreatorDetails;
   createdAt?: string;
+  completedAt?: Timestamp;
+  lastFollowUpAt?: Timestamp;
 }
 
 interface ILawyer {

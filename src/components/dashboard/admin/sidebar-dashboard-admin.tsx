@@ -13,6 +13,7 @@ import {
   BarChart,
   MessagesSquare,
   Clock,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '@/context/user/userContext';
 import { Badge, Button } from '@chakra-ui/react';
@@ -152,6 +153,16 @@ const Sidebar = () => {
             <span>Attendance</span>
           </li>
         )}
+
+        <li
+          className={`mb-3 flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-bgSecondary ${
+            activeTab === 'leave' ? 'bg-bgSecondary' : ''
+          }`}
+          onClick={() => handleNavigation('leave')}
+        >
+          <LogOut size={20} />
+          <span>Leave</span>
+        </li>
 
         {role === 'SUPERADMIN' && (
           <li

@@ -136,7 +136,7 @@ const TextDisplay = ({ label, value }: { label: string; value: any }) => (
 );
 
 // Helper function for role badge color scheme
-const getRoleColor = (role: 'ADMIN' | 'LAWYER' | 'SUPERADMIN') => {
+const getRoleColor = (role: 'ADMIN' | 'LAWYER' | 'SUPERADMIN' | 'HR') => {
   switch (role) {
     case 'ADMIN':
       return 'blue';

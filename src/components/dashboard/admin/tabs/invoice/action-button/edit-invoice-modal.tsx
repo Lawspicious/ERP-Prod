@@ -15,22 +15,32 @@ import {
   FormLabel,
   Input,
   Select,
+  Textarea,
 } from '@chakra-ui/react';
 import React, { useState } from 'react';
 
 const EditInvoiceModal = ({ invoiceData }: { invoiceData: IInvoice }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [paymentStatus, setPaymentStatus] = useState<'paid' | 'unpaid'>(
-    invoiceData.paymentStatus,
-  );
+  const [paymentStatus, setPaymentStatus] = useState<
+    'paid' | 'unpaid' | 'rejected'
+  >(invoiceData.paymentStatus);
   const [paymentDate, setPaymentDate] = useState(invoiceData.paymentDate || '');
+  const [remark, setRemark] = useState('');
   const { updateInvoice } = useInvoice();
 
   const handleEdit = async () => {
-    await updateInvoice(invoiceData.id as string, {
-      paymentDate,
-      paymentStatus,
-    });
+    if (paymentStatus === 'rejected') {
+      await updateInvoice(invoiceData.id as string, {
+        paymentStatus,
+        remark,
+        rejectionDate: new Date().toISOString().split('T')[0],
+      });
+    } else {
+      await updateInvoice(invoiceData.id as string, {
+        paymentStatus,
+        paymentDate,
+      });
+    }
     onClose();
   };
   return (
@@ -56,6 +66,7 @@ const EditInvoiceModal = ({ invoiceData }: { invoiceData: IInvoice }) => {
               >
                 <option value={'unpaid'}>Unpaid</option>
                 <option value={'paid'}>Paid</option>
+                <option value={'rejected'}>Rejected</option>
               </Select>
             </FormControl>
             {paymentStatus === 'paid' ? (
@@ -72,6 +83,18 @@ const EditInvoiceModal = ({ invoiceData }: { invoiceData: IInvoice }) => {
               </FormControl>
             ) : (
               <div />
+            )}
+
+            {paymentStatus === 'rejected' && (
+              <FormControl>
+                <FormLabel>Remark</FormLabel>
+                <Textarea
+                  name="remark"
+                  placeholder="Enter rejection remark"
+                  value={remark}
+                  onChange={(e) => setRemark(e.target.value)}
+                />
+              </FormControl>
             )}
           </ModalBody>
           <ModalFooter>

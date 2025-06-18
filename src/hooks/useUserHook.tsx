@@ -74,6 +74,7 @@ export const useUser = () => {
   const updateUser = async (data: IUser) => {
     console.log('uid', data.id);
     try {
+      // Update user credentials in Firebase Auth via cloud function
       const result = await updateUserCred({
         uid: data.id,
         name: data.name,
@@ -81,6 +82,22 @@ export const useUser = () => {
         role: data.role,
         phoneNumber: data.phoneNumber,
       });
+
+      // Update user document in Firestore with latest address and related fields
+      if (!data.id) {
+        throw new Error('User ID is required to update user');
+      }
+
+      await updateDoc(doc(db, 'users', data.id), {
+        phoneNumber: data.phoneNumber,
+        address: data.address,
+        zipcode: data.zipcode,
+        country: data.country,
+        state: data.state,
+        city: data.city,
+        typeOfLawyer: data.typeOfLawyer,
+      });
+
       newToast({
         status: 'success',
         message: 'User Updated Successfully',

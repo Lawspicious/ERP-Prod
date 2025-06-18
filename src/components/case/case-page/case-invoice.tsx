@@ -110,7 +110,9 @@ const CaseInvoiceTable = ({ caseId }: { caseId: string }) => {
                       variant="outline"
                     />
                     <MenuList zIndex={50} maxWidth={100}>
-                      {(role === 'ADMIN' || role === 'SUPERADMIN') && (
+                      {(role === 'ADMIN' ||
+                        role === 'SUPERADMIN' ||
+                        role === 'HR') && (
                         <MenuItem as={'div'}>
                           <DialogButton
                             title={'Delete'}
