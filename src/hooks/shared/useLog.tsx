@@ -132,14 +132,26 @@ export const useLog = () => {
           conditions.push(where('date', '==', date.trim()));
         }
 
-        const logQuery = query(
-          logCollectionRef,
-          orderBy('date', 'desc'),
-          orderBy('time', 'desc'),
-          ...conditions,
-          ...(currentPage !== 0 ? [startAfter(lastVisible)] : []),
-          limit(pageSize),
-        );
+        let logQuery;
+
+        if (currentPage === 0) {
+          logQuery = query(
+            logCollectionRef,
+            orderBy('date', 'desc'),
+            orderBy('time', 'desc'), // Add time sorting
+            ...conditions,
+            limit(pageSize),
+          );
+        } else {
+          logQuery = query(
+            logCollectionRef,
+            orderBy('date', 'desc'),
+            orderBy('time', 'desc'),
+            ...conditions,
+            startAfter(lastVisible),
+            limit(pageSize),
+          );
+        }
 
         const logSnap = await getDocs(logQuery);
         const logList: ILogEventInterface[] = logSnap.docs.map((doc) => ({
