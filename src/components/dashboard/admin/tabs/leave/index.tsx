@@ -238,11 +238,12 @@ function LeaveTab() {
                                       </>
                                     )}
 
-                                  {item.userId === authUser?.uid && (
-                                    <MenuItem as="div">
-                                      <LeaveRequestModal data={item} />
-                                    </MenuItem>
-                                  )}
+                                  {item.userId === authUser?.uid &&
+                                    item.status === 'pending' && (
+                                      <MenuItem as="div">
+                                        <LeaveRequestModal data={item} />
+                                      </MenuItem>
+                                    )}
                                   {/* <MenuItem as="div">
                                     <DialogButton
                                       title="Delete"
