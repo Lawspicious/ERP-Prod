@@ -14,7 +14,7 @@ import {
 import { db } from '@/lib/config/firebase.config';
 import { useToastHook } from './shared/useToastHook';
 import { differenceInHours } from 'date-fns';
-import { sendFollowUpEmail } from '../../functions-cloud/src/utils/sendFollowUpEmail';
+import { sendFollowUpEmail } from '../lib/utils/sendFollowUpEmail';
 import { useTask } from './useTaskHooks';
 
 export interface FollowUp {
