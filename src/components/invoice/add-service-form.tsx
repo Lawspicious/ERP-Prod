@@ -132,7 +132,7 @@ const AddServiceForm = ({
 
                   <AutocompleteTextbox
                     options={serviceList2}
-                    handleSelect={(value) => {
+                    onChange={(value) => {
                       handleChange({ target: { name: 'name', value } }, i);
                     }}
                     placeholder="Enter Service Name"

@@ -16,7 +16,7 @@ interface AutocompleteProps {
     e: React.ChangeEvent<HTMLInputElement>,
     index: number,
   ) => void;
-  handleSelect: (value: string) => void;
+  handleSelect?: (value: string) => void;
   index?: number;
   className?: string;
   value?: string;
@@ -69,7 +69,7 @@ const AutocompleteTextbox: React.FC<AutocompleteProps> = ({
     setInputValue(option.label);
     setSelectedOption(option);
     onChange?.(option.label);
-    handleSelect(option.label);
+    // handleSelect(option.label);
     setIsOpen(false);
   };
 
