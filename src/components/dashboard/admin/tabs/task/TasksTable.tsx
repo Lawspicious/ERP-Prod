@@ -111,7 +111,7 @@ const TasksTable = ({
   const filteredData = useMemo(() => {
     return sortedData.filter((item) => {
       const matchesSearch = Object.values(item).some((value) =>
-        value.toString().toLowerCase().includes(searchTerm.toLowerCase()),
+        value?.toString()?.toLowerCase()?.includes(searchTerm?.toLowerCase()),
       );
       const matchesPriority =
         !priorityFilter || item.priority.toLowerCase() === priorityFilter;
