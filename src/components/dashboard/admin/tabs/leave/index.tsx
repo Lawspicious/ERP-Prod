@@ -153,6 +153,7 @@ function LeaveTab() {
                           <Th>Name</Th>
                           <Th>From-TO</Th>
                           <Th>Reason</Th>
+                          <Th>Remarks</Th>
                           <Th>Status</Th>
                           <Th>Action</Th>
                         </Tr>
@@ -167,6 +168,7 @@ function LeaveTab() {
                               {`${item.fromDate} to ${item.toDate} (${item.numberOfDays}days)`}
                             </Td>
                             <Td>{item.reason}</Td>
+                            <Td>{item.remark}</Td>
 
                             <Td>
                               <Badge
@@ -194,10 +196,10 @@ function LeaveTab() {
                                 />
 
                                 <MenuList zIndex={50} maxWidth={100}>
+                                  {/* Approve/Reject: Only shown if status is pending AND user is HR/Admin/SuperAdmin */}
                                   {item.status === 'pending' &&
                                     (role === 'SUPERADMIN' ||
-                                      role === 'HR' ||
-                                      role === 'ADMIN') && (
+                                      role === 'HR') && (
                                       <>
                                         <MenuItem>
                                           <DialogButton
@@ -238,32 +240,42 @@ function LeaveTab() {
                                       </>
                                     )}
 
-                                  {item.userId === authUser?.uid &&
-                                    item.status === 'pending' && (
-                                      <MenuItem as="div">
-                                        <LeaveRequestModal data={item} />
-                                      </MenuItem>
-                                    )}
-                                  {/* <MenuItem as="div">
-                                    <DialogButton
-                                      title="Delete"
-                                      message="Do you want to Delete?"
-                                      onConfirm={async () => {
-                                        deleteLeaveRequest(
-                                          item.id as string,
-                                          item.status,
-                                          {
-                                            userId: item.userId,
-                                            fromDate: item.fromDate,
-                                            toDate: item.toDate,
-                                          },
-                                        );
-                                      }}
-                                      confirmButtonColorScheme="red"
-                                    >
-                                      Delete
-                                    </DialogButton>
-                                  </MenuItem> */}
+                                  {(item.status === 'pending' &&
+                                    item.userId === authUser?.uid) ||
+                                  (item.status === 'approved' &&
+                                    (role === 'SUPERADMIN' ||
+                                      role === 'HR')) ? (
+                                    <MenuItem as="div">
+                                      <LeaveRequestModal data={item} />
+                                    </MenuItem>
+                                  ) : null}
+
+                                  {/* Delete: shown if HR/Admin/SuperAdmin OR creator when pending */}
+                                  {(role === 'SUPERADMIN' ||
+                                    role === 'HR' ||
+                                    (item.userId === authUser?.uid &&
+                                      item.status === 'pending')) && (
+                                    <MenuItem as="div">
+                                      <DialogButton
+                                        title="Delete"
+                                        message="Do you want to Delete?"
+                                        onConfirm={async () => {
+                                          deleteLeaveRequest(
+                                            item.id as string,
+                                            item.status,
+                                            {
+                                              userId: item.userId,
+                                              fromDate: item.fromDate,
+                                              toDate: item.toDate,
+                                            },
+                                          );
+                                        }}
+                                        confirmButtonColorScheme="red"
+                                      >
+                                        Delete
+                                      </DialogButton>
+                                    </MenuItem>
+                                  )}
                                 </MenuList>
                               </Menu>
                             </Td>

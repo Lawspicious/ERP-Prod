@@ -17,6 +17,7 @@ export interface ILogEventInterface {
   userId: string;
   eventDetails: string;
   date?: string;
+  createdAt?: string;
   time?: string;
   action: 'CREATE' | 'DELETE' | 'UPDATE';
   user: {
@@ -48,6 +49,7 @@ export const useLog = () => {
       await addDoc(logCollectionRef, {
         userId,
         user,
+        createdAt: new Date().toISOString(),
         date: new Date()
           .toLocaleDateString('en-GB')
           .split('/')
@@ -137,16 +139,14 @@ export const useLog = () => {
         if (currentPage === 0) {
           logQuery = query(
             logCollectionRef,
-            orderBy('date', 'desc'),
-            orderBy('time', 'desc'), // Add time sorting
+            orderBy('createdAt', 'desc'),
             ...conditions,
             limit(pageSize),
           );
         } else {
           logQuery = query(
             logCollectionRef,
-            orderBy('date', 'desc'),
-            orderBy('time', 'desc'),
+            orderBy('createdAt', 'desc'),
             ...conditions,
             startAfter(lastVisible),
             limit(pageSize),

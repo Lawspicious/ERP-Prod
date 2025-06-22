@@ -6,6 +6,7 @@ import {
   getDocs,
   addDoc,
   deleteDoc,
+  doc,
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/config/firebase.config'; // Ensure you import your initialized Firestore instance
 import { useAuth } from '@/context/user/userContext';
@@ -37,7 +38,7 @@ const useCalendarEvents = () => {
 
       try {
         const eventsCollectionRef = collection(db, `users/${userId}/events`);
-        await addDoc(eventsCollectionRef, {
+        const eventDocRef = await addDoc(eventsCollectionRef, {
           title: event.title,
           start: event.start,
         });
@@ -50,6 +51,7 @@ const useCalendarEvents = () => {
           duration: 4000,
           isClosable: true,
         });
+        return eventDocRef;
       } catch (error) {
         console.error('Error creating new event:', error);
         toast({
@@ -63,6 +65,7 @@ const useCalendarEvents = () => {
     },
     [userId, toast],
   );
+
   const fetchLawyerCalendarEvents = useCallback(async () => {
     if (!userId || role !== 'LAWYER') return;
 

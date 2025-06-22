@@ -25,6 +25,7 @@ export const LeaveRequestModal = ({ data }: { data?: ILeaveRequest }) => {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [reason, setReason] = useState('');
+  const [remark, setRemark] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -32,11 +33,12 @@ export const LeaveRequestModal = ({ data }: { data?: ILeaveRequest }) => {
       setFromDate(data.fromDate);
       setToDate(data.toDate);
       setReason(data.reason);
+      setRemark(data.remark || '');
     }
   }, [data]);
 
   const handleSubmit = async () => {
-    if (!authUser || !fromDate || !toDate || !reason) return;
+    if (!authUser || !fromDate || !toDate || (!reason && !remark)) return;
 
     setLoading(true);
     if (data) {
@@ -44,6 +46,8 @@ export const LeaveRequestModal = ({ data }: { data?: ILeaveRequest }) => {
         fromDate,
         toDate,
         reason,
+        remark,
+        status: data.status,
       });
     } else {
       await raiseLeaveRequest({
@@ -60,6 +64,7 @@ export const LeaveRequestModal = ({ data }: { data?: ILeaveRequest }) => {
     setFromDate('');
     setToDate('');
     setReason('');
+    setRemark('');
   };
 
   return (
@@ -93,13 +98,23 @@ export const LeaveRequestModal = ({ data }: { data?: ILeaveRequest }) => {
               />
             </FormControl>
 
-            <FormControl>
-              <FormLabel>Reason</FormLabel>
-              <Textarea
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-              />
-            </FormControl>
+            {data?.status === 'approved' ? (
+              <FormControl>
+                <FormLabel>Remark</FormLabel>
+                <Textarea
+                  value={remark}
+                  onChange={(e) => setRemark(e.target.value)}
+                />
+              </FormControl>
+            ) : (
+              <FormControl>
+                <FormLabel>Reason</FormLabel>
+                <Textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                />
+              </FormControl>
+            )}
           </ModalBody>
 
           <ModalFooter>

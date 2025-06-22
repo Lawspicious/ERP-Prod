@@ -161,7 +161,15 @@ const LogsPage = () => {
                       </Td>
                       <Td>{log.eventDetails}</Td>
                       <Td>{log.date}</Td>
-                      <Td>{log.time}</Td>
+                      <Td>
+                        {log.createdAt
+                          ? new Date(log.createdAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true,
+                            })
+                          : ''}
+                      </Td>
                       <Td>
                         <Text fontWeight="bold">{log.user.name}</Text>
                       </Td>
