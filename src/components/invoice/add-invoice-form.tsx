@@ -140,18 +140,20 @@ const AddInvoiceForm = ({
 
   const handleCreateInvoice = async (e: any) => {
     e.preventDefault();
+
+    if (!selectedTasks.length && billTo === 'organization') {
+      newToast({
+        message: 'Task is required',
+        status: 'error',
+      });
+
+      return;
+    }
+
     setLoading(true);
     try {
       let clientDetails = null;
       let teamMember: IUser | undefined = undefined;
-      if (!selectedTasks.length && billTo === 'organization') {
-        newToast({
-          message: 'Task is required',
-          status: 'error',
-        });
-
-        return;
-      }
 
       if (selectedClientId) {
         const client = allClients.find(
