@@ -345,6 +345,7 @@ const MessagesTab = ({ user }: { user: 'admin' | 'lawyer' }) => {
                           <MenuItem>
                             <Button
                               onClick={() => {
+                                onClose();
                                 groupModal.onOpen();
                                 setMode('edit');
                                 setEditGroup({
@@ -402,6 +403,7 @@ const MessagesTab = ({ user }: { user: 'admin' | 'lawyer' }) => {
               aria-label="Create Group"
               icon={<Plus size={18} />}
               onClick={() => {
+                onClose();
                 groupModal.onOpen();
                 setMode('create');
               }}
