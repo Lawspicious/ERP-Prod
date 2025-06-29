@@ -1,9 +1,11 @@
 import React from 'react';
 import { Page, Text, Document, View, Image } from '@react-pdf/renderer';
 import styles from './pdfStyles';
-import { IInvoice, IService } from '@/types/invoice';
+import { IInvoice } from '@/types/invoice';
 
 const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
+  console.log(invoiceData);
+
   if (!invoiceData || !invoiceData.id) {
     return (
       <Document>
@@ -14,42 +16,20 @@ const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
     );
   }
 
-  // Dynamic chunking function
-  const chunkServicesByHeight = (
-    services: IService[],
-    maxHeightPerPage: number,
-  ) => {
-    const chunks = [];
-    let currentChunk = [];
-    let currentHeight = 0;
+  const SERVICES_PER_PAGE = 4;
 
-    for (const s of services) {
-      const descLength = s.description?.length || 0;
-      const estimatedRowHeight =
-        descLength < 100 ? 50 : descLength < 300 ? 100 : 200;
-
-      if (currentHeight + estimatedRowHeight > maxHeightPerPage) {
-        chunks.push(currentChunk);
-        currentChunk = [];
-        currentHeight = 0;
-      }
-
-      currentChunk.push(s);
-      currentHeight += estimatedRowHeight;
+  const chunkServices = (services: IInvoice['services'], chunkSize: number) => {
+    const chunks: (typeof services)[] = [];
+    for (let i = 0; i < services?.length; i += chunkSize) {
+      chunks.push(services.slice(i, i + chunkSize));
     }
-
-    if (currentChunk.length > 0) {
-      chunks.push(currentChunk);
-    }
-
     return chunks;
   };
 
-  const HEADER_FOOTER_HEIGHT = 350;
-  const PAGE_HEIGHT = 841.89;
-  const MAX_TABLE_HEIGHT = PAGE_HEIGHT - HEADER_FOOTER_HEIGHT - 200;
-
-  const serviceChunks = chunkServicesByHeight(invoiceData?.services || [], 199);
+  const serviceChunks = chunkServices(
+    invoiceData?.services || [],
+    SERVICES_PER_PAGE,
+  );
 
   const renderHeader = () => (
     <>
@@ -99,10 +79,8 @@ const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
       </View>
       {services.map((service, i) => (
         <View style={styles.tbody} key={i}>
-          <Text style={styles.smallCell_tbody} wrap>
-            {service?.name || 'N/A'}
-          </Text>
-          <Text style={styles.largeCell_tbody} wrap>
+          <Text style={styles.smallCell_tbody}>{service?.name || 'N/A'}</Text>
+          <Text style={styles.largeCell_tbody}>
             {service?.description || 'N/A'}
           </Text>
           <Text style={styles.smallCellLast_tbody}>
@@ -141,12 +119,33 @@ const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
 
   return (
     <Document>
-      {serviceChunks.map((chunk, pageIndex) => (
-        <Page size="A4" style={styles.page} key={pageIndex}>
-          {renderHeader()}
-          {renderServicesTable(chunk)}
+      {/* Page 1 */}
+      <Page size="A4" style={styles.page}>
+        {renderHeader()}
+        {renderServicesTable(serviceChunks[0] || [])}
 
-          {pageIndex === serviceChunks.length - 1 && (
+        {serviceChunks.length === 1 && (
+          <>
+            {/* Total on single-page invoice */}
+            <View style={styles.tbody}>
+              <Text style={styles.largeCellTotal}>Total</Text>
+              <Text style={styles.smallCellLast_tbody}>
+                {invoiceData.totalAmount || 'N/A'}
+              </Text>
+            </View>
+          </>
+        )}
+        {renderFooter()}
+      </Page>
+
+      {/* Extra pages if services exceed page 1 */}
+      {serviceChunks.slice(1).map((services, pageIndex) => (
+        <Page size="A4" style={styles.page} key={pageIndex + 1}>
+          {renderHeader()}
+          {renderServicesTable(services)}
+
+          {/* Only show total on the last page */}
+          {pageIndex === serviceChunks.length - 2 && (
             <View style={styles.tbody}>
               <Text style={styles.largeCellTotal}>Total</Text>
               <Text style={styles.smallCellLast_tbody}>
@@ -155,7 +154,8 @@ const PDFfile = ({ invoiceData }: { invoiceData: IInvoice }) => {
             </View>
           )}
 
-          {renderFooter()}
+          {/* Render footer only on last page */}
+          {pageIndex === serviceChunks.length - 2 && renderFooter()}
         </Page>
       ))}
     </Document>

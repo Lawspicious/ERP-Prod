@@ -80,7 +80,7 @@ const PrintLawyerInvoiceButton = ({
 
   return (
     <Button colorScheme="purple" onClick={openPDFInNewTab}>
-      View Abhradip Jha Invoice
+      Print Abhradip Jha Invoice
     </Button>
   );
 };
