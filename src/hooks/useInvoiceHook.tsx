@@ -113,19 +113,36 @@ export const useInvoice = () => {
     try {
       const collectionRef = collection(db, collectionName);
 
-      const q = query(collectionRef, orderBy('__name__', 'desc'), limit(1));
+      // const q = query(collectionRef, orderBy('__name__', 'desc'), limit(1));
+      const currentYear = new Date().getFullYear();
+      const yearPrefix = `LAWSP-${currentYear}-`;
+
+      const q = query(
+        collectionRef,
+        where('__name__', '>=', yearPrefix),
+        where('__name__', '<', `LAWSP-${currentYear + 1}-`),
+      );
 
       const querySnapshot = await getDocs(q);
 
       let lastNumber = 0;
 
       querySnapshot.forEach((doc) => {
-        const lastDocId = doc.id;
-        const numberPart = lastDocId.split('-').pop();
-        lastNumber = parseInt(numberPart as string, 10);
+        // const lastDocId = doc.id;
+        // const numberPart = lastDocId.split('-').pop();
+        // lastNumber = parseInt(numberPart as string, 10);
+        const docId = doc.id;
+        if (docId.startsWith(yearPrefix)) {
+          const numberPart = docId.split('-').pop();
+          const currentNumber = parseInt(numberPart as string, 10);
+          if (currentNumber > lastNumber) {
+            lastNumber = currentNumber;
+          }
+        }
       });
 
-      const newNumber = (lastNumber + 1).toString().padStart(3, '0');
+      // const newNumber = (lastNumber + 1).toString().padStart(3, '0');
+      const newNumber = (lastNumber + 1).toString().padStart(5, '0');
 
       return `${prefix}${newNumber}`;
     } catch (error) {
@@ -136,6 +153,33 @@ export const useInvoice = () => {
       return null;
     }
   };
+  // const createNextDocId = async () => {
+  //   try {
+  //     const collectionRef = collection(db, collectionName);
+
+  //     const q = query(collectionRef, orderBy('__name__', 'desc'), limit(1));
+
+  //     const querySnapshot = await getDocs(q);
+
+  //     let lastNumber = 0;
+
+  //     querySnapshot.forEach((doc) => {
+  //       const lastDocId = doc.id;
+  //       const numberPart = lastDocId.split('-').pop();
+  //       lastNumber = parseInt(numberPart as string, 10);
+  //     });
+
+  //     const newNumber = (lastNumber + 1).toString().padStart(3, '0');
+
+  //     return `${prefix}${newNumber}`;
+  //   } catch (error) {
+  //     newToast({
+  //       message: 'Error Creating Invoice Id',
+  //       status: 'error',
+  //     });
+  //     return null;
+  //   }
+  // };
 
   const createInvoice = useCallback(
     async (data: IInvoice) => {
