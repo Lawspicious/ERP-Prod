@@ -3,6 +3,7 @@ import withAuth from '@/components/shared/hoc-middlware';
 import PageLayout from '@/components/ui/page-layout';
 import { useAuth } from '@/context/user/userContext';
 import { typesOfLawyers } from '@/db/typesOfLawyer';
+import { countryCodes } from '@/db/countryCodes';
 import { useUser } from '@/hooks/useUserHook';
 import { IUser } from '@/types/user';
 
@@ -12,6 +13,7 @@ import {
   Select,
   Button,
   Input,
+  Flex,
 } from '@chakra-ui/react';
 import { ArrowLeft } from 'lucide-react';
 import React, { useState } from 'react';
@@ -31,6 +33,7 @@ const initialData: IUser = {
 
 const AddMemberPage = () => {
   const [formInputs, setFormInputs] = useState<IUser>({ ...initialData });
+  const [countryCode, setCountryCode] = useState('+91');
   const { createUser } = useUser();
   const { role } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -49,12 +52,13 @@ const AddMemberPage = () => {
     e.preventDefault();
     try {
       let _createMemberData = formInputs;
-      formInputs.phoneNumber = `+91${formInputs.phoneNumber}`;
+      _createMemberData.phoneNumber = `${countryCode}${formInputs.phoneNumber}`;
       const res = await createUser(_createMemberData);
     } catch (error) {
       console.log(error);
     }
     setFormInputs(initialData);
+    setCountryCode('+91');
     setLoading(false);
   };
 
@@ -101,13 +105,28 @@ const AddMemberPage = () => {
 
             <FormControl isRequired>
               <FormLabel>Mobile Number</FormLabel>
-              <Input
-                type="tel"
-                name="phoneNumber"
-                placeholder="Enter mobile number"
-                value={formInputs.phoneNumber}
-                onChange={handleInputChange}
-              />
+              <Flex>
+                <Select
+                  width="120px"
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  borderRightRadius="0"
+                >
+                  {countryCodes.map((item) => (
+                    <option key={item.code} value={item.code}>
+                      {item.flag} {item.code}
+                    </option>
+                  ))}
+                </Select>
+                <Input
+                  type="tel"
+                  name="phoneNumber"
+                  placeholder="Enter mobile number"
+                  value={formInputs.phoneNumber}
+                  onChange={handleInputChange}
+                  borderLeftRadius="0"
+                />
+              </Flex>
             </FormControl>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
