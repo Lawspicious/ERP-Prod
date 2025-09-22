@@ -14,6 +14,8 @@ import {
   Button,
   IconButton,
   Box,
+  Select,
+  HStack,
 } from '@chakra-ui/react';
 import { MoreVertical, Star } from 'lucide-react';
 import Pagination from '@/components/dashboard/shared/Pagination';
@@ -22,6 +24,7 @@ import { DialogButton } from '@/components/ui/alert-dialog';
 import EditClientModal from './edit-client-modal';
 import { useClient } from '@/hooks/useClientHook';
 import { useLoading } from '@/context/loading/loadingContext';
+import { useTeam } from '@/hooks/useTeamHook';
 
 interface Client {
   id: string;
@@ -30,6 +33,7 @@ interface Client {
   mobile: string;
   city: string;
   rating: number;
+  relationshipManager?: string;
 }
 
 const NormalClientTable: React.FC = () => {
@@ -37,19 +41,38 @@ const NormalClientTable: React.FC = () => {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [selectedRM, setSelectedRM] = useState<string>('');
   const rowsPerPage = 10;
 
   const { normalClient, deleteClient } = useClient();
   const { loading } = useLoading();
+  const { allUser } = useTeam();
 
-  // Filtered data based on search term
+  // Get unique RMs from clients
+  const assignedRMs = useMemo(() => {
+    const rms = normalClient
+      .map((client) => client.relationshipManager)
+      .filter((rm) => rm && rm !== 'yet to be assigned')
+      .filter((rm, index, arr) => arr.indexOf(rm) === index);
+    return rms;
+  }, [normalClient]);
+
+  // Filtered data based on search term and RM filter
   const filteredData = useMemo(() => {
-    return normalClient.filter((client) =>
+    let filtered = normalClient.filter((client) =>
       Object.values(client).some((value) =>
         String(value).toLowerCase().includes(searchTerm.toLowerCase()),
       ),
     );
-  }, [normalClient, searchTerm]);
+
+    if (selectedRM) {
+      filtered = filtered.filter(
+        (client) => client.relationshipManager === selectedRM,
+      );
+    }
+
+    return filtered;
+  }, [normalClient, searchTerm, selectedRM]);
 
   // Sort data based on column and direction
   const sortedData = useMemo(() => {
@@ -97,18 +120,49 @@ const NormalClientTable: React.FC = () => {
     }
   };
 
+  const resetFilter = () => {
+    setSelectedRM('');
+    setSearchTerm('');
+  };
+
+  const getDisplayRM = (rm?: string) => {
+    if (!rm || rm === 'yet to be assigned') return 'Yet to be assigned';
+    const user = allUser.find((u) => u.id === rm);
+    return user ? user.name : 'RM';
+  };
+
   return (
     <>
       {loading ? (
         <LoaderComponent />
       ) : (
         <Box overflowX="auto">
-          <Input
-            placeholder="Search normal clients..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            mb={4}
-          />
+          <HStack spacing={4} mb={4}>
+            <Input
+              placeholder="Search normal clients..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              flex={1}
+            />
+            <Select
+              placeholder="View By RM"
+              value={selectedRM}
+              onChange={(e) => setSelectedRM(e.target.value)}
+              width="200px"
+            >
+              {assignedRMs.map((rm) => {
+                const user = allUser.find((u) => u.id === rm);
+                return (
+                  <option key={rm} value={rm}>
+                    {user?.name || 'Unknown RM'}
+                  </option>
+                );
+              })}
+            </Select>
+            <Button onClick={resetFilter} colorScheme="gray" size="sm">
+              Reset
+            </Button>
+          </HStack>
           <Table variant="striped" colorScheme="blackAlpha">
             <Thead>
               <Tr>
@@ -118,7 +172,14 @@ const NormalClientTable: React.FC = () => {
                   {sortColumn === 'name' &&
                     (sortDirection === 'asc' ? ' ▲' : ' ▼')}
                 </Th>
-                <Th>Email</Th>
+                <Th
+                  cursor="pointer"
+                  onClick={() => handleSort('relationshipManager')}
+                >
+                  RM
+                  {sortColumn === 'relationshipManager' &&
+                    (sortDirection === 'asc' ? ' ▲' : ' ▼')}
+                </Th>
                 <Th cursor="pointer" onClick={() => handleSort('mobile')}>
                   Mobile
                   {sortColumn === 'mobile' &&
@@ -143,7 +204,7 @@ const NormalClientTable: React.FC = () => {
                   <Tr key={client.id}>
                     <Td>{(currentPage - 1) * rowsPerPage + index + 1}</Td>
                     <Td>{client.name}</Td>
-                    <Td>{client.email}</Td>
+                    <Td>{getDisplayRM(client.relationshipManager)}</Td>
                     <Td>{client.mobile}</Td>
                     <Td>{client.city}</Td>
                     <Td>

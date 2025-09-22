@@ -15,6 +15,8 @@ import { useClient } from '@/hooks/useClientHook';
 import StarRating from '../ui/star-rating';
 import { today } from '@/lib/utils/todayDate';
 import { useLoading } from '@/context/loading/loadingContext';
+import { useTeam } from '@/hooks/useTeamHook';
+import { useAuth } from '@/context/user/userContext';
 
 const initialData: IClientProspect = {
   name: '',
@@ -31,6 +33,7 @@ const initialData: IClientProspect = {
   gender: 'Male',
   nextFollowUpDate: today,
   remark: '',
+  relationshipManager: 'yet to be assigned',
 };
 
 const ClientProspectForm = () => {
@@ -40,6 +43,12 @@ const ClientProspectForm = () => {
   const toast = useToast();
   const { loading, setLoading } = useLoading();
   const { createClient } = useClient();
+  const { allUser } = useTeam();
+  const { role } = useAuth();
+
+  // Filter out lawyers from RM selection
+  const availableRMs = allUser.filter((user) => user.role !== 'LAWYER');
+  const canEditRM = role !== 'LAWYER';
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -60,7 +69,7 @@ const ClientProspectForm = () => {
       await createClient(formInputs);
       toast({
         title: 'Success',
-        description: 'Case created successfully',
+        description: 'Client created successfully',
         status: 'success',
         duration: 3000,
         position: 'top',
@@ -69,7 +78,7 @@ const ClientProspectForm = () => {
     } catch (e) {
       toast({
         title: 'Error',
-        description: 'Case can not created',
+        description: 'Client cannot be created',
         status: 'error',
         duration: 3000,
         position: 'top',
@@ -139,6 +148,24 @@ const ClientProspectForm = () => {
           <option value={'Other'}>Other</option>
         </Select>
       </FormControl>
+
+      <FormControl>
+        <FormLabel>Relationship Manager</FormLabel>
+        <Select
+          name="relationshipManager"
+          value={formInputs.relationshipManager}
+          onChange={handleInputChange}
+          isDisabled={!canEditRM}
+        >
+          <option value="yet to be assigned">Yet to be assigned</option>
+          {availableRMs.map((user) => (
+            <option key={user.id} value={user.id}>
+              {user.name}
+            </option>
+          ))}
+        </Select>
+      </FormControl>
+
       <div>
         <FormControl mb={4}>
           <FormLabel>Follow Up</FormLabel>

@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/user/userContext';
 import { useInvoice } from '@/hooks/useInvoiceHook';
+import { useTeam } from '@/hooks/useTeamHook';
 import { ICase } from '@/types/case';
 import { IClient, IClientProspect } from '@/types/client';
 import { IInvoice } from '@/types/invoice';
@@ -39,6 +40,13 @@ export const ClientPageMain = ({
 }) => {
   const { role } = useAuth();
   const { allPendingInvoice } = useInvoice();
+  const { allUser } = useTeam();
+
+  const getDisplayRM = (rm?: string) => {
+    if (!rm || rm === 'yet to be assigned') return 'Yet to be assigned';
+    const user = allUser.find((u) => u.id === rm);
+    return user ? user.name : 'Unknown RM';
+  };
 
   return (
     <div>
@@ -70,6 +78,10 @@ export const ClientPageMain = ({
             <TextDisplay label="Name:" value={client.name} />
             <TextDisplay label="Email:" value={client.email} />
             <TextDisplay label="Mobile:" value={client.mobile} />
+            <TextDisplay
+              label="Relationship Manager:"
+              value={getDisplayRM(client.relationshipManager)}
+            />
 
             <TextDisplay label="Gender:" value={client.gender} />
             {client.clientType === 'prospect' && (

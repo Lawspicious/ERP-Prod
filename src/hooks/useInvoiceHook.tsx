@@ -274,18 +274,6 @@ export const useInvoice = () => {
           message: 'Permission Denied',
           status: 'error',
         });
-        if (authUser) {
-          await createLogEvent({
-            userId: authUser?.uid,
-            action: 'DELETE',
-            eventDetails: `Invoice Deleted`,
-            user: {
-              name: authUser?.displayName,
-              email: authUser?.email,
-              role: role,
-            },
-          } as ILogEventInterface);
-        }
         return;
       }
 
@@ -296,6 +284,18 @@ export const useInvoice = () => {
           message: 'Invoice Deleted Successfully',
           status: 'success',
         });
+        if (authUser) {
+          await createLogEvent({
+            userId: authUser?.uid,
+            action: 'DELETE',
+            eventDetails: `Invoice ${id} Deleted`,
+            user: {
+              name: authUser?.displayName,
+              email: authUser?.email,
+              role: role,
+            },
+          } as ILogEventInterface);
+        }
       } catch (error) {
         newToast({
           message: 'Could not Delete Invoice',

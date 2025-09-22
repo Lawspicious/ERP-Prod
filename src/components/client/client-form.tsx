@@ -13,6 +13,8 @@ import { useToastHook } from '@/hooks/shared/useToastHook';
 import { useClient } from '@/hooks/useClientHook';
 import StarRating from '../ui/star-rating';
 import { useLoading } from '@/context/loading/loadingContext';
+import { useTeam } from '@/hooks/useTeamHook';
+import { useAuth } from '@/context/user/userContext';
 
 const initialData: IClient = {
   name: '',
@@ -26,13 +28,21 @@ const initialData: IClient = {
   clientType: 'normal',
   rating: 1,
   remark: '',
+  relationshipManager: 'yet to be assigned',
 };
 
 const ClientForm = () => {
   const [formInputs, setFormInputs] = useState<IClient>({ ...initialData });
   const { loading, setLoading } = useLoading();
   const { createClient } = useClient();
+  const { allUser } = useTeam();
+  const { role } = useAuth();
   const toast = useToast();
+
+  // Filter out lawyers from RM selection
+  const availableRMs = allUser.filter((user) => user.role !== 'LAWYER');
+  const canEditRM = role !== 'LAWYER';
+
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -52,7 +62,7 @@ const ClientForm = () => {
       await createClient(formInputs);
       toast({
         title: 'Success',
-        description: 'Case created successfully',
+        description: 'Client created successfully',
         status: 'success',
         duration: 3000,
         position: 'top',
@@ -61,7 +71,7 @@ const ClientForm = () => {
     } catch (e) {
       toast({
         title: 'Error',
-        description: 'Case can not created',
+        description: 'Client cannot be created',
         status: 'error',
         duration: 3000,
         position: 'top',
@@ -113,11 +123,28 @@ const ClientForm = () => {
           name="gender"
           placeholder="Enter Gender"
           value={formInputs.gender}
-          onChange={(e) => handleInputChange}
+          onChange={handleInputChange}
         >
           <option value={'Male'}>Male</option>
           <option value={'Female'}>Female</option>
           <option value={'Other'}>Other</option>
+        </Select>
+      </FormControl>
+
+      <FormControl>
+        <FormLabel>Relationship Manager</FormLabel>
+        <Select
+          name="relationshipManager"
+          value={formInputs.relationshipManager}
+          onChange={handleInputChange}
+          isDisabled={!canEditRM}
+        >
+          <option value="yet to be assigned">Yet to be assigned</option>
+          {availableRMs.map((user) => (
+            <option key={user.id} value={user.id}>
+              {user.name}
+            </option>
+          ))}
         </Select>
       </FormControl>
 

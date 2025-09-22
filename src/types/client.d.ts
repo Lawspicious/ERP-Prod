@@ -14,6 +14,7 @@ export interface IClient {
   rating: number;
   createdAt?: string | number;
   remark: string;
+  relationshipManager?: string; // RM field
 }
 
 export interface IClientProspect {
@@ -33,4 +34,5 @@ export interface IClientProspect {
   rating: number;
   createdAt?: string | number;
   remark: string;
+  relationshipManager?: string; // RM field
 }

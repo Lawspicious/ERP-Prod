@@ -23,6 +23,8 @@ import {
   SimpleGrid,
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
+import { useTeam } from '@/hooks/useTeamHook';
+import { useAuth } from '@/context/user/userContext';
 
 interface EditClientModalProps {
   client: IClient | IClientProspect;
@@ -32,10 +34,18 @@ const EditClientModal = ({ client }: EditClientModalProps) => {
   const [formInputs, setFormInputs] = useState(client);
   const { updateClient } = useClient();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { allUser } = useTeam();
+  const { role } = useAuth();
+
+  // Filter out lawyers from RM selection
+  const availableRMs = allUser.filter((user) => user.role !== 'LAWYER');
 
   useEffect(() => {
     if (client) {
-      setFormInputs(client);
+      setFormInputs({
+        ...client,
+        relationshipManager: client.relationshipManager || 'yet to be assigned',
+      });
     }
   }, [client]);
 
@@ -68,6 +78,8 @@ const EditClientModal = ({ client }: EditClientModalProps) => {
     await updateClient(client.id as string, formInputs, client.name);
     onClose();
   };
+
+  const canEditRM = role !== 'LAWYER';
 
   return (
     <>
@@ -117,6 +129,27 @@ const EditClientModal = ({ client }: EditClientModalProps) => {
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
+                  </Select>
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>Relationship Manager</FormLabel>
+                  <Select
+                    name="relationshipManager"
+                    value={
+                      formInputs.relationshipManager || 'yet to be assigned'
+                    }
+                    onChange={handleSelectChange}
+                    isDisabled={!canEditRM}
+                  >
+                    <option value="yet to be assigned">
+                      Yet to be assigned
+                    </option>
+                    {availableRMs.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name}
+                      </option>
+                    ))}
                   </Select>
                 </FormControl>
 
