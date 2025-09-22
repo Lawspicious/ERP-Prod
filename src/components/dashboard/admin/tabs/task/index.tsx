@@ -6,6 +6,7 @@ import LoaderComponent from '@/components/ui/loader';
 import { useTask } from '@/hooks/useTaskHooks';
 import { DialogButton } from '@/components/ui/alert-dialog';
 import TaskEditModal from './action-button/edit-task-modal';
+import ExtendTaskModal from './action-button/extend-task-modal';
 import TaskModal from './task-modal';
 import TasksTable from './TasksTable'; // Import the new TasksTable
 import { differenceInCalendarDays, isBefore, parseISO } from 'date-fns';
@@ -46,11 +47,11 @@ const TaskTab = () => {
     { key: 'No', label: 'No', sortable: false },
     { key: 'taskName', label: 'Task Name', sortable: true },
     { key: 'relatedTo', label: 'Related To', sortable: true },
-    { key: 'petitionVsRespondent', label: 'Pet vs Resp', sortable: false },
+    { key: 'extended', label: 'Extended', sortable: false },
     { key: 'startDate', label: 'Start Date', sortable: true },
     { key: 'endDate', label: 'End Date', sortable: true },
     { key: 'member', label: 'Member', sortable: true },
-    { key: 'priority', label: 'Priority', sortable: true },
+    { key: 'status', label: 'Status', sortable: true },
   ];
 
   const transformedTaskData = useMemo(() => {
@@ -86,9 +87,7 @@ const TaskTab = () => {
         relatedTo: taskData?.caseDetails?.caseId
           ? `CaseNo:${taskData.caseDetails.caseNo}`
           : 'Other',
-        petitionVsRespondent: taskData.caseDetails?.caseId
-          ? `${taskData.caseDetails.petition.petitioner || 'NA'}\nvs\n${taskData.caseDetails.respondent.respondentee || 'NA'}`
-          : 'N/A',
+        extended: taskData.isExtended ? 'Yes' : 'No',
         startDate: taskData.startDate || 'TBD',
         endDate: taskData.endDate || 'TBD',
         member:
@@ -120,7 +119,7 @@ const TaskTab = () => {
   const taskActionButtons = (
     id: string,
     deleteName: string,
-    data: { lastFollowUpAt?: any; status: string },
+    data: { lastFollowUpAt?: any; status: string; endDate: string },
   ): ReactElement[] => {
     const canFollowUp = (() => {
       if (!data.lastFollowUpAt) return true;
@@ -172,6 +171,25 @@ const TaskTab = () => {
         >
           Follow Up
         </Button>,
+      );
+
+      // Add extend button only for pending tasks
+      buttons.splice(
+        3,
+        0,
+        <ExtendTaskModal
+          key="extend"
+          taskId={id}
+          currentEndDate={data.endDate}
+          onExtend={() => {
+            // Refresh data after extension
+            if (isChecked) {
+              getTasksByLawyerId(authUser?.uid as string);
+            } else {
+              getAllTask();
+            }
+          }}
+        />,
       );
     }
 

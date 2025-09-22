@@ -20,6 +20,22 @@ export interface ITask {
   createdAt?: string;
   completedAt?: Timestamp;
   lastFollowUpAt?: Timestamp;
+  isExtended?: boolean;
+  timeline?: ITaskTimeline[];
+}
+
+export interface ITaskTimeline {
+  id?: string;
+  date: string;
+  activity: 'ASSIGNED' | 'EXTENDED' | 'COMPLETED';
+  dateExtendedTo?: string;
+  oldEndDate?: string;
+  delay?: string;
+  reason: string;
+  createdBy: {
+    id: string;
+    name: string;
+  };
 }
 
 interface ILawyer {

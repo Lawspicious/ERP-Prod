@@ -89,15 +89,16 @@ const IndividualTask = ({
             <TabList>
               <Tab>Details</Tab>
               <Tab>Follow Ups</Tab>
+              <Tab>Timeline</Tab>
             </TabList>
             <TabPanels>
               <TabPanel>
                 <SectionHeading icon={Clipboard} title="Task Information">
                   <TextDisplay
-                    label="Priority:"
+                    label="Status:"
                     value={
-                      <Badge colorScheme={getPriorityColor(task.priority)}>
-                        {task.priority}
+                      <Badge colorScheme={getBadgeColor(task.taskStatus)}>
+                        {task.taskStatus}
                       </Badge>
                     }
                   />
@@ -115,6 +116,10 @@ const IndividualTask = ({
                   <TextDisplay
                     label="Assigned By:"
                     value={task?.createdBy?.name || 'NA'}
+                  />
+                  <TextDisplay
+                    label="Extended:"
+                    value={task.isExtended ? 'Yes' : 'No'}
                   />
                 </SectionHeading>
 
@@ -205,6 +210,50 @@ const IndividualTask = ({
                   </Table>
                 ) : (
                   <p>No Follow up yet</p>
+                )}
+              </TabPanel>
+              <TabPanel>
+                {task.timeline?.length ? (
+                  <Table variant="striped" colorScheme="blackAlpha">
+                    <Thead>
+                      <Tr>
+                        <Th>Date</Th>
+                        <Th>Activity</Th>
+                        <Th>Date Extended To</Th>
+                        <Th>Delay</Th>
+                        <Th>Reason</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {task.timeline.map((entry, index) => (
+                        <Tr key={index}>
+                          <Td>{entry.date}</Td>
+                          <Td>
+                            <Badge
+                              colorScheme={
+                                entry.activity === 'ASSIGNED'
+                                  ? 'blue'
+                                  : entry.activity === 'EXTENDED'
+                                    ? 'orange'
+                                    : 'green'
+                              }
+                            >
+                              {entry.activity}
+                            </Badge>
+                          </Td>
+                          <Td>
+                            {entry.activity === 'EXTENDED'
+                              ? `${entry.dateExtendedTo} (from ${entry.oldEndDate})`
+                              : '---'}
+                          </Td>
+                          <Td>{entry.delay || '---'}</Td>
+                          <Td>{entry.reason}</Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                ) : (
+                  <p>No timeline entries yet</p>
                 )}
               </TabPanel>
             </TabPanels>

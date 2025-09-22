@@ -1,4 +1,4 @@
-import { ITask } from '@/types/task';
+import { ITask, ITaskTimeline } from '@/types/task';
 import { useState, useEffect, useCallback } from 'react';
 import { app, db } from '@/lib/config/firebase.config';
 import {
@@ -12,6 +12,7 @@ import {
   query,
   updateDoc,
   where,
+  Timestamp,
 } from 'firebase/firestore';
 import { useToastHook } from './shared/useToastHook';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -37,7 +38,24 @@ export const useTask = () => {
 
   const createTask = async (data: Partial<ITask>) => {
     try {
-      const result = await createTaskAndSendEmail({ ...data });
+      // Add initial timeline entry
+      const initialTimelineEntry: ITaskTimeline = {
+        date: new Date().toISOString().split('T')[0],
+        activity: 'ASSIGNED',
+        reason: 'Task assigned',
+        createdBy: {
+          id: authUser?.uid || '',
+          name: authUser?.displayName || 'Unknown',
+        },
+      };
+
+      const taskData = {
+        ...data,
+        isExtended: false,
+        timeline: [initialTimelineEntry],
+      };
+
+      const result = await createTaskAndSendEmail(taskData);
       console.log('Task Created and Email Sent -->', result.data);
       newToast({
         message: 'Task Created Successfully',
@@ -142,11 +160,52 @@ export const useTask = () => {
   ) => {
     try {
       const taskDocRef = doc(db, collectionName, id);
-      // If status is 'COMPLETED', add completedAt timestamp
-      const updateData = {
-        ...data,
-        ...(data.taskStatus === 'COMPLETED' && { completedAt: new Date() }),
-      };
+
+      let updateData = { ...data };
+      let newTimelineEntry: ITaskTimeline | null = null;
+
+      // If status is 'COMPLETED', add completedAt timestamp and timeline entry
+      if (data.taskStatus === 'COMPLETED') {
+        const completedDate = new Date();
+        updateData.completedAt = Timestamp.now();
+
+        // Find current task data from allTask state
+        const currentTask = allTask.find((task) => task.id === id);
+
+        // Only change endDate if task was not extended
+        if (currentTask && !currentTask.isExtended) {
+          updateData.endDate = completedDate.toISOString().split('T')[0];
+        }
+
+        // Calculate delay if task was not extended
+        let delay = '';
+        if (currentTask && !currentTask.isExtended) {
+          const originalEndDate = new Date(currentTask.endDate);
+          const diffInMs = completedDate.getTime() - originalEndDate.getTime();
+          const diffInHours = Math.ceil(diffInMs / (1000 * 60 * 60));
+          if (diffInHours > 0) {
+            delay = `${diffInHours} hours`;
+          }
+        }
+
+        newTimelineEntry = {
+          date: completedDate.toISOString().split('T')[0],
+          activity: 'COMPLETED',
+          ...(delay && { delay }),
+          reason: delay ? 'Task delayed' : 'Task completed',
+          createdBy: {
+            id: authUser?.uid || '',
+            name: authUser?.displayName || 'Unknown',
+          },
+        };
+
+        // Add timeline entry if exists
+        if (newTimelineEntry && currentTask) {
+          const existingTimeline = currentTask.timeline || [];
+          updateData.timeline = [...existingTimeline, newTimelineEntry];
+        }
+      }
+
       await updateDoc(taskDocRef, updateData);
       toast({
         title: 'Task Updated Successfully',
