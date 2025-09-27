@@ -22,6 +22,7 @@ import {
   Tag,
   TagLabel,
   TagCloseButton,
+  Textarea,
   useToast,
 } from '@chakra-ui/react';
 import { ArrowUp, ArrowDown, MoreVertical, ChevronDown } from 'lucide-react';
@@ -29,7 +30,7 @@ import Pagination from '@/components/dashboard/shared/Pagination';
 import { useTeam } from '@/hooks/useTeamHook';
 import { IUser } from '@/types/user';
 import CloneTaskModal from './action-button/clone-task-modal';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/config/firebase.config';
 
 interface Column {
@@ -78,6 +79,7 @@ const TasksTable = ({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [extensionDays, setExtensionDays] = useState<number>(1);
+  const [extensionReason, setExtensionReason] = useState<string>('');
   const [isExtending, setIsExtending] = useState<boolean>(false);
   const rowsPerPage = 10;
   const toast = useToast();
@@ -206,13 +208,30 @@ const TasksTable = ({
     taskId: string,
     endDate: string,
     timeLimit: string,
+    reason: string,
   ) => {
     try {
       const taskRef = doc(db, 'tasks', taskId);
+      const taskDoc = await getDoc(taskRef);
+      const currentTask = taskDoc.data();
+
+      const timelineEntry = {
+        date: new Date().toISOString().split('T')[0],
+        activity: 'EXTENDED',
+        dateExtendedTo: endDate,
+        oldEndDate: currentTask?.endDate,
+        reason: reason,
+        createdBy: {
+          id: 'bulk-update',
+          name: 'Bulk Update',
+        },
+      };
 
       await updateDoc(taskRef, {
         endDate: endDate,
         timeLimit: timeLimit,
+        isExtended: true,
+        timeline: [...(currentTask?.timeline || []), timelineEntry],
       });
 
       toast({
@@ -246,20 +265,46 @@ const TasksTable = ({
       return;
     }
 
+    if (!extensionReason.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please provide a reason for extending the tasks',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+        position: 'top',
+      });
+      return;
+    }
+
     setIsExtending(true);
 
     try {
       const taskIds = Array.from(selectedTasks);
 
       for (const taskId of taskIds) {
+        const task = data.find((item) => item.id === taskId);
+
+        // Skip completed tasks
+        if (task?.status?.toLowerCase() === 'completed') {
+          continue;
+        }
+
         const newEndDate = calculateNewEndDate(taskId, extensionDays);
 
         if (newEndDate) {
           // Calculate time limit based on start date and new end date
           const newTimeLimit = calculateHours(taskId, newEndDate);
-          await directUpdateTask(taskId, newEndDate, newTimeLimit);
+          await directUpdateTask(
+            taskId,
+            newEndDate,
+            newTimeLimit,
+            extensionReason,
+          );
         }
       }
+
+      setExtensionReason('');
     } catch (error) {
       console.error('Error in bulk end date extension:', error);
       toast({
@@ -493,88 +538,103 @@ const TasksTable = ({
             </Flex>
           )}
         </Flex>
-        {selectedTasks.size > 0 && (
-          <>
-            <Flex align="center" gap={2} wrap="wrap">
-              <Select
-                value={extensionDays}
-                onChange={(e) => setExtensionDays(Number(e.target.value))}
-                maxW={['100%', '150px']}
-                isDisabled={isExtending}
-              >
-                <option value={1}>Extend by 1 day</option>
-                <option value={2}>Extend by 2 days</option>
-                <option value={3}>Extend by 3 days</option>
-                <option value={4}>Extend by 4 days</option>
-                <option value={5}>Extend by 5 days</option>
-                <option value={6}>Extend by 6 days</option>
-                <option value={7}>Extend by 7 days</option>
-              </Select>
-              <Button
-                colorScheme="teal"
-                onClick={() => extendEndDate()}
-                isLoading={isExtending}
-                loadingText="Extending"
-              >
-                Extend End Date
-              </Button>
-            </Flex>
-            <Flex align="center" gap={2} wrap="wrap" mt={4}>
-              <Box>
+        {selectedTasks.size > 0 &&
+          Array.from(selectedTasks).some((taskId) => {
+            const task = data.find((item) => item.id === taskId);
+            return task?.status?.toLowerCase() === 'pending';
+          }) && (
+            <>
+              <Flex align="center" gap={2} wrap="wrap">
                 <Select
-                  placeholder="Select Lawyers"
-                  onChange={(e) => {
-                    const selectedLawyer = lawyers.find(
-                      (lawyer) => lawyer.id === e.target.value,
-                    );
-                    if (
-                      selectedLawyer &&
-                      !selectedLawyers.some(
-                        (lawyer) => lawyer.id === selectedLawyer.id,
-                      )
-                    ) {
-                      setSelectedLawyers([...selectedLawyers, selectedLawyer]);
-                    }
-                  }}
-                  maxW={['100%', '300px']}
+                  value={extensionDays}
+                  onChange={(e) => setExtensionDays(Number(e.target.value))}
+                  maxW={['100%', '150px']}
+                  isDisabled={isExtending}
                 >
-                  {lawyers.map((lawyer) => (
-                    <option key={lawyer.id} value={lawyer.id}>
-                      {lawyer.name}
-                    </option>
-                  ))}
+                  <option value={1}>Extend by 1 day</option>
+                  <option value={2}>Extend by 2 days</option>
+                  <option value={3}>Extend by 3 days</option>
+                  <option value={4}>Extend by 4 days</option>
+                  <option value={5}>Extend by 5 days</option>
+                  <option value={6}>Extend by 6 days</option>
+                  <option value={7}>Extend by 7 days</option>
                 </Select>
-                <VStack mt={2} align="start">
-                  {selectedLawyers.map((lawyer) => (
-                    <Tag
-                      key={lawyer.id}
-                      size="lg"
-                      colorScheme="teal"
-                      borderRadius="full"
-                    >
-                      <TagLabel>{lawyer.name}</TagLabel>
-                      <TagCloseButton
-                        onClick={() =>
-                          setSelectedLawyers(
-                            selectedLawyers.filter((l) => l.id !== lawyer.id),
-                          )
-                        }
-                      />
-                    </Tag>
-                  ))}
-                </VStack>
+                <Textarea
+                  placeholder="Reason for extension..."
+                  value={extensionReason}
+                  onChange={(e) => setExtensionReason(e.target.value)}
+                  maxW={['100%', '300px']}
+                  rows={2}
+                  isDisabled={isExtending}
+                />
                 <Button
-                  colorScheme="purple"
-                  mt={2}
-                  onClick={handleApplyLawyers}
-                  isDisabled={selectedLawyers.length === 0}
+                  colorScheme="teal"
+                  onClick={() => extendEndDate()}
+                  isLoading={isExtending}
+                  loadingText="Extending"
                 >
-                  Assign Lawyers
+                  Extend End Date
                 </Button>
-              </Box>
-            </Flex>
-          </>
-        )}
+              </Flex>
+              <Flex align="center" gap={2} wrap="wrap" mt={4}>
+                <Box>
+                  <Select
+                    placeholder="Select Lawyers"
+                    onChange={(e) => {
+                      const selectedLawyer = lawyers.find(
+                        (lawyer) => lawyer.id === e.target.value,
+                      );
+                      if (
+                        selectedLawyer &&
+                        !selectedLawyers.some(
+                          (lawyer) => lawyer.id === selectedLawyer.id,
+                        )
+                      ) {
+                        setSelectedLawyers([
+                          ...selectedLawyers,
+                          selectedLawyer,
+                        ]);
+                      }
+                    }}
+                    maxW={['100%', '300px']}
+                  >
+                    {lawyers.map((lawyer) => (
+                      <option key={lawyer.id} value={lawyer.id}>
+                        {lawyer.name}
+                      </option>
+                    ))}
+                  </Select>
+                  <VStack mt={2} align="start">
+                    {selectedLawyers.map((lawyer) => (
+                      <Tag
+                        key={lawyer.id}
+                        size="lg"
+                        colorScheme="teal"
+                        borderRadius="full"
+                      >
+                        <TagLabel>{lawyer.name}</TagLabel>
+                        <TagCloseButton
+                          onClick={() =>
+                            setSelectedLawyers(
+                              selectedLawyers.filter((l) => l.id !== lawyer.id),
+                            )
+                          }
+                        />
+                      </Tag>
+                    ))}
+                  </VStack>
+                  <Button
+                    colorScheme="purple"
+                    mt={2}
+                    onClick={handleApplyLawyers}
+                    isDisabled={selectedLawyers.length === 0}
+                  >
+                    Assign Lawyers
+                  </Button>
+                </Box>
+              </Flex>
+            </>
+          )}
       </Flex>
       {paginatedData.length > 0 ? (
         <>
