@@ -13,10 +13,23 @@ export interface AttendanceOverride {
   id?: string;
   userId: string;
   date: string; // ISO date string for the day being overridden
-  status: 'present' | 'absent';
+  status: 'present' | 'absent' | 'early_leave';
   overriddenBy: string; // Admin user ID or name
   timestamp: Timestamp; // Firestore timestamp
   notes?: string; // Optional notes about the override
+}
+
+export interface IEarlyLeave {
+  id?: string;
+  userId: string;
+  name: string;
+  date: string;
+  loginTime: string;
+  exitTime: string;
+  workingHours: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt?: string;
 }
 
 export interface UserAttendanceData {
@@ -24,6 +37,6 @@ export interface UserAttendanceData {
   username: string;
   userEmail: string;
   lastLogin: Date | null;
-  status: 'present' | 'absent';
+  status: 'present' | 'absent' | 'early_leave';
   statusOverridden: boolean;
 }

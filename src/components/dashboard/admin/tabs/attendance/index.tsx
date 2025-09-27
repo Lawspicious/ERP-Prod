@@ -63,7 +63,7 @@ function AttendanceTab() {
   const rowsPerPage = 5;
   const [isUpdating, setIsUpdating] = useState(false);
   const [overrides, setOverrides] = useState<
-    Record<string, Record<string, 'present' | 'absent'>>
+    Record<string, Record<string, 'present' | 'absent' | 'early_leave'>>
   >({});
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const [allUsers, setAllUsers] = useState<
@@ -146,7 +146,7 @@ function AttendanceTab() {
 
       const overridesData: Record<
         string,
-        Record<string, 'present' | 'absent'>
+        Record<string, 'present' | 'absent' | 'early_leave'>
       > = {};
 
       snapshot.forEach((doc) => {
@@ -315,7 +315,7 @@ function AttendanceTab() {
         logData.hasAnyAttendanceRecord || hasOverrides;
 
       // Determine status (overrides take precedence over login data)
-      let status: 'present' | 'absent' = 'absent';
+      let status: 'present' | 'absent' | 'early_leave' = 'absent';
       let statusOverridden = false;
 
       if (userOverrides[relevantDateIsoString]) {
@@ -427,7 +427,7 @@ function AttendanceTab() {
   // Save attendance override to Firestore - this is the core function
   const saveAttendanceOverride = async (
     userId: string,
-    status: 'present' | 'absent',
+    status: 'present' | 'absent' | 'early_leave',
     dateToOverride: string,
   ) => {
     setIsUpdating(true);
@@ -517,7 +517,7 @@ function AttendanceTab() {
   };
 
   const handleStatusChange = useCallback(
-    (userId: string, status: 'present' | 'absent') => {
+    (userId: string, status: 'present' | 'absent' | 'early_leave') => {
       // Always capture the current value of relevantDateIsoString
       const currentDateString = relevantDateIsoString;
       debugLog(
@@ -532,7 +532,7 @@ function AttendanceTab() {
 
   // Toggle status with a switch
   const toggleStatus = useCallback(
-    (userId: string, currentStatus: 'present' | 'absent') => {
+    (userId: string, currentStatus: 'present' | 'absent' | 'early_leave') => {
       const newStatus = currentStatus === 'present' ? 'absent' : 'present';
       // Always capture the current value of relevantDateIsoString
       const currentDateString = relevantDateIsoString;
@@ -700,7 +700,7 @@ function AttendanceTab() {
             </Stat>
           </CardBody>
         </Card>
-        <Card flex={1} variant="outline">
+        <Card flex={1} mr={4} variant="outline">
           <CardBody>
             <Stat>
               <StatLabel>
@@ -709,6 +709,22 @@ function AttendanceTab() {
               <StatNumber>
                 {
                   filteredUsers.filter((user) => user.status === 'absent')
+                    .length
+                }
+              </StatNumber>
+            </Stat>
+          </CardBody>
+        </Card>
+        <Card flex={1} variant="outline">
+          <CardBody>
+            <Stat>
+              <StatLabel>
+                Early Leaves{' '}
+                {selectedDate ? format(selectedDate, 'MMM dd') : 'Today'}
+              </StatLabel>
+              <StatNumber>
+                {
+                  filteredUsers.filter((user) => user.status === 'early_leave')
                     .length
                 }
               </StatNumber>
@@ -824,13 +840,21 @@ function AttendanceTab() {
                     <Td>
                       <Badge
                         colorScheme={
-                          user.status === 'present' ? 'green' : 'yellow'
+                          user.status === 'present'
+                            ? 'green'
+                            : user.status === 'early_leave'
+                              ? 'orange'
+                              : 'yellow'
                         }
                         borderRadius="full"
                         px={2}
                         py={1}
                       >
-                        {user.status === 'present' ? 'Present' : 'Absent'}
+                        {user.status === 'present'
+                          ? 'Present'
+                          : user.status === 'early_leave'
+                            ? 'Early Leave'
+                            : 'Absent'}
                       </Badge>
                       {user.statusOverridden && (
                         <Badge
@@ -905,12 +929,16 @@ function AttendanceTab() {
                           onChange={(e) =>
                             handleStatusChange(
                               user.userId,
-                              e.target.value as 'present' | 'absent',
+                              e.target.value as
+                                | 'present'
+                                | 'absent'
+                                | 'early_leave',
                             )
                           }
                           isDisabled={isUpdating}
                         >
                           <option value="present">Present</option>
+                          <option value="early_leave">Early Leave</option>
                           <option value="absent">Absent</option>
                         </Select>
                         {user.statusOverridden && (

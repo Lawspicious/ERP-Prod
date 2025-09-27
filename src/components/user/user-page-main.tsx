@@ -1,5 +1,6 @@
 import { ICase } from '@/types/case';
 import { IUser } from '@/types/user';
+import { IEarlyLeave } from '@/types/attendance';
 import {
   Box,
   Text,
@@ -11,16 +12,27 @@ import {
   Icon,
   Stack,
   Button,
+  Card,
+  CardBody,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatGroup,
 } from '@chakra-ui/react';
-import { Map, Scale, User } from 'lucide-react';
+import { Map, Scale, User, Calendar, Clock } from 'lucide-react';
 import Link from 'next/link';
+import EarlyLeavesTable from './EarlyLeavesTable';
 
 export const IndividualUser = ({
   user,
   cases,
+  absentDays = 0,
+  earlyLeaves = [],
 }: {
   user: IUser;
   cases: ICase[];
+  absentDays?: number;
+  earlyLeaves?: IEarlyLeave[];
 }) => {
   return (
     <div>
@@ -90,6 +102,41 @@ export const IndividualUser = ({
               )}
             </SectionHeading>
           )}
+
+          <Divider />
+
+          {/* Attendance Stats */}
+          <StatGroup>
+            <Card flex={1} mr={4} variant="outline">
+              <CardBody>
+                <Stat>
+                  <StatLabel>
+                    <HStack>
+                      <Icon as={Calendar} color="red.500" />
+                      <Text>Absent Days</Text>
+                    </HStack>
+                  </StatLabel>
+                  <StatNumber color="red.500">{absentDays}</StatNumber>
+                </Stat>
+              </CardBody>
+            </Card>
+            <Card flex={1} variant="outline">
+              <CardBody>
+                <Stat>
+                  <StatLabel>
+                    <HStack>
+                      <Icon as={Clock} color="orange.500" />
+                      <Text>Early Leaves</Text>
+                      <EarlyLeavesTable earlyLeaves={earlyLeaves} />
+                    </HStack>
+                  </StatLabel>
+                  <StatNumber color="orange.500">
+                    {earlyLeaves.length}
+                  </StatNumber>
+                </Stat>
+              </CardBody>
+            </Card>
+          </StatGroup>
         </VStack>
       </Flex>
       <div className="mt-6 flex w-full items-center justify-center">

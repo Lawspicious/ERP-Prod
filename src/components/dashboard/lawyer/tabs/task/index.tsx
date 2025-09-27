@@ -50,7 +50,12 @@ const TaskTab = () => {
           ? `${taskData.caseDetails.petition.petitioner}\nvs\n${taskData.caseDetails.respondent.respondentee}`
           : 'N/A',
         startDate: taskData.startDate || 'TBD',
-        endDate: taskData.endDate || 'TBD',
+        endDate:
+          taskData.taskStatus === 'COMPLETED' && taskData.completedAt
+            ? new Date(taskData.completedAt.toDate())
+                .toISOString()
+                .split('T')[0]
+            : taskData.endDate || 'TBD',
         member:
           taskData.lawyerDetails?.map((lawyer) => lawyer.name).join(', ') ||
           'No Lawyers Assigned',

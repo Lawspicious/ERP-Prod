@@ -87,9 +87,19 @@ const TaskTab = () => {
         relatedTo: taskData?.caseDetails?.caseId
           ? `CaseNo:${taskData.caseDetails.caseNo}`
           : 'Other',
+        petitionVsRespondent:
+          taskData?.caseDetails?.petition?.petitioner &&
+          taskData?.caseDetails?.respondent?.respondentee
+            ? `${taskData.caseDetails.petition.petitioner} vs ${taskData.caseDetails.respondent.respondentee}`
+            : 'N/A',
         extended: taskData.isExtended ? 'Yes' : 'No',
         startDate: taskData.startDate || 'TBD',
-        endDate: taskData.endDate || 'TBD',
+        endDate:
+          taskData.taskStatus === 'COMPLETED' && taskData.completedAt
+            ? new Date(taskData.completedAt.toDate())
+                .toISOString()
+                .split('T')[0]
+            : taskData.endDate || 'TBD',
         member:
           taskData.lawyerDetails?.map((lawyer) => lawyer.name).join(', ') ||
           'No Lawyers Assigned',

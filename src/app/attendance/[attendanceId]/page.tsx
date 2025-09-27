@@ -53,6 +53,7 @@ import { db } from '@/lib/config/firebase.config';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { AttendanceLog, AttendanceOverride } from '@/types/attendance';
 import Pagination from '@/components/dashboard/shared/Pagination';
+import EarlyLeavesModal from '@/components/attendance/EarlyLeavesModal';
 
 export default function AttendanceDetailPage() {
   const { attendanceId } = useParams();
@@ -71,11 +72,12 @@ export default function AttendanceDetailPage() {
   // Add a state to track client-side rendering to prevent hydration errors
   const [isClient, setIsClient] = useState(false);
   const [attendanceOverrides, setAttendanceOverrides] = useState<
-    Record<string, 'present' | 'absent'>
+    Record<string, 'present' | 'absent' | 'early_leave'>
   >({});
 
   const presentColor = useColorModeValue('green.100', 'green.800');
   const absentColor = useColorModeValue('yellow.100', 'yellow.800');
+  const earlyLeaveColor = useColorModeValue('orange.100', 'orange.800');
   const overrideIndicatorColor = useColorModeValue('blue.500', 'blue.300');
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -139,7 +141,10 @@ export default function AttendanceDetailPage() {
           where('userId', '==', attendanceId),
         );
         const overridesSnapshot = await getDocs(overridesQuery);
-        const overridesData: Record<string, 'present' | 'absent'> = {};
+        const overridesData: Record<
+          string,
+          'present' | 'absent' | 'early_leave'
+        > = {};
 
         overridesSnapshot.forEach((doc) => {
           const data = doc.data();
@@ -185,20 +190,29 @@ export default function AttendanceDetailPage() {
     return eachDayOfInterval({ start: monthStart, end: monthEnd });
   }, [isClient, currentMonth]);
 
-  // Function to determine if user was present on a specific day
-  const wasUserPresent = (date: Date) => {
+  // Function to determine user attendance status on a specific day
+  const getUserAttendanceStatus = (
+    date: Date,
+  ): 'present' | 'absent' | 'early_leave' => {
     // First check if there's an admin override for this date
     const dateString = format(date, 'yyyy-MM-dd');
 
     // If there's an override, use that status
     if (attendanceOverrides[dateString]) {
-      return attendanceOverrides[dateString] === 'present';
+      return attendanceOverrides[dateString];
     }
 
     // Otherwise check for login events on that day
-    return userLogs.some(
+    const hasLogin = userLogs.some(
       (log) => log.eventType === 'login' && isSameDay(log.timestamp, date),
     );
+
+    return hasLogin ? 'present' : 'absent';
+  };
+
+  // Legacy function for backward compatibility
+  const wasUserPresent = (date: Date) => {
+    return getUserAttendanceStatus(date) === 'present';
   };
 
   // Month navigation functions
@@ -257,7 +271,10 @@ export default function AttendanceDetailPage() {
           where('userId', '==', attendanceId),
         );
         const overridesSnapshot = await getDocs(overridesQuery);
-        const overridesData: Record<string, 'present' | 'absent'> = {};
+        const overridesData: Record<
+          string,
+          'present' | 'absent' | 'early_leave'
+        > = {};
 
         overridesSnapshot.forEach((doc) => {
           const data = doc.data();
@@ -426,7 +443,11 @@ export default function AttendanceDetailPage() {
             </Card>
 
             {/* Stats */}
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} flex={2}>
+            <SimpleGrid
+              columns={{ base: 1, md: 2, lg: 3 }}
+              spacing={4}
+              flex={2}
+            >
               <Card variant="outline">
                 <CardBody>
                   <Stat>
@@ -458,6 +479,44 @@ export default function AttendanceDetailPage() {
                       Present Days ({format(currentMonth, 'MMM yyyy')})
                     </StatLabel>
                     <StatNumber>{presentDaysInCurrentMonth}</StatNumber>
+                  </Stat>
+                </CardBody>
+              </Card>
+              <Card variant="outline">
+                <CardBody>
+                  <Stat>
+                    <StatLabel>
+                      Absent Days ({format(currentMonth, 'MMM yyyy')})
+                    </StatLabel>
+                    <StatNumber>
+                      {
+                        calendarDays.filter(
+                          (day) => getUserAttendanceStatus(day) === 'absent',
+                        ).length
+                      }
+                    </StatNumber>
+                  </Stat>
+                </CardBody>
+              </Card>
+              <Card variant="outline">
+                <CardBody>
+                  <Stat>
+                    <StatLabel>
+                      <HStack>
+                        <Text>
+                          Early Leaves ({format(currentMonth, 'MMM yyyy')})
+                        </Text>
+                        <EarlyLeavesModal userId={attendanceId as string} />
+                      </HStack>
+                    </StatLabel>
+                    <StatNumber>
+                      {
+                        calendarDays.filter(
+                          (day) =>
+                            getUserAttendanceStatus(day) === 'early_leave',
+                        ).length
+                      }
+                    </StatNumber>
                   </Stat>
                 </CardBody>
               </Card>
@@ -527,15 +586,22 @@ export default function AttendanceDetailPage() {
                       return <Box minH="40px" key={i} />; // render empty space
                     }
 
-                    const isPresent = wasUserPresent(day);
+                    const attendanceStatus = getUserAttendanceStatus(day);
                     const isToday = isSameDay(day, new Date());
+
+                    let bgColor = absentColor;
+                    if (attendanceStatus === 'present') {
+                      bgColor = presentColor;
+                    } else if (attendanceStatus === 'early_leave') {
+                      bgColor = earlyLeaveColor;
+                    }
 
                     return (
                       <Box
                         key={i}
                         textAlign="center"
                         p={3}
-                        bg={isPresent ? presentColor : absentColor}
+                        bg={bgColor}
                         borderRadius="md"
                         fontWeight={isToday ? 'bold' : 'normal'}
                       >
@@ -556,6 +622,16 @@ export default function AttendanceDetailPage() {
                     mr={2}
                   ></Box>
                   <Text fontSize="sm">Present</Text>
+                </Flex>
+                <Flex alignItems="center">
+                  <Box
+                    w={4}
+                    h={4}
+                    bg={earlyLeaveColor}
+                    borderRadius="md"
+                    mr={2}
+                  ></Box>
+                  <Text fontSize="sm">Early Leave</Text>
                 </Flex>
                 <Flex alignItems="center">
                   <Box

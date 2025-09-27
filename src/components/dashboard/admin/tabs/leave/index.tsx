@@ -27,13 +27,25 @@ import {
   MenuList,
   MenuItem,
   Button,
+  HStack,
 } from '@chakra-ui/react';
 import { MoreVertical, Search } from 'lucide-react';
 import withAuth from '@/components/shared/hoc-middlware';
-import { useLeaveRequest } from '@/hooks/useLeaveRequest';
+import { useLeaveRequest, ILeaveRequest } from '@/hooks/useLeaveRequest';
+import { useEarlyLeave } from '@/hooks/useEarlyLeave';
+import { IEarlyLeave } from '@/types/attendance';
 import { LeaveRequestModal } from './LeaveRequestModal';
+import EarlyLeaveModal from './EarlyLeaveModal';
 import { useAuth } from '@/context/user/userContext';
 import { DialogButton } from '@/components/ui/alert-dialog';
+
+type CombinedLeaveRequest = (ILeaveRequest | IEarlyLeave) & {
+  type: 'regular' | 'early';
+  fromDate: string;
+  toDate: string;
+  numberOfDays?: number;
+  exitTime?: string;
+};
 
 function LeaveTab() {
   const { role, authUser } = useAuth();
@@ -50,18 +62,57 @@ function LeaveTab() {
     deleteLeaveRequest,
   } = useLeaveRequest();
 
+  const {
+    earlyLeaves,
+    pendingEarlyLeaves,
+    changeEarlyLeaveStatus,
+    loading: earlyLeaveLoading,
+  } = useEarlyLeave();
+
   const [selectedTab, setSelectedTab] = useState<string>('ALL');
-  const filteredUsers = useMemo(() => {
-    let data;
+
+  const filteredUsers = useMemo((): CombinedLeaveRequest[] => {
+    let data: CombinedLeaveRequest[];
     if (
       selectedTab === 'ALL' &&
       ['SUPERADMIN', 'HR', 'ADMIN'].includes(role as string)
     ) {
-      data = leaveRequests;
+      // Combine regular leaves and early leaves
+      const combinedData: CombinedLeaveRequest[] = [
+        ...leaveRequests.map((leave) => ({
+          ...leave,
+          type: 'regular' as const,
+        })),
+        ...earlyLeaves.map((leave) => ({
+          ...leave,
+          type: 'early' as const,
+          fromDate: leave.date,
+          toDate: leave.date,
+          numberOfDays: 1,
+        })),
+      ];
+      data = combinedData;
     } else if (selectedTab === 'requested') {
-      data = pendingLeaves;
+      // Combine pending regular and early leaves
+      const combinedPending: CombinedLeaveRequest[] = [
+        ...pendingLeaves.map((leave) => ({
+          ...leave,
+          type: 'regular' as const,
+        })),
+        ...pendingEarlyLeaves.map((leave) => ({
+          ...leave,
+          type: 'early' as const,
+          fromDate: leave.date,
+          toDate: leave.date,
+          numberOfDays: 1,
+        })),
+      ];
+      data = combinedPending;
     } else {
-      data = myLeaveHistory;
+      data = myLeaveHistory.map((leave) => ({
+        ...leave,
+        type: 'regular' as const,
+      }));
     }
     if (!data) return [];
     return data.filter((leave) => {
@@ -79,7 +130,9 @@ function LeaveTab() {
   }, [
     myLeaveHistory,
     pendingLeaves,
+    pendingEarlyLeaves,
     leaveRequests,
+    earlyLeaves,
     searchTerm,
     selectedTab,
     role,
@@ -89,7 +142,10 @@ function LeaveTab() {
     <Box p={4}>
       <Flex justifyContent="space-between" alignItems="center" mb={6}>
         <Heading size="lg">Leave</Heading>
-        <LeaveRequestModal />
+        <HStack spacing={3}>
+          <LeaveRequestModal />
+          <EarlyLeaveModal />
+        </HStack>
       </Flex>
 
       <InputGroup mb={6}>
@@ -151,25 +207,36 @@ function LeaveTab() {
                       <Thead bg={useColorModeValue('gray.50', 'gray.700')}>
                         <Tr>
                           <Th>Name</Th>
-                          <Th>From-TO</Th>
+                          <Th>Type</Th>
+                          <Th>Date(s)</Th>
                           <Th>Reason</Th>
-                          <Th>Remarks</Th>
                           <Th>Status</Th>
                           <Th>Action</Th>
                         </Tr>
                       </Thead>
                       <Tbody>
                         {filteredUsers.map((item) => (
-                          <Tr key={item.id}>
+                          <Tr key={`${item.type}-${item.id}`}>
                             <Td>
                               <Text fontWeight="medium">{item.name}</Text>
                             </Td>
                             <Td>
-                              {`${item.fromDate} to ${item.toDate} (${item.numberOfDays}days)`}
+                              <Badge
+                                colorScheme={
+                                  item.type === 'regular' ? 'blue' : 'orange'
+                                }
+                              >
+                                {item.type === 'regular'
+                                  ? 'Leave'
+                                  : 'Early Leave'}
+                              </Badge>
+                            </Td>
+                            <Td>
+                              {item.type === 'regular'
+                                ? `${item.fromDate} to ${item.toDate} (${item.numberOfDays} days)`
+                                : `${item.fromDate} (${item.exitTime || 'N/A'})`}
                             </Td>
                             <Td>{item.reason}</Td>
-                            <Td>{item.remark}</Td>
-
                             <Td>
                               <Badge
                                 colorScheme={
@@ -194,82 +261,81 @@ function LeaveTab() {
                                   icon={<MoreVertical />}
                                   variant="outline"
                                 />
-
-                                <MenuList zIndex={50} maxWidth={100}>
-                                  {/* Approve/Reject: Only shown if status is pending AND user is HR/Admin/SuperAdmin */}
+                                <MenuList>
                                   {item.status === 'pending' &&
                                     (role === 'SUPERADMIN' ||
                                       role === 'HR') && (
                                       <>
                                         <MenuItem>
-                                          <DialogButton
-                                            title="Approve"
-                                            message="Do you want to Approve?"
-                                            onConfirm={async () => {
-                                              changeLeaveStatus(
-                                                item.id as string,
-                                                'approved',
-                                                {
-                                                  userId: item.userId,
-                                                  userName: item.name,
-                                                  fromDate: item.fromDate,
-                                                  toDate: item.toDate,
-                                                },
-                                              );
+                                          <Button
+                                            colorScheme="green"
+                                            size="sm"
+                                            width="100%"
+                                            onClick={() => {
+                                              if (item.type === 'regular') {
+                                                changeLeaveStatus(
+                                                  item.id!,
+                                                  'approved',
+                                                  {
+                                                    userId: item.userId,
+                                                    userName: item.name,
+                                                    fromDate: item.fromDate,
+                                                    toDate: item.toDate,
+                                                  },
+                                                );
+                                              } else {
+                                                changeEarlyLeaveStatus(
+                                                  item.id!,
+                                                  'approved',
+                                                  item as IEarlyLeave,
+                                                );
+                                              }
                                             }}
-                                            confirmButtonColorScheme="green"
                                           >
                                             Approve
-                                          </DialogButton>
+                                          </Button>
                                         </MenuItem>
-                                        <MenuItem as="div">
-                                          <DialogButton
-                                            title="Reject"
-                                            message="Do you want to Reject?"
-                                            onConfirm={async () => {
-                                              changeLeaveStatus(
-                                                item.id as string,
-                                                'rejected',
-                                              );
+                                        <MenuItem>
+                                          <Button
+                                            colorScheme="red"
+                                            size="sm"
+                                            width="100%"
+                                            onClick={() => {
+                                              if (item.type === 'regular') {
+                                                changeLeaveStatus(
+                                                  item.id!,
+                                                  'rejected',
+                                                );
+                                              } else {
+                                                changeEarlyLeaveStatus(
+                                                  item.id!,
+                                                  'rejected',
+                                                );
+                                              }
                                             }}
-                                            confirmButtonColorScheme="red"
                                           >
                                             Reject
-                                          </DialogButton>
+                                          </Button>
                                         </MenuItem>
                                       </>
                                     )}
-
-                                  {(item.status === 'pending' &&
-                                    item.userId === authUser?.uid) ||
-                                  (item.status === 'approved' &&
-                                    (role === 'SUPERADMIN' ||
-                                      role === 'HR')) ? (
-                                    <MenuItem as="div">
-                                      <LeaveRequestModal data={item} />
-                                    </MenuItem>
-                                  ) : null}
-
-                                  {/* Delete: shown if HR/Admin/SuperAdmin OR creator when pending */}
-                                  {(role === 'SUPERADMIN' ||
-                                    role === 'HR' ||
-                                    (item.userId === authUser?.uid &&
-                                      item.status === 'pending')) && (
-                                    <MenuItem as="div">
+                                  {item.type === 'regular' && (
+                                    <MenuItem>
                                       <DialogButton
                                         title="Delete"
-                                        message="Do you want to Delete?"
-                                        onConfirm={async () => {
+                                        message="Do you want to delete this leave request?"
+                                        onConfirm={() =>
                                           deleteLeaveRequest(
-                                            item.id as string,
+                                            item.id!,
                                             item.status,
                                             {
                                               userId: item.userId,
                                               fromDate: item.fromDate,
                                               toDate: item.toDate,
                                             },
-                                          );
-                                        }}
+                                            'Deleted by admin',
+                                          )
+                                        }
                                         confirmButtonColorScheme="red"
                                       >
                                         Delete
@@ -284,16 +350,6 @@ function LeaveTab() {
                       </Tbody>
                     </Table>
                   </Box>
-
-                  {/* Pagination */}
-                  {/* {filteredUsers.length > rowsPerPage && (
-                      <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                        pagesWithContent={pagesWithContent}
-                      />
-                    )} */}
                 </>
               )}
             </TabPanel>
