@@ -51,11 +51,12 @@ export const scheduledDeadlineCheck = functions
     const oneDayLaterString = oneDayLater.toISOString().split('T')[0]; // 'YYYY-MM-DD'
 
     try {
-      // Query Firestore for tasks where endDate is within the next 24 hours
+      // Query Firestore for tasks where endDate is within the next 24 hours and status is PENDING
       const tasksSnapshot = await db
         .collection('tasks')
         .where('endDate', '>=', currentDateString)
         .where('endDate', '<=', oneDayLaterString)
+        .where('taskStatus', '==', 'PENDING')
         .get();
 
       if (tasksSnapshot.empty) {
