@@ -9,11 +9,14 @@ import {
   orderBy,
   where,
   serverTimestamp,
+  deleteDoc,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '@/lib/config/firebase.config';
 import { useToastHook } from './shared/useToastHook';
 import { useAuth } from '@/context/user/userContext';
 import { IEarlyLeave } from '@/types/attendance';
+import { useLog } from './shared/useLog';
 
 const collectionName = 'earlyLeaves';
 
@@ -27,6 +30,7 @@ export const useEarlyLeave = () => {
 
   const { authUser, role } = useAuth();
   const [state, newToast] = useToastHook();
+  const { createLogEvent } = useLog();
 
   useEffect(() => {
     const q = query(
@@ -70,6 +74,18 @@ export const useEarlyLeave = () => {
         status: 'pending',
         createdAt: new Date().toISOString(),
       });
+
+      await createLogEvent({
+        userId: data.userId,
+        action: 'CREATE',
+        eventDetails: `Early leave request created: ${data.name} on ${data.date} - ${data.reason}`,
+        user: {
+          name: data.name,
+          email: authUser?.email || '',
+          role: role || '',
+        },
+      });
+
       newToast({ message: 'Early leave request submitted', status: 'success' });
     } catch (error) {
       console.error('Error submitting early leave:', error);
@@ -105,6 +121,17 @@ export const useEarlyLeave = () => {
         });
       }
 
+      await createLogEvent({
+        userId: earlyLeaveData?.userId || authUser?.uid || '',
+        action: 'UPDATE',
+        eventDetails: `Early leave ${newStatus}: ${earlyLeaveData?.name || 'User'} on ${earlyLeaveData?.date || ''} - ${earlyLeaveData?.reason || ''}`,
+        user: {
+          name: authUser?.displayName || 'Admin',
+          email: authUser?.email || '',
+          role: role || '',
+        },
+      });
+
       newToast({
         message: `Early leave ${newStatus}`,
         status: 'success',
@@ -113,6 +140,71 @@ export const useEarlyLeave = () => {
       console.error('Error updating early leave status:', error);
       newToast({
         message: 'Failed to update early leave status',
+        status: 'error',
+      });
+    }
+  };
+
+  const deleteEarlyLeave = async (id: string) => {
+    if (
+      !authUser ||
+      (role !== 'SUPERADMIN' && role !== 'HR' && role !== 'ADMIN')
+    ) {
+      newToast({ message: 'Permission denied', status: 'error' });
+      return;
+    }
+
+    try {
+      // Get the early leave data before deletion
+      const earlyLeave = earlyLeaves.find((leave) => leave.id === id);
+
+      // Delete the early leave record
+      await deleteDoc(doc(db, collectionName, id));
+
+      if (earlyLeave) {
+        // Remove from attendance_overrides
+        const overridesQuery = query(
+          collection(db, 'attendance_overrides'),
+          where('userId', '==', earlyLeave.userId),
+          where('date', '==', earlyLeave.date),
+          where('status', '==', 'early_leave'),
+        );
+        const overridesSnapshot = await getDocs(overridesQuery);
+        overridesSnapshot.forEach(async (overrideDoc) => {
+          await deleteDoc(overrideDoc.ref);
+        });
+
+        // Remove from attendance calendar
+        const attendanceQuery = query(
+          collection(db, 'attendance'),
+          where('userId', '==', earlyLeave.userId),
+          where('date', '==', earlyLeave.date),
+        );
+        const attendanceSnapshot = await getDocs(attendanceQuery);
+        attendanceSnapshot.forEach(async (attendanceDoc) => {
+          await deleteDoc(attendanceDoc.ref);
+        });
+
+        await createLogEvent({
+          userId: earlyLeave.userId,
+          action: 'DELETE',
+          eventDetails: `Early leave deleted: ${earlyLeave.name} on ${earlyLeave.date} - ${earlyLeave.reason}`,
+          user: {
+            name: authUser?.displayName || 'Admin',
+            email: authUser?.email || '',
+            role: role || '',
+          },
+        });
+      }
+
+      newToast({
+        message: 'Early leave deleted successfully',
+        status: 'success',
+      });
+    } catch (error) {
+      console.error('Error deleting early leave:', error);
+      newToast({
+        message: 'Failed to delete early leave',
         status: 'error',
       });
     }
@@ -143,6 +235,7 @@ export const useEarlyLeave = () => {
     loading,
     requestEarlyLeave,
     changeEarlyLeaveStatus,
+    deleteEarlyLeave,
     getApprovedEarlyLeavesForDate,
     getUserEarlyLeavesForDate,
   };

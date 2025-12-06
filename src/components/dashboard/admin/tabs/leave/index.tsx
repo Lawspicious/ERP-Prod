@@ -66,6 +66,7 @@ function LeaveTab() {
     earlyLeaves,
     pendingEarlyLeaves,
     changeEarlyLeaveStatus,
+    deleteEarlyLeave,
     loading: earlyLeaveLoading,
   } = useEarlyLeave();
 
@@ -115,7 +116,7 @@ function LeaveTab() {
       }));
     }
     if (!data) return [];
-    return data.filter((leave) => {
+    const filtered = data.filter((leave) => {
       if (selectedTab === 'requested') {
         return leave.name.toLowerCase().includes(searchTerm.toLowerCase());
       }
@@ -126,6 +127,13 @@ function LeaveTab() {
         leave.status === selectedTab.toLowerCase() &&
         leave.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
+    });
+
+    // Sort to show pending leaves at the top
+    return filtered.sort((a, b) => {
+      if (a.status === 'pending' && b.status !== 'pending') return -1;
+      if (a.status !== 'pending' && b.status === 'pending') return 1;
+      return 0;
     });
   }, [
     myLeaveHistory,
@@ -209,6 +217,7 @@ function LeaveTab() {
                           <Th>Name</Th>
                           <Th>Type</Th>
                           <Th>Date(s)</Th>
+                          <Th>Exit Time</Th>
                           <Th>Reason</Th>
                           <Th>Status</Th>
                           <Th>Action</Th>
@@ -234,7 +243,12 @@ function LeaveTab() {
                             <Td>
                               {item.type === 'regular'
                                 ? `${item.fromDate} to ${item.toDate} (${item.numberOfDays} days)`
-                                : `${item.fromDate} (${item.exitTime || 'N/A'})`}
+                                : item.fromDate}
+                            </Td>
+                            <Td>
+                              {item.type === 'early'
+                                ? item.exitTime || 'N/A'
+                                : '-'}
                             </Td>
                             <Td>{item.reason}</Td>
                             <Td>
@@ -319,22 +333,13 @@ function LeaveTab() {
                                         </MenuItem>
                                       </>
                                     )}
-                                  {item.type === 'regular' && (
+                                  {item.type === 'early' && (
                                     <MenuItem>
                                       <DialogButton
                                         title="Delete"
-                                        message="Do you want to delete this leave request?"
+                                        message="Do you want to delete this early leave request?"
                                         onConfirm={() =>
-                                          deleteLeaveRequest(
-                                            item.id!,
-                                            item.status,
-                                            {
-                                              userId: item.userId,
-                                              fromDate: item.fromDate,
-                                              toDate: item.toDate,
-                                            },
-                                            'Deleted by admin',
-                                          )
+                                          deleteEarlyLeave(item.id!)
                                         }
                                         confirmButtonColorScheme="red"
                                       >

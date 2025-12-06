@@ -47,6 +47,7 @@ export const useLeaveRequest = () => {
 
   const { authUser, role } = useAuth();
   const { setLoading } = useLoading();
+  const { createLogEvent } = useLog();
 
   // Function to get all leave requests (one-time fetch, not realtime)
 
@@ -106,6 +107,18 @@ export const useLeaveRequest = () => {
         numberOfDays: dayCount,
         createdAt,
       });
+
+      await createLogEvent({
+        userId: data.userId,
+        action: 'CREATE',
+        eventDetails: `Leave request created: ${data.name} from ${data.fromDate} to ${data.toDate} (${dayCount} days)`,
+        user: {
+          name: data.name,
+          email: authUser?.email || '',
+          role: role || '',
+        },
+      });
+
       newToast({ message: 'Leave request submitted', status: 'success' });
     } catch (err) {
       console.error(err);
@@ -193,6 +206,18 @@ export const useLeaveRequest = () => {
       }
 
       await updateDoc(leaveRef, updates);
+
+      await createLogEvent({
+        userId: existing.userId,
+        action: 'UPDATE',
+        eventDetails: `Leave request updated: ${existing.name} - ${updatedFrom} to ${updatedTo} (${numberOfDays} days)`,
+        user: {
+          name: authUser?.displayName || 'Admin',
+          email: authUser?.email || '',
+          role: role || '',
+        },
+      });
+
       newToast({ message: 'Leave request updated', status: 'success' });
     } catch (err) {
       console.error(err);
@@ -277,6 +302,17 @@ export const useLeaveRequest = () => {
           linkedEventIds,
         });
       }
+
+      await createLogEvent({
+        userId: leaveData?.userId || authUser?.uid || '',
+        action: 'UPDATE',
+        eventDetails: `Leave request ${newStatus}: ${leaveData?.userName || 'User'} from ${leaveData?.fromDate || ''} to ${leaveData?.toDate || ''}`,
+        user: {
+          name: authUser?.displayName || 'Admin',
+          email: authUser?.email || '',
+          role: role || '',
+        },
+      });
     } catch (err) {
       console.error('Leave approval failed:', err);
       newToast({ message: 'Failed to update leave status', status: 'error' });
@@ -337,6 +373,18 @@ export const useLeaveRequest = () => {
         // });
         await deleteDoc(doc(db, collectionName, id));
       }
+
+      await createLogEvent({
+        userId: leaveData?.userId || authUser?.uid || '',
+        action: 'DELETE',
+        eventDetails: `Leave request deleted (${status}): ${leaveData?.fromDate || ''} to ${leaveData?.toDate || ''} - Reason: ${reason}`,
+        user: {
+          name: authUser?.displayName || 'Admin',
+          email: authUser?.email || '',
+          role: role || '',
+        },
+      });
+
       newToast({ message: 'Leave request deleted', status: 'success' });
     } catch (err) {
       newToast({ message: 'Error deleting leave request', status: 'error' });
