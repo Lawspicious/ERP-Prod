@@ -222,6 +222,59 @@ export const useLog = () => {
     }
   };
 
+  const searchLogs = useCallback(
+    async (searchQuery: string, userId: string, date: string) => {
+      try {
+        setLoading(true);
+        const conditions = [];
+
+        if (userId.trim()) {
+          conditions.push(where('userId', '==', userId.trim()));
+        }
+        if (date.trim()) {
+          conditions.push(where('date', '==', date.trim()));
+        }
+
+        const logQuery = query(
+          logCollectionRef,
+          orderBy('createdAt', 'desc'),
+          ...conditions,
+        );
+
+        const logSnap = await getDocs(logQuery);
+        const logList: ILogEventInterface[] = logSnap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as unknown as ILogEventInterface[];
+
+        const q = searchQuery.toLowerCase();
+        const filtered = logList.filter(
+          (log) =>
+            log.action?.toLowerCase().includes(q) ||
+            log.eventDetails?.toLowerCase().includes(q) ||
+            log.date?.toLowerCase().includes(q) ||
+            log.user?.name?.toLowerCase().includes(q) ||
+            (log.createdAt &&
+              new Date(log.createdAt)
+                .toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true,
+                })
+                .toLowerCase()
+                .includes(q)),
+        );
+
+        setAllLogs(filtered);
+      } catch (error) {
+        console.error('Error searching logs:', error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
   return {
     allLogs,
     currentPage,
@@ -231,6 +284,7 @@ export const useLog = () => {
     createLogEvent,
     setCurrentPage,
     getLogsByUserandDate,
+    searchLogs,
     selectedUser,
     selectedDate,
     setSelectedDate,

@@ -16,6 +16,7 @@ import {
   Input,
   Select,
   TableCaption,
+  Skeleton,
 } from '@chakra-ui/react';
 import PageLayout from '@/components/ui/page-layout';
 import withAuth from '@/components/shared/hoc-middlware';
@@ -24,7 +25,20 @@ import { useRouter } from 'next/navigation';
 import { useLog } from '@/hooks/shared/useLog';
 import { useTeam } from '@/hooks/useTeamHook';
 import { useLoading } from '@/context/loading/loadingContext';
-import LoaderComponent from '@/components/ui/loader';
+
+const SkeletonRows = () => (
+  <>
+    {Array.from({ length: 10 }).map((_, i) => (
+      <Tr key={i}>
+        {Array.from({ length: 5 }).map((_, j) => (
+          <Td key={j}>
+            <Skeleton height="16px" borderRadius="md" />
+          </Td>
+        ))}
+      </Tr>
+    ))}
+  </>
+);
 
 const LogsPage = () => {
   const router = useRouter();
@@ -39,13 +53,57 @@ const LogsPage = () => {
     selectedUser,
     setSelectedDate,
     setSelectedUser,
+    searchLogs,
   } = useLog();
   const { allUser } = useTeam();
   const { loading } = useLoading();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchPage, setSearchPage] = useState(0);
+  const isSearching = searchQuery.trim().length > 0;
 
   useEffect(() => {
-    getLogsByUserandDate(selectedUser, selectedDate);
-  }, [router, selectedDate, selectedUser, getLogsByUserandDate]);
+    if (isSearching) {
+      const timeout = setTimeout(() => {
+        searchLogs(searchQuery, selectedUser, selectedDate);
+        setSearchPage(0);
+      }, 400);
+      return () => clearTimeout(timeout);
+    } else {
+      getLogsByUserandDate(selectedUser, selectedDate);
+    }
+  }, [
+    router,
+    selectedDate,
+    selectedUser,
+    getLogsByUserandDate,
+    searchQuery,
+    searchLogs,
+  ]);
+
+  const paginatedLogs = isSearching
+    ? allLogs.slice(searchPage * pageSize, (searchPage + 1) * pageSize)
+    : allLogs;
+
+  const canGoPrev = isSearching ? searchPage > 0 : currentPage > 0;
+  const canGoNext = isSearching
+    ? (searchPage + 1) * pageSize < allLogs.length
+    : allLogs.length >= pageSize;
+
+  const handlePrev = () => {
+    if (isSearching) {
+      setSearchPage((p) => Math.max(0, p - 1));
+    } else {
+      prevPage(selectedUser, selectedDate);
+    }
+  };
+
+  const handleNext = () => {
+    if (isSearching) {
+      setSearchPage((p) => p + 1);
+    } else {
+      nextPage();
+    }
+  };
 
   const getBadgeColor = (action: string) => {
     switch (action) {
@@ -62,125 +120,139 @@ const LogsPage = () => {
 
   return (
     <PageLayout screen="margined">
-      {loading ? (
-        <LoaderComponent />
-      ) : (
-        <Box className="min-h-screen">
-          <Heading size="lg" mb={4} textAlign="center">
-            Logs Table
-          </Heading>
-          {/* Filters */}
-          <div className="flex w-full items-center justify-between gap-6">
-            <Flex gap={4} align="end" mb={6} flexWrap="wrap">
-              {/* User Selector */}
-              <Box>
-                <Text fontSize="sm" fontWeight="bold" mb={1}>
-                  Select User
-                </Text>
-                <Select
-                  value={selectedUser}
-                  onChange={(e) => setSelectedUser(e.target.value)}
-                  placeholder="Select a user"
-                >
-                  {allUser.map((user, index) => (
-                    <option key={index} value={user.id}>
-                      {user.name} - {user.role}
-                    </option>
-                  ))}
-                </Select>
-              </Box>
-              <Box>
-                <Text fontSize="sm" fontWeight="bold" mb={1}>
-                  Select Date
-                </Text>
-                <Input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                />
-              </Box>
-              <Button
-                colorScheme="red"
-                onClick={() => {
-                  setSelectedUser('');
-                  setSelectedDate('');
-                }}
+      <Box className="min-h-screen">
+        <Heading size="lg" mb={4} textAlign="center">
+          Logs Table
+        </Heading>
+        {/* Filters */}
+        <div className="flex w-full items-center justify-between gap-6">
+          <Flex gap={4} align="end" mb={6} flexWrap="wrap">
+            {/* Search */}
+            <Box>
+              <Text fontSize="sm" fontWeight="bold" mb={1}>
+                Search
+              </Text>
+              <Input
+                placeholder="Search logs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </Box>
+            {/* User Selector */}
+            <Box>
+              <Text fontSize="sm" fontWeight="bold" mb={1}>
+                Select User
+              </Text>
+              <Select
+                value={selectedUser}
+                onChange={(e) => setSelectedUser(e.target.value)}
+                placeholder="Select a user"
               >
-                <Trash2 />
-              </Button>
-            </Flex>
+                {allUser.map((user, index) => (
+                  <option key={index} value={user.id}>
+                    {user.name} - {user.role}
+                  </option>
+                ))}
+              </Select>
+            </Box>
+            <Box>
+              <Text fontSize="sm" fontWeight="bold" mb={1}>
+                Select Date
+              </Text>
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
+            </Box>
             <Button
-              rightIcon={<ArrowLeft />}
-              colorScheme="blue"
-              onClick={() => router.back()}
+              colorScheme="red"
+              onClick={() => {
+                setSelectedUser('');
+                setSelectedDate('');
+                setSearchQuery('');
+              }}
             >
-              Back
+              <Trash2 />
             </Button>
-          </div>
-          <Box className="overflow-x-auto rounded-lg bg-white p-4 shadow-md">
-            <Table variant="striped" colorScheme="gray">
-              <TableCaption>
-                <div className="flex items-center justify-center gap-6">
-                  <Button
-                    colorScheme="purple"
-                    onClick={() => prevPage(selectedUser, selectedDate)}
-                    disabled={currentPage === 0}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    colorScheme="purple"
-                    onClick={nextPage}
-                    disabled={allLogs.length < pageSize}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </TableCaption>
-              <Thead>
+          </Flex>
+          <Button
+            rightIcon={<ArrowLeft />}
+            colorScheme="blue"
+            onClick={() => router.back()}
+          >
+            Back
+          </Button>
+        </div>
+        <Box className="overflow-x-auto rounded-lg bg-white p-4 shadow-md">
+          <Table variant="striped" colorScheme="gray">
+            <TableCaption>
+              <div className="flex items-center justify-center gap-6">
+                <Button
+                  colorScheme="purple"
+                  onClick={handlePrev}
+                  disabled={!canGoPrev}
+                >
+                  Previous
+                </Button>
+                <Button
+                  colorScheme="purple"
+                  onClick={handleNext}
+                  disabled={!canGoNext}
+                >
+                  Next
+                </Button>
+              </div>
+            </TableCaption>
+            <Thead>
+              <Tr>
+                <Th>Action</Th>
+                <Th>Event Details</Th>
+                <Th>Event Date</Th>
+                <Th>Event Time</Th>
+                <Th>User Info</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {loading ? (
+                <SkeletonRows />
+              ) : paginatedLogs.length === 0 ? (
                 <Tr>
-                  <Th>Action</Th>
-                  <Th>Event Details</Th>
-                  <Th>Event Date</Th>
-                  <Th>Event Time</Th>
-                  <Th>User Info</Th>
+                  <Td colSpan={5}>
+                    <Text className="heading-primary my-4 w-full text-center">
+                      No Logs Found!
+                    </Text>
+                  </Td>
                 </Tr>
-              </Thead>
-              <Tbody>
-                {allLogs.length === 0 ? (
-                  <h1 className="heading-primary my-4 w-full text-center">
-                    No Logs Found!
-                  </h1>
-                ) : (
-                  allLogs.map((log, index) => (
-                    <Tr key={index}>
-                      <Td>
-                        <Badge colorScheme={getBadgeColor(log.action)}>
-                          {log.action}
-                        </Badge>
-                      </Td>
-                      <Td>{log.eventDetails}</Td>
-                      <Td>{log.date}</Td>
-                      <Td>
-                        {log.createdAt
-                          ? new Date(log.createdAt).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: true,
-                            })
-                          : ''}
-                      </Td>
-                      <Td>
-                        <Text fontWeight="bold">{log.user.name}</Text>
-                      </Td>
-                    </Tr>
-                  ))
-                )}
-              </Tbody>
-            </Table>
-          </Box>
+              ) : (
+                paginatedLogs.map((log, index) => (
+                  <Tr key={index}>
+                    <Td>
+                      <Badge colorScheme={getBadgeColor(log.action)}>
+                        {log.action}
+                      </Badge>
+                    </Td>
+                    <Td>{log.eventDetails}</Td>
+                    <Td>{log.date}</Td>
+                    <Td>
+                      {log.createdAt
+                        ? new Date(log.createdAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true,
+                          })
+                        : ''}
+                    </Td>
+                    <Td>
+                      <Text fontWeight="bold">{log.user.name}</Text>
+                    </Td>
+                  </Tr>
+                ))
+              )}
+            </Tbody>
+          </Table>
         </Box>
-      )}
+      </Box>
     </PageLayout>
   );
 };
